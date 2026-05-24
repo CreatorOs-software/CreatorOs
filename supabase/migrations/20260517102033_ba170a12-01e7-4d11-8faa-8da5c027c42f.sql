@@ -1,0 +1,1 @@
+ALTER TABLE public.email_threads ADD COLUMN IF NOT EXISTS body_html TEXT;

@@ -1,0 +1,105 @@
+/* ============================================================
+   TalentOS Design System
+   Overrides shadcn/base-nova tokens — edit here, nowhere else
+   ============================================================ */
+
+:root {
+  /* --- Brand primitives ------------------------------------ */
+  --brand-bg:           #F5F5F2;
+  --brand-surface:      #FFFFFF;
+  --brand-surface-soft: #FAFAF8;
+
+  --brand-primary:      #F3D250;
+  --brand-primary-soft: #F8E58D;
+
+  --brand-text:         #111111;
+  --brand-text-secondary: #666666;
+  --brand-text-muted:   #A0A0A0;
+
+  --brand-dark:         #2B2B2B;
+
+  /* --- Spacing -------------------------------------------- */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 48px;
+
+  /* --- Shadows -------------------------------------------- */
+  --shadow-soft: 0 8px 30px rgba(0, 0, 0, 0.04);
+
+  /* --- Radius --------------------------------------------- */
+  --radius-pill: 999px;
+  --radius-xl:   40px;
+  --radius-lg:   28px;
+  --radius-md:   20px;
+  --radius-sm:   12px;
+
+  /* --- Shadcn token overrides ----------------------------- */
+  --background:           var(--brand-bg);
+  --foreground:           var(--brand-text);
+
+  --card:                 var(--brand-surface);
+  --card-foreground:      var(--brand-text);
+
+  --popover:              var(--brand-surface);
+  --popover-foreground:   var(--brand-text);
+
+  --primary:              var(--brand-primary);
+  --primary-foreground:   var(--brand-dark);
+
+  --secondary:            var(--brand-surface-soft);
+  --secondary-foreground: var(--brand-text);
+
+  --muted:                var(--brand-surface-soft);
+  --muted-foreground:     var(--brand-text-secondary);
+
+  --accent:               var(--brand-primary-soft);
+  --accent-foreground:    var(--brand-dark);
+
+  --border:               rgba(0, 0, 0, 0.08);
+  --input:                rgba(0, 0, 0, 0.08);
+  --ring:                 var(--brand-primary);
+
+  /* Base radius used by shadcn scale */
+  --radius: var(--radius-md);
+
+  --sidebar:                    var(--brand-surface);
+  --sidebar-foreground:         var(--brand-text);
+  --sidebar-primary:            var(--brand-primary);
+  --sidebar-primary-foreground: var(--brand-dark);
+  --sidebar-accent:             var(--brand-surface-soft);
+  --sidebar-accent-foreground:  var(--brand-text);
+  --sidebar-border:             rgba(0, 0, 0, 0.08);
+  --sidebar-ring:               var(--brand-primary);
+}
+
+/* Shadcn's @theme inline uses calc(var(--radius) * ...) — override the
+   resolved Tailwind radius tokens to match our explicit scale */
+@theme inline {
+  --radius-sm:  var(--radius-sm);
+  --radius-md:  var(--radius-md);
+  --radius-lg:  var(--radius-lg);
+  --radius-xl:  var(--radius-xl);
+  --radius-2xl: var(--radius-pill);
+  --radius-3xl: var(--radius-pill);
+  --radius-4xl: var(--radius-pill);
+}
+
+/* --- Pill overrides for interactive elements ---------------- */
+@layer base {
+  button,
+  [role="button"],
+  input,
+  textarea,
+  select {
+    border-radius: var(--radius-pill);
+  }
+
+  /* Cards stay at --radius-lg */
+  .card,
+  [data-slot="card"] {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
+  }
+}
