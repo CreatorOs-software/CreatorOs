@@ -12,8 +12,8 @@ import { StatusBar, StatusBarGroup } from "@/components/dashboard/status-bar";
 
 export default function DashboardPage() {
   return (
-    <div>
-      <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between mb-6 gap-6">
+    <div className="h-full flex flex-col">
+      <div className="shrink-0 flex flex-col xl:flex-row xl:items-start xl:justify-between mb-6 gap-6">
         <div>
           <h1 className="text-4xl font-light tracking-tight mb-6 text-balance">
             Welcome in, <span className="font-medium">Nixtio</span>
@@ -31,7 +31,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Grid — 2 explicit rows, right col spans both */}
-      <div className="grid grid-cols-12 gap-4">
+      <div className="flex-1 min-h-0 grid grid-cols-12 grid-rows-[auto_1fr] gap-4">
         {/* Row 1, col 1-3 */}
         <CreatorCard
           className="col-span-12 lg:col-span-3"
@@ -52,7 +52,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Row 2, col 1-3 */}
-        <div className="col-span-12 lg:col-span-3 bg-card rounded-2xl border border-border-light overflow-hidden">
+        <div className="col-span-12 lg:col-span-3 bg-card rounded-2xl  overflow-hidden">
           <div className="px-4">
             <AccordionSection title="Pension contributions" />
             <AccordionSection title="Devices" defaultOpen>

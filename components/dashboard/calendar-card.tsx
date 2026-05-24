@@ -47,12 +47,7 @@ const events = [
 
 export function CalendarCard({ className }: CalendarCardProps) {
   return (
-    <Card
-      className={cn(
-        "rounded-2xl p-5 gap-0 border border-border-light ring-0",
-        className,
-      )}
-    >
+    <Card className={cn("rounded-2xl p-5 gap-0 ring-0 h-full flex flex-col", className)}>
       <CardHeader className="flex flex-row items-center justify-between p-0 mb-6 gap-0">
         <Button
           variant="ghost"
@@ -69,7 +64,7 @@ export function CalendarCard({ className }: CalendarCardProps) {
         </Button>
       </CardHeader>
 
-      <CardContent className="p-0">
+      <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
         <div className="grid grid-cols-7 gap-2">
           <div />
           {calendarDays.map((item) => (

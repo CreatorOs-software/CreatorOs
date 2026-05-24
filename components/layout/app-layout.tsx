@@ -11,9 +11,10 @@ import { useAuth } from "@/features/auth/hooks/use-auth";
 interface AppLayoutProps {
   children: React.ReactNode;
   activeNav?: string;
+  fullHeight?: boolean;
 }
 
-export function AppLayout({ children, activeNav }: AppLayoutProps) {
+export function AppLayout({ children, activeNav, fullHeight = false }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, loading } = useAuth();
@@ -39,7 +40,7 @@ export function AppLayout({ children, activeNav }: AppLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen ">
+    <div className={fullHeight ? "h-screen overflow-hidden flex flex-col" : "min-h-screen"}>
       {/* Header - Full Width */}
       <Header
         onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -63,7 +64,7 @@ export function AppLayout({ children, activeNav }: AppLayoutProps) {
 
       {/* Main Content */}
       <main
-        className={`px-6 py-6 transition-all duration-300 ${
+        className={`${fullHeight ? "flex-1 min-h-0 overflow-hidden" : ""} px-6 py-6 transition-all duration-300 ${
           sidebarOpen ? "lg:ml-64" : "lg:ml-24"
         }`}
       >

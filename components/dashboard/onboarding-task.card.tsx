@@ -18,9 +18,24 @@ interface OnboardingTaskCardProps {
 const tasks = [
   { icon: Monitor, title: "Interview", date: "Sep 13, 08:30", completed: true },
   { icon: Zap, title: "Team Meeting", date: "Sep 13, 10:30", completed: true },
-  { icon: MessageCircle, title: "Project Update", date: "Sep 13, 13:00", completed: false },
-  { icon: CalendarCheck, title: "Discuss Q3 Goals", date: "Sep 13, 14:45", completed: false },
-  { icon: Link, title: "HR Policy Review", date: "Sep 13, 16:30", completed: false },
+  {
+    icon: MessageCircle,
+    title: "Project Update",
+    date: "Sep 13, 13:00",
+    completed: false,
+  },
+  {
+    icon: CalendarCheck,
+    title: "Discuss Q3 Goals",
+    date: "Sep 13, 14:45",
+    completed: false,
+  },
+  {
+    icon: Link,
+    title: "HR Policy Review",
+    date: "Sep 13, 16:30",
+    completed: false,
+  },
 ];
 
 export function OnboardingTaskCard({ className }: OnboardingTaskCardProps) {
@@ -30,7 +45,7 @@ export function OnboardingTaskCard({ className }: OnboardingTaskCardProps) {
   return (
     <Card
       className={cn(
-        "rounded-2xl p-5 gap-0 bg-card-dark text-card-dark-foreground ring-0 border-0",
+        "rounded-2xl p-5 gap-0 bg-card-dark text-card-dark-foreground ",
         className,
       )}
     >
