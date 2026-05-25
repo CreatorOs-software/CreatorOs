@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -12,12 +13,13 @@ import {
   Star,
   ChevronLeft,
   ChevronRight,
+  Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { label: "Inbox", icon: Users, href: "/inbox" },
+  { label: "Inbox", icon: Inbox, href: "/inbox" },
   { label: "Hiring", icon: UserPlus, href: "/hiring" },
   { label: "Devices", icon: Monitor, href: "/devices" },
   { label: "Apps", icon: AppWindow, href: "/apps" },
@@ -29,14 +31,10 @@ const navItems = [
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
-  activeNav?: string;
 }
 
-export function Sidebar({
-  isOpen,
-  onToggle,
-  activeNav = "Dashboard",
-}: SidebarProps) {
+export function Sidebar({ isOpen, onToggle }: SidebarProps) {
+  const pathname = usePathname();
   return (
     <aside
       className={cn(
@@ -61,7 +59,7 @@ export function Sidebar({
         <ul className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = item.label === activeNav;
+            const isActive = pathname === item.href;
             return (
               <li key={item.label}>
                 <Link

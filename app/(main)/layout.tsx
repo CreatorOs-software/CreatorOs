@@ -9,7 +9,7 @@ export default async function DashboardLayout({
 }) {
   return (
     <>
-      <AppLayout activeNav="Dashboard" fullHeight>{children}</AppLayout>
+      <AppLayout fullHeight>{children}</AppLayout>
     </>
   );
 }

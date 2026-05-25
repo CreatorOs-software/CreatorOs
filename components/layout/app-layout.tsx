@@ -10,11 +10,10 @@ import { useAuth } from "@/features/auth/hooks/use-auth";
 
 interface AppLayoutProps {
   children: React.ReactNode;
-  activeNav?: string;
   fullHeight?: boolean;
 }
 
-export function AppLayout({ children, activeNav, fullHeight = false }: AppLayoutProps) {
+export function AppLayout({ children, fullHeight = false }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, loading } = useAuth();
@@ -40,7 +39,11 @@ export function AppLayout({ children, activeNav, fullHeight = false }: AppLayout
   }
 
   return (
-    <div className={fullHeight ? "h-screen overflow-hidden flex flex-col" : "min-h-screen"}>
+    <div
+      className={
+        fullHeight ? "h-screen overflow-hidden flex flex-col" : "min-h-screen"
+      }
+    >
       {/* Header - Full Width */}
       <Header
         onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -52,19 +55,17 @@ export function AppLayout({ children, activeNav, fullHeight = false }: AppLayout
       <MobileSidebar
         isOpen={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
-        activeNav={activeNav}
       />
 
       {/* Desktop Floating Sidebar */}
       <Sidebar
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
-        activeNav={activeNav}
       />
 
       {/* Main Content */}
       <main
-        className={`${fullHeight ? "flex-1 min-h-0 overflow-hidden" : ""} px-6 py-6 transition-all duration-300 ${
+        className={`${fullHeight ? "flex-1 min-h-0  overflow-hidden" : ""} px-6  pb-4 transition-all duration-300 ${
           sidebarOpen ? "lg:ml-64" : "lg:ml-24"
         }`}
       >

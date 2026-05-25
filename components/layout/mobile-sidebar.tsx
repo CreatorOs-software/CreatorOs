@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -11,12 +12,13 @@ import {
   Calendar,
   Star,
   X,
+  Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { label: "Inbox", icon: Users, href: "/inbox" },
+  { label: "Inbox", icon: Inbox, href: "/inbox" },
   { label: "Hiring", icon: UserPlus, href: "/hiring" },
   { label: "Devices", icon: Monitor, href: "/devices" },
   { label: "Apps", icon: AppWindow, href: "/apps" },
@@ -28,14 +30,10 @@ const navItems = [
 interface MobileSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  activeNav?: string;
 }
 
-export function MobileSidebar({
-  isOpen,
-  onClose,
-  activeNav = "Dashboard",
-}: MobileSidebarProps) {
+export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
+  const pathname = usePathname();
   return (
     <>
       {/* Backdrop */}
@@ -74,7 +72,7 @@ export function MobileSidebar({
           <ul className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = item.label === activeNav;
+              const isActive = pathname === item.href;
               return (
                 <li key={item.label}>
                   <Link

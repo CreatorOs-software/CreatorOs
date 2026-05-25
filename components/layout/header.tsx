@@ -25,7 +25,7 @@ export function Header({
 }: HeaderProps) {
   const { signOut } = useAuth();
   return (
-    <header className="flex items-center justify-between px-6 py-4  ">
+    <header className="flex items-center justify-between px-6 py-4 ">
       {/* Logo */}
       <div className="flex items-center gap-4">
         <div className="rounded-lg border border-foreground/20 px-4 py-2">
