@@ -25,9 +25,18 @@ export async function GET() {
 
   const { data: integrations } = await supabase
     .from("email_integrations")
-    .select("id, email, display_name, provider, status")
+    .select("id, email, display_name, provider, status, creator_id")
     .eq("agency_id", profile.agency_id)
     .eq("status", "connected");
 
-  return Response.json({ threads: threads ?? [], integrations: integrations ?? [] });
+  const { data: creators } = await supabase
+    .from("creators")
+    .select("id, full_name, initials, color")
+    .eq("agency_id", profile.agency_id);
+
+  return Response.json({
+    threads: threads ?? [],
+    integrations: integrations ?? [],
+    creators: creators ?? [],
+  });
 }

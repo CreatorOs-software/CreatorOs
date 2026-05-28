@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRef, useState } from "react";
 import {
   Star,
   RefreshCw,
@@ -37,6 +38,20 @@ type Integration = {
   email: string;
   display_name: string | null;
   provider: string;
+  creator_id: string | null;
+};
+
+type Creator = {
+  id: string;
+  full_name: string;
+  initials: string;
+  color: string;
+};
+
+type InboxData = {
+  threads: Thread[];
+  integrations: Integration[];
+  creators: Creator[];
 };
 
 type Filter = "all" | "unread" | "starred";
@@ -93,9 +108,35 @@ function mailboxInitials(email: string) {
 }
 
 export function InboxView() {
-  const [threads, setThreads] = useState<Thread[]>([]);
-  const [integrations, setIntegrations] = useState<Integration[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  const { data, isPending, isFetching } = useQuery<InboxData>({
+    queryKey: ["inbox"],
+    queryFn: async () => {
+      // Sync all previously known integrations before fetching fresh inbox data
+      const prev = queryClient.getQueryData<InboxData>(["inbox"]);
+      const prevIntegrations = prev?.integrations ?? [];
+      if (prevIntegrations.length > 0) {
+        await Promise.allSettled(
+          prevIntegrations.map((i) =>
+            fetch(`/api/integrations/${i.id}/sync`, { method: "POST" }),
+          ),
+        );
+      }
+      const r = await fetch("/api/inbox");
+      if (!r.ok) throw new Error("Failed to fetch inbox");
+      return r.json();
+    },
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+    placeholderData: (prev) => prev,
+  });
+
+  const threads: Thread[] = data?.threads ?? [];
+  const integrations: Integration[] = data?.integrations ?? [];
+  const creators: Creator[] = data?.creators ?? [];
+  const loading = isPending;
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [activeMailboxId, setActiveMailboxId] = useState<MailboxId | null>(
@@ -107,31 +148,7 @@ export function InboxView() {
   const [workPanelOpen, setWorkPanelOpen] = useState(true);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
   const replyRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/inbox")
-      .then((r) => r.json())
-      .then((json) => {
-        if (cancelled) return;
-        setThreads(json.threads ?? []);
-        setIntegrations(json.integrations ?? []);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey]);
-
-  function refresh() {
-    setRefreshKey((k) => k + 1);
-  }
 
   // Filtered list based on current mailbox + filter tab
   const filtered = threads.filter((t) => {
@@ -165,9 +182,13 @@ export function InboxView() {
   const totalUnread = inboxThreads.filter((t) => t.unread).length;
 
   function patchLocal(id: string, patch: Partial<Thread>) {
-    setThreads((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, ...patch } : t)),
-    );
+    queryClient.setQueryData<InboxData>(["inbox"], (prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        threads: prev.threads.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+      };
+    });
   }
 
   async function patch(id: string, update: Partial<Thread>) {
@@ -200,18 +221,11 @@ export function InboxView() {
     });
     setReply("");
     setSending(false);
-    refresh();
+    queryClient.invalidateQueries({ queryKey: ["inbox"] });
   }
 
-  async function handleSync() {
-    setSyncing(true);
-    await Promise.all(
-      integrations.map((i) =>
-        fetch(`/api/integrations/${i.id}/sync`, { method: "POST" }),
-      ),
-    );
-    refresh();
-    setSyncing(false);
+  function handleSync() {
+    queryClient.refetchQueries({ queryKey: ["inbox"] });
   }
 
   function openMailbox(id: MailboxId | null) {
@@ -223,6 +237,10 @@ export function InboxView() {
 
   const activeMailbox =
     integrations.find((i) => i.id === activeMailboxId) ?? null;
+  const activeMailboxCreator =
+    activeMailbox?.creator_id
+      ? (creators.find((c) => c.id === activeMailbox.creator_id) ?? null)
+      : null;
   const activeLabel =
     activeMailboxId === "__sent__"
       ? "Gesendet"
@@ -230,7 +248,10 @@ export function InboxView() {
         ? "Markiert"
         : activeMailboxId === "__all__" || !activeMailboxId
           ? "Alle Postfächer"
-          : (activeMailbox?.display_name ?? activeMailbox?.email ?? "Postfach");
+          : (activeMailboxCreator?.full_name ??
+             activeMailbox?.display_name ??
+             activeMailbox?.email ??
+             "Postfach");
 
   return (
     <div className="h-full flex gap-3 min-w-0">
@@ -243,11 +264,11 @@ export function InboxView() {
               <span className="text-sm font-semibold">Postfächer</span>
               <button
                 onClick={handleSync}
-                disabled={syncing || integrations.length === 0}
+                disabled={isFetching || integrations.length === 0}
                 className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground disabled:opacity-40"
               >
                 <RefreshCw
-                  className={cn("w-3.5 h-3.5", syncing && "animate-spin")}
+                  className={cn("w-3.5 h-3.5", isFetching && "animate-spin")}
                 />
               </button>
             </div>
@@ -272,19 +293,31 @@ export function InboxView() {
                 const unread = inboxThreads.filter(
                   (t) => t.integration_id === integ.id && t.unread,
                 ).length;
-                const initials = mailboxInitials(integ.email);
+                const linkedCreator = integ.creator_id
+                  ? (creators.find((c) => c.id === integ.creator_id) ?? null)
+                  : null;
+                const displayName =
+                  linkedCreator?.full_name ?? integ.display_name ?? integ.email;
+                const initials = linkedCreator?.initials ?? mailboxInitials(integ.email);
+                const avatarBg = linkedCreator?.color ?? undefined;
                 return (
                   <button
                     key={integ.id}
                     onClick={() => openMailbox(integ.id)}
                     className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
                   >
-                    <span className="w-9 h-9 rounded-xl bg-sidebar flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0">
+                    <span
+                      className={cn(
+                        "w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold shrink-0",
+                        avatarBg ? "text-white" : "bg-sidebar text-muted-foreground",
+                      )}
+                      style={avatarBg ? { background: avatarBg } : undefined}
+                    >
                       {initials}
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">
-                        {integ.display_name ?? integ.email}
+                        {displayName}
                       </div>
                       <div className="text-xs text-muted-foreground truncate">
                         {integ.email}
@@ -358,11 +391,11 @@ export function InboxView() {
                 )}
                 <button
                   onClick={handleSync}
-                  disabled={syncing || integrations.length === 0}
+                  disabled={isFetching || integrations.length === 0}
                   className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground disabled:opacity-40"
                 >
                   <RefreshCw
-                    className={cn("w-3.5 h-3.5", syncing && "animate-spin")}
+                    className={cn("w-3.5 h-3.5", isFetching && "animate-spin")}
                   />
                 </button>
               </div>

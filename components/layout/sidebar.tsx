@@ -16,6 +16,7 @@ import {
   Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { clientCache } from "@/lib/client-cache";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
@@ -35,17 +36,22 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const pathname = usePathname();
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(
+    () => clientCache.get<number>("inbox:unread") ?? 0,
+  );
 
   useEffect(() => {
+    if (clientCache.get<number>("inbox:unread") !== null) return;
     fetch("/api/inbox")
       .then((r) => r.json())
       .then((json) => {
         const threads: { unread: boolean; folder: string | null }[] =
           json.threads ?? [];
-        setUnreadCount(
-          threads.filter((t) => t.unread && t.folder !== "sent").length,
-        );
+        const count = threads.filter(
+          (t) => t.unread && t.folder !== "sent",
+        ).length;
+        clientCache.set("inbox:unread", count, 2 * 60_000);
+        setUnreadCount(count);
       })
       .catch(() => {});
   }, [pathname]);

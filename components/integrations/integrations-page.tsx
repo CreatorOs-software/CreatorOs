@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Inbox, RefreshCw, X, Check, AlertCircle, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,14 @@ type Integration = {
   provider: string;
   status: string;
   last_sync_at: string | null;
+  creator_id: string | null;
+};
+
+type Creator = {
+  id: string;
+  full_name: string;
+  initials: string;
+  color: string;
 };
 
 const PROVIDERS: {
@@ -102,8 +111,23 @@ const defaultForm = (): FormState => ({
 });
 
 export function IntegrationsPage() {
-  const [integrations, setIntegrations] = useState<Integration[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  const { data: integrationsData, isPending: loading } = useQuery<{ integrations: Integration[] }>({
+    queryKey: ["integrations"],
+    queryFn: () => fetch("/api/integrations").then((r) => r.json()),
+    staleTime: 5 * 60_000,
+  });
+
+  const { data: creatorsData } = useQuery<{ creators: Creator[] }>({
+    queryKey: ["creators"],
+    queryFn: () => fetch("/api/creators").then((r) => r.json()),
+    staleTime: 5 * 60_000,
+  });
+
+  const integrations: Integration[] = integrationsData?.integrations ?? [];
+  const creators: Creator[] = creatorsData?.creators ?? [];
+
   const [openProvider, setOpenProvider] = useState<Provider | null>(null);
   const [form, setForm] = useState<FormState>(defaultForm());
   const [testResult, setTestResult] = useState<{ ok: boolean; error?: string } | null>(null);
@@ -112,50 +136,58 @@ export function IntegrationsPage() {
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [assigningId, setAssigningId] = useState<string | null>(null);
 
-  async function loadIntegrations() {
-    const res = await fetch("/api/integrations");
-    if (res.ok) {
-      const json = await res.json();
-      setIntegrations(json.integrations ?? []);
-    }
-    setLoading(false);
+  async function handleAssignCreator(integrationId: string, creatorId: string | null) {
+    setAssigningId(integrationId);
+    await fetch(`/api/integrations/${integrationId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ creator_id: creatorId }),
+    });
+    queryClient.setQueryData<{ integrations: Integration[] }>(["integrations"], (prev) => {
+      if (!prev) return prev;
+      return {
+        integrations: prev.integrations.map((i) =>
+          i.id === integrationId ? { ...i, creator_id: creatorId } : i,
+        ),
+      };
+    });
+    queryClient.invalidateQueries({ queryKey: ["inbox"] });
+    setAssigningId(null);
   }
 
-  useEffect(() => {
-    loadIntegrations();
-  }, []);
-
-  // Pre-fill IMAP host/port when provider is selected
-  useEffect(() => {
-    if (!openProvider) return;
-    const preset = PRESETS[openProvider] ?? null;
-    setForm((f) => ({
-      ...f,
+  function openModal(provider: Provider) {
+    const preset = PRESETS[provider] ?? null;
+    setOpenProvider(provider);
+    setForm({
+      ...defaultForm(),
       imap_host: preset?.imap_host ?? "",
       imap_port: preset?.imap_port ?? 993,
       smtp_host: preset?.smtp_host ?? "",
       smtp_port: preset?.smtp_port ?? 465,
-    }));
+    });
     setTestResult(null);
     setSaveError(null);
-  }, [openProvider]);
+  }
 
-  // Auto-detect preset from email domain (for generic IMAP)
-  useEffect(() => {
-    if (openProvider !== "imap") return;
-    const domain = form.email.split("@")[1]?.toLowerCase().trim();
-    if (!domain) return;
-    const preset = getPresetForDomain(domain);
-    if (!preset) return;
+  function handleEmailChange(email: string) {
+    const domain = email.split("@")[1]?.toLowerCase().trim();
+    const preset = domain && openProvider === "imap" ? getPresetForDomain(domain) : null;
     setForm((f) => ({
       ...f,
-      imap_host: f.imap_host || preset.imap_host,
-      imap_port: f.imap_port || preset.imap_port,
-      smtp_host: f.smtp_host || preset.smtp_host,
-      smtp_port: f.smtp_port || preset.smtp_port,
+      email,
+      imap_username: f.imap_username || email,
+      ...(preset
+        ? {
+            imap_host: f.imap_host || preset.imap_host,
+            imap_port: f.imap_port || preset.imap_port,
+            smtp_host: f.smtp_host || preset.smtp_host,
+            smtp_port: f.smtp_port || preset.smtp_port,
+          }
+        : {}),
     }));
-  }, [form.email, openProvider]);
+  }
 
   function closeModal() {
     setOpenProvider(null);
@@ -214,7 +246,8 @@ export function IntegrationsPage() {
         setSaveError(json.error ?? "Verbindung fehlgeschlagen");
       } else {
         closeModal();
-        await loadIntegrations();
+        await queryClient.refetchQueries({ queryKey: ["integrations"] });
+        queryClient.invalidateQueries({ queryKey: ["inbox"] });
       }
     } catch {
       setSaveError("Netzwerkfehler");
@@ -227,7 +260,8 @@ export function IntegrationsPage() {
     setSyncingId(id);
     try {
       await fetch(`/api/integrations/${id}/sync`, { method: "POST" });
-      await loadIntegrations();
+      await queryClient.refetchQueries({ queryKey: ["integrations"] });
+      queryClient.invalidateQueries({ queryKey: ["inbox"] });
     } finally {
       setSyncingId(null);
     }
@@ -237,7 +271,11 @@ export function IntegrationsPage() {
     setDeletingId(id);
     try {
       await fetch(`/api/integrations/${id}`, { method: "DELETE" });
-      setIntegrations((prev) => prev.filter((i) => i.id !== id));
+      queryClient.setQueryData<{ integrations: Integration[] }>(["integrations"], (prev) => {
+        if (!prev) return prev;
+        return { integrations: prev.integrations.filter((i) => i.id !== id) };
+      });
+      queryClient.invalidateQueries({ queryKey: ["inbox"] });
     } finally {
       setDeletingId(null);
     }
@@ -273,56 +311,90 @@ export function IntegrationsPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {integrations.map((integ) => (
-              <div
-                key={integ.id}
-                className="flex items-center gap-4 px-4 py-3 bg-card rounded-2xl"
-              >
-                <div className="w-9 h-9 rounded-xl bg-sidebar flex items-center justify-center shrink-0">
-                  <Inbox className="w-4 h-4 text-muted-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">
-                    {integ.display_name ?? integ.email}
+            {integrations.map((integ) => {
+              const assignedCreator = creators.find((c) => c.id === integ.creator_id) ?? null;
+              return (
+                <div
+                  key={integ.id}
+                  className="flex items-center gap-4 px-4 py-3 bg-card rounded-2xl"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-sidebar flex items-center justify-center shrink-0">
+                    <Inbox className="w-4 h-4 text-muted-foreground" />
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {integ.provider} · Sync {timeAgo(integ.last_sync_at)}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">
+                      {integ.display_name ?? integ.email}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {integ.provider} · Sync {timeAgo(integ.last_sync_at)}
+                    </div>
                   </div>
+
+                  {/* Creator assignment */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {assignedCreator && (
+                      <span
+                        className="w-6 h-6 rounded-lg inline-flex items-center justify-center text-[10px] font-bold text-white"
+                        style={{ background: assignedCreator.color }}
+                        title={assignedCreator.full_name}
+                      >
+                        {assignedCreator.initials}
+                      </span>
+                    )}
+                    <select
+                      value={integ.creator_id ?? ""}
+                      disabled={assigningId === integ.id}
+                      onChange={(e) =>
+                        handleAssignCreator(integ.id, e.target.value || null)
+                      }
+                      className="text-xs px-2 py-1.5 rounded-xl bg-muted border border-border-light outline-none max-w-35 text-muted-foreground"
+                    >
+                      <option value="">Kein Creator</option>
+                      {creators.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.full_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <span
+                    className={cn(
+                      "text-xs px-2 py-0.5 rounded-full font-medium shrink-0",
+                      integ.status === "connected"
+                        ? "bg-green-500/10 text-green-600"
+                        : integ.status === "error"
+                          ? "bg-destructive/10 text-destructive"
+                          : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {integ.status}
+                  </span>
+                  <button
+                    onClick={() => handleSync(integ.id)}
+                    disabled={syncingId === integ.id}
+                    className="p-2 rounded-xl hover:bg-muted transition-colors text-muted-foreground"
+                    title="Sync"
+                  >
+                    <RefreshCw
+                      className={cn("w-4 h-4", syncingId === integ.id && "animate-spin")}
+                    />
+                  </button>
+                  <button
+                    onClick={() => handleDisconnect(integ.id)}
+                    disabled={deletingId === integ.id}
+                    className="p-2 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors text-muted-foreground"
+                    title="Trennen"
+                  >
+                    {deletingId === integ.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <X className="w-4 h-4" />
+                    )}
+                  </button>
                 </div>
-                <span
-                  className={cn(
-                    "text-xs px-2 py-0.5 rounded-full font-medium",
-                    integ.status === "connected"
-                      ? "bg-green-500/10 text-green-600"
-                      : integ.status === "error"
-                        ? "bg-destructive/10 text-destructive"
-                        : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  {integ.status}
-                </span>
-                <button
-                  onClick={() => handleSync(integ.id)}
-                  disabled={syncingId === integ.id}
-                  className="p-2 rounded-xl hover:bg-muted transition-colors text-muted-foreground"
-                  title="Sync"
-                >
-                  <RefreshCw className={cn("w-4 h-4", syncingId === integ.id && "animate-spin")} />
-                </button>
-                <button
-                  onClick={() => handleDisconnect(integ.id)}
-                  disabled={deletingId === integ.id}
-                  className="p-2 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors text-muted-foreground"
-                  title="Trennen"
-                >
-                  {deletingId === integ.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <X className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
@@ -344,10 +416,7 @@ export function IntegrationsPage() {
               </div>
               <p className="text-xs text-muted-foreground flex-1">{p.description}</p>
               <button
-                onClick={() => {
-                  setOpenProvider(p.id);
-                  setForm(defaultForm());
-                }}
+                onClick={() => openModal(p.id)}
                 className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl bg-sidebar hover:bg-muted transition-colors w-fit"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -405,7 +474,7 @@ export function IntegrationsPage() {
                 <input
                   type="email"
                   value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value, imap_username: f.imap_username || e.target.value }))}
+                  onChange={(e) => handleEmailChange(e.target.value)}
                   placeholder="du@gmail.com"
                   className="w-full px-3 py-2 rounded-xl bg-card border border-border-light text-sm outline-none focus:ring-1 focus:ring-foreground/20"
                 />
