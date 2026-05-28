@@ -22,8 +22,8 @@ const timeSlots = ["8:00 am", "9:00 am", "10:00 am", "11:00 am"];
 
 const events = [
   {
-    title: "Weekly Team Sync",
-    description: "Discuss progress on projects",
+    title: "Weekly ",
+    description: "",
     time: "8:00 am",
     day: "Tue",
     color: "bg-primary",
@@ -34,7 +34,7 @@ const events = [
   },
   {
     title: "Onboarding Session",
-    description: "Introduction for new hires",
+    description: "",
     time: "10:00 am",
     day: "Wed",
     color: "bg-card",
@@ -47,7 +47,12 @@ const events = [
 
 export function CalendarCard({ className }: CalendarCardProps) {
   return (
-    <Card className={cn("rounded-2xl p-5 gap-0 ring-0 h-full flex flex-col", className)}>
+    <Card
+      className={cn(
+        "rounded-2xl p-5 gap-0 ring-0 h-full flex flex-col",
+        className,
+      )}
+    >
       <CardHeader className="flex flex-row items-center justify-between p-0 mb-6 gap-0">
         <Button
           variant="ghost"

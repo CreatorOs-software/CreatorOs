@@ -1,8 +1,10 @@
 "use client";
 
 import { useAuth } from "@/features/auth/hooks/use-auth";
-import { Settings, Bell, Menu, X, LogOut } from "lucide-react";
+import { Settings, Bell, Menu, X, LogOut, PuzzleIcon } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface User {
   id: string;
@@ -24,6 +26,8 @@ export function Header({
   user,
 }: HeaderProps) {
   const { signOut } = useAuth();
+  const pathName = usePathname();
+  console.log(pathName);
   return (
     <header className="flex items-center justify-between px-6 py-4 ">
       {/* Logo */}
@@ -35,6 +39,16 @@ export function Header({
 
       {/* Actions */}
       <div className="flex items-center gap-3">
+        {pathName == "/inbox" && (
+          <Link
+            href="/integrations"
+            className="flex items-center gap-2 bg-card rounded-full px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+          >
+            <PuzzleIcon className="w-4 h-4" />
+            <span className="hidden sm:inline">Integration</span>
+          </Link>
+        )}
+
         <button className="flex items-center gap-2 bg-card rounded-full px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">
           <Settings className="w-4 h-4" />
           <span className="hidden sm:inline">Setting</span>

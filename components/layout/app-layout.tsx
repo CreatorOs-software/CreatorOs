@@ -65,7 +65,7 @@ export function AppLayout({ children, fullHeight = false }: AppLayoutProps) {
 
       {/* Main Content */}
       <main
-        className={`${fullHeight ? "flex-1 min-h-0  overflow-hidden" : ""} px-6  pb-4 transition-all duration-300 ${
+        className={`${fullHeight ? "flex-1 min-h-0 overflow-hidden" : ""} px-6 pb-4 transition-all duration-300 ${
           sidebarOpen ? "lg:ml-64" : "lg:ml-24"
         }`}
       >

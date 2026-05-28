@@ -56,7 +56,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 px-2 py-2 overflow-y-auto">
-        <ul className="space-y-1">
+        <ul className="space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
