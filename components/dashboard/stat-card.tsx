@@ -31,8 +31,8 @@ interface StatGroupProps {
 
 export function StatGroup({ className }: StatGroupProps) {
   const stats = [
-    { icon: Users, value: 78, label: "Employe" },
-    { icon: UserPlus, value: 56, label: "Hirings" },
+    { icon: Users, value: 78, label: "Creators" },
+    { icon: UserPlus, value: 56, label: "Deals" },
     { icon: Briefcase, value: 203, label: "Projects" },
   ];
 

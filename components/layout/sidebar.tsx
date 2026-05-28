@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  Users,
   UserPlus,
   Monitor,
   AppWindow,
@@ -20,9 +20,9 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
   { label: "Inbox", icon: Inbox, href: "/inbox" },
-  { label: "Hiring", icon: UserPlus, href: "/hiring" },
-  { label: "Devices", icon: Monitor, href: "/devices" },
-  { label: "Apps", icon: AppWindow, href: "/apps" },
+  { label: "Deals", icon: UserPlus, href: "/deals" },
+  { label: "Creator", icon: Monitor, href: "/creators" },
+  { label: "Events", icon: AppWindow, href: "/events" },
   { label: "Salary", icon: Wallet, href: "/salary" },
   { label: "Calendar", icon: Calendar, href: "/calendar" },
   { label: "Reviews", icon: Star, href: "/reviews" },
@@ -35,6 +35,20 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/inbox")
+      .then((r) => r.json())
+      .then((json) => {
+        const threads: { unread: boolean; folder: string | null }[] =
+          json.threads ?? [];
+        setUnreadCount(
+          threads.filter((t) => t.unread && t.folder !== "sent").length,
+        );
+      })
+      .catch(() => {});
+  }, [pathname]);
   return (
     <aside
       className={cn(
@@ -73,8 +87,18 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   )}
                   title={!isOpen ? item.label : undefined}
                 >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  {isOpen && <span>{item.label}</span>}
+                  <div className="relative">
+                    <Icon className="w-5 h-5 shrink-0" />
+                    {!isOpen && item.label === "Inbox" && unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-400" />
+                    )}
+                  </div>
+                  {isOpen && <span className="flex-1">{item.label}</span>}
+                  {isOpen && item.label === "Inbox" && unreadCount > 0 && (
+                    <span className="text-[10px] bg-yellow-400 text-black rounded-full px-1.5 py-0.5 leading-none font-semibold">
+                      {unreadCount}
+                    </span>
+                  )}
                 </Link>
               </li>
             );
