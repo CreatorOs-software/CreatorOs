@@ -15,7 +15,7 @@ const progressData = [
   { day: "M", values: [50, 60, 45], hasYellow: false },
   { day: "T", values: [70, 80], hasYellow: false },
   { day: "W", values: [40, 55], hasYellow: false },
-  { day: "T", values: [85, 75, 90], hasYellow: true, label: "5h 23m" },
+  { day: "T", values: [85, 75, 90], hasYellow: true, label: "8k" },
   { day: "F", values: [60, 70], hasYellow: false },
   { day: "S", values: [20, 25], hasYellow: false },
 ];

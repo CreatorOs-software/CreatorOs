@@ -16,23 +16,28 @@ interface OnboardingTaskCardProps {
 }
 
 const tasks = [
-  { icon: Monitor, title: "Interview", date: "Sep 13, 08:30", completed: true },
+  {
+    icon: Monitor,
+    title: "Meeting mit Ella",
+    date: "Sep 13, 08:30",
+    completed: true,
+  },
   { icon: Zap, title: "Team Meeting", date: "Sep 13, 10:30", completed: true },
   {
     icon: MessageCircle,
-    title: "Project Update",
+    title: "Anfrage beantworen",
     date: "Sep 13, 13:00",
     completed: false,
   },
   {
     icon: CalendarCheck,
-    title: "Discuss Q3 Goals",
+    title: "FIBO",
     date: "Sep 13, 14:45",
     completed: false,
   },
   {
     icon: Link,
-    title: "HR Policy Review",
+    title: "Rechnung verschicken",
     date: "Sep 13, 16:30",
     completed: false,
   },
@@ -51,7 +56,7 @@ export function OnboardingTaskCard({ className }: OnboardingTaskCardProps) {
     >
       <CardHeader className="flex flex-row items-start justify-between p-0 mb-6 gap-0">
         <CardTitle className="text-lg font-semibold text-card-dark-foreground">
-          Onboarding Task
+          TODOS (KI)
         </CardTitle>
         <span className="text-2xl font-light">
           {completedCount}/{totalCount}

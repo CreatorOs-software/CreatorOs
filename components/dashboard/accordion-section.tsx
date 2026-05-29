@@ -29,7 +29,7 @@ export function AccordionSection({
       className={cn("border-b border-border-light", className)}
     >
       <AccordionItem value="section">
-        <AccordionTrigger className="py-4 px-1 text-base font-medium text-foreground hover:bg-muted/50 hover:no-underline transition-colors rounded-none">
+        <AccordionTrigger className="py-4 px-1 text-sm text-foreground  hover:no-underline transition-colors rounded-none">
           {title}
         </AccordionTrigger>
         {children && (

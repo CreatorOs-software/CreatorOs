@@ -1,131 +1,185 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type CalendarEvent = {
+  id: string;
+  title: string;
+  type: "shoot" | "travel" | "deadline" | "brand" | "internal" | "posting";
+  start_at: string;
+  end_at: string;
+  location: string | null;
+  creator_id: string | null;
+  creators: { full_name: string; initials: string; color: string } | null;
+};
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const TYPE_STYLE: Record<string, { bg: string; text: string; label: string }> = {
+  shoot:    { bg: "bg-yellow-400/15", text: "text-yellow-700", label: "Shoot" },
+  travel:   { bg: "bg-blue-500/10",   text: "text-blue-600",   label: "Travel" },
+  deadline: { bg: "bg-red-500/10",    text: "text-red-600",    label: "Deadline" },
+  posting:  { bg: "bg-orange-500/10", text: "text-orange-600", label: "Posting" },
+  brand:    { bg: "bg-purple-500/10", text: "text-purple-600", label: "Brand" },
+  internal: { bg: "bg-muted",         text: "text-muted-foreground", label: "Intern" },
+};
+
+const DAY_NAMES = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+const MONTH_NAMES = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getWeekDays(weekOffset: number): Date[] {
+  const now = new Date();
+  const monday = new Date(now);
+  const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; // Mon=0
+  monday.setDate(now.getDate() - dayOfWeek + weekOffset * 7);
+  monday.setHours(0, 0, 0, 0);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d;
+  });
+}
+
+function isSameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+}
+
+function isToday(d: Date) {
+  return isSameDay(d, new Date());
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 interface CalendarCardProps {
   className?: string;
 }
 
-const calendarDays = [
-  { day: "Mon", date: 22 },
-  { day: "Tue", date: 23 },
-  { day: "Wed", date: 24 },
-  { day: "Thu", date: 25 },
-  { day: "Fri", date: 26 },
-  { day: "Sat", date: 27 },
-];
-
-const timeSlots = ["8:00 am", "9:00 am", "10:00 am", "11:00 am"];
-
-const events = [
-  {
-    title: "Weekly ",
-    description: "",
-    time: "8:00 am",
-    day: "Tue",
-    color: "bg-primary",
-    avatars: [
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=32&h=32&fit=crop&crop=face",
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop&crop=face",
-    ],
-  },
-  {
-    title: "Onboarding Session",
-    description: "",
-    time: "10:00 am",
-    day: "Wed",
-    color: "bg-card",
-    avatars: [
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=32&h=32&fit=crop&crop=face",
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face",
-    ],
-  },
-];
-
 export function CalendarCard({ className }: CalendarCardProps) {
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  const days = getWeekDays(weekOffset);
+  const from = days[0].toISOString();
+  const to = new Date(days[6].getTime() + 86_400_000 - 1).toISOString();
+
+  const { data, isPending } = useQuery<{ events: CalendarEvent[] }>({
+    queryKey: ["events", from, to],
+    queryFn: () =>
+      fetch(`/api/events?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`).then(
+        (r) => r.json(),
+      ),
+    staleTime: 5 * 60_000,
+  });
+
+  const events = data?.events ?? [];
+
+  const monthLabel = (() => {
+    const months = [...new Set(days.map((d) => d.getMonth()))];
+    return months.map((m) => MONTH_NAMES[m]).join(" / ") + " " + days[0].getFullYear();
+  })();
+
   return (
-    <Card
-      className={cn(
-        "rounded-2xl p-5 gap-0 ring-0 h-full flex flex-col",
-        className,
-      )}
-    >
-      <CardHeader className="flex flex-row items-center justify-between p-0 mb-6 gap-0">
+    <Card className={cn("rounded-2xl p-5 gap-0 ring-0 h-full flex flex-col", className)}>
+      <CardHeader className="flex flex-row items-center justify-between p-0 mb-4 gap-0">
         <Button
           variant="ghost"
-          className="rounded-full px-4 h-auto py-1.5 bg-muted hover:bg-muted/80 text-sm font-medium"
+          size="icon-sm"
+          onClick={() => setWeekOffset((w) => w - 1)}
         >
-          August
+          <ChevronLeft className="w-4 h-4" />
         </Button>
-        <CardTitle className="text-lg font-semibold">September 2024</CardTitle>
+        <span className="text-sm font-semibold">{monthLabel}</span>
         <Button
           variant="ghost"
-          className="rounded-full px-4 h-auto py-1.5 bg-muted hover:bg-muted/80 text-sm font-medium"
+          size="icon-sm"
+          onClick={() => setWeekOffset((w) => w + 1)}
         >
-          October
+          <ChevronRight className="w-4 h-4" />
         </Button>
       </CardHeader>
 
-      <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
-        <div className="grid grid-cols-7 gap-2">
-          <div />
-          {calendarDays.map((item) => (
-            <div key={item.day + item.date} className="text-center">
-              <p className="text-sm text-muted-foreground">{item.day}</p>
-              <p className="text-lg font-medium">{item.date}</p>
+      <CardContent className="p-0 flex-1 min-h-0 flex flex-col gap-2 overflow-hidden">
+        {/* Day header row */}
+        <div className="grid grid-cols-7 gap-1 shrink-0">
+          {days.map((d) => (
+            <div key={d.toISOString()} className="text-center">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                {DAY_NAMES[d.getDay()]}
+              </p>
+              <div
+                className={cn(
+                  "mx-auto w-7 h-7 rounded-full flex items-center justify-center text-sm font-medium mt-0.5",
+                  isToday(d) && "bg-yellow-400 text-black",
+                )}
+              >
+                {d.getDate()}
+              </div>
             </div>
           ))}
+        </div>
 
-          {timeSlots.map((time) => (
-            <div key={time} className="contents">
-              <div className="text-xs text-muted-foreground py-4">{time}</div>
-              {calendarDays.map((day) => {
-                const event = events.find(
-                  (e) => e.time === time && e.day === day.day,
-                );
-                return (
-                  <div
-                    key={`${time}-${day.day}`}
-                    className="relative border-l border-dashed border-border-light py-2 pl-2"
-                  >
-                    {event && (
+        {/* Events grid */}
+        <div className="grid grid-cols-7 gap-1 flex-1 min-h-0 overflow-y-auto content-start">
+          {days.map((d) => {
+            const dayEvents = events.filter((e) => isSameDay(new Date(e.start_at), d));
+            return (
+              <div key={d.toISOString()} className="flex flex-col gap-1 min-w-0">
+                {isPending ? (
+                  <div className="h-12 rounded-xl bg-muted/50 animate-pulse" />
+                ) : dayEvents.length === 0 ? null : (
+                  dayEvents.map((ev) => {
+                    const style = TYPE_STYLE[ev.type] ?? TYPE_STYLE.internal;
+                    return (
                       <div
-                        className={cn(
-                          "rounded-xl p-3 h-full",
-                          event.color,
-                          event.color === "bg-card" && "border border-border",
-                        )}
+                        key={ev.id}
+                        className={cn("rounded-xl p-1.5 flex flex-col gap-0.5 min-w-0", style.bg)}
                       >
-                        <p className="text-sm font-medium leading-tight">
-                          {event.title}
+                        <span className={cn("text-[10px] font-semibold leading-none", style.text)}>
+                          {style.label}
+                        </span>
+                        <p className="text-xs font-medium leading-tight truncate text-foreground">
+                          {ev.title}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {event.description}
+                        <p className="text-[10px] text-muted-foreground leading-none">
+                          {formatTime(ev.start_at)}
                         </p>
-                        <div className="flex -space-x-2 mt-2">
-                          {event.avatars.map((avatar, i) => (
-                            <div
-                              key={i}
-                              className="w-6 h-6 rounded-full border-2 border-card overflow-hidden relative"
-                            >
-                              <Image
-                                src={avatar}
-                                alt="Avatar"
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                          ))}
-                        </div>
+                        {ev.creators && (
+                          <span
+                            className="mt-0.5 w-5 h-5 rounded-md inline-flex items-center justify-center text-[8px] font-bold text-white shrink-0"
+                            style={{ background: ev.creators.color }}
+                            title={ev.creators.full_name}
+                          >
+                            {ev.creators.initials}
+                          </span>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Legend */}
+        <div className="shrink-0 flex gap-3 flex-wrap pt-2 border-t border-border-light/50">
+          {Object.entries(TYPE_STYLE).map(([key, s]) => (
+            <span key={key} className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <span className={cn("w-1.5 h-1.5 rounded-full", s.bg.replace("/15", "").replace("/10", ""), "border", s.text.replace("text-", "border-"))} />
+              {s.label}
+            </span>
           ))}
         </div>
       </CardContent>
