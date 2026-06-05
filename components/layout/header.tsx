@@ -8,10 +8,10 @@ import { usePathname } from "next/navigation";
 
 interface User {
   id: string;
-  name: string;
-  email: string;
-  role: string;
-  avatar: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  avatar?: string;
 }
 
 interface HeaderProps {
