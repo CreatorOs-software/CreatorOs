@@ -46,8 +46,12 @@ export function InboxView() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
-  const [activeMailboxId, setActiveMailboxId] = useState<MailboxId | null>(null);
-  const [listView, setListView] = useState<"mailboxes" | "threads">("mailboxes");
+  const [activeMailboxId, setActiveMailboxId] = useState<MailboxId | null>(
+    null,
+  );
+  const [listView, setListView] = useState<"mailboxes" | "threads">(
+    "mailboxes",
+  );
   const [workPanelOpen, setWorkPanelOpen] = useState(true);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
@@ -55,12 +59,15 @@ export function InboxView() {
 
   const inboxThreads = threads.filter((t) => t.folder !== "sent");
   const sentThreads = threads.filter((t) => t.folder === "sent");
-  const starredThreads = threads.filter((t) => t.starred && t.folder !== "sent");
+  const starredThreads = threads.filter(
+    (t) => t.starred && t.folder !== "sent",
+  );
   const totalUnread = inboxThreads.filter((t) => t.unread).length;
 
   const filtered = threads.filter((t) => {
     if (activeMailboxId === "__sent__") return t.folder === "sent";
-    if (activeMailboxId === "__starred__") return t.starred && t.folder !== "sent";
+    if (activeMailboxId === "__starred__")
+      return t.starred && t.folder !== "sent";
     if (t.folder === "sent") return false;
     if (activeMailboxId && activeMailboxId !== "__all__") {
       if (t.integration_id !== activeMailboxId) return false;
@@ -79,11 +86,11 @@ export function InboxView() {
 
   const selected = threads.find((t) => t.id === effectiveSelectedId) ?? null;
 
-  const activeMailbox = integrations.find((i) => i.id === activeMailboxId) ?? null;
-  const activeMailboxCreator =
-    activeMailbox?.creator_id
-      ? (creators.find((c) => c.id === activeMailbox.creator_id) ?? null)
-      : null;
+  const activeMailbox =
+    integrations.find((i) => i.id === activeMailboxId) ?? null;
+  const activeMailboxCreator = activeMailbox?.creator_id
+    ? (creators.find((c) => c.id === activeMailbox.creator_id) ?? null)
+    : null;
   const activeLabel =
     activeMailboxId === "__sent__"
       ? "Gesendet"
@@ -92,16 +99,18 @@ export function InboxView() {
         : activeMailboxId === "__all__" || !activeMailboxId
           ? "Alle Postfächer"
           : (activeMailboxCreator?.full_name ??
-             activeMailbox?.display_name ??
-             activeMailbox?.email ??
-             "Postfach");
+            activeMailbox?.display_name ??
+            activeMailbox?.email ??
+            "Postfach");
 
   function patchLocal(id: string, patch: Partial<Thread>) {
     queryClient.setQueryData<InboxData>(["inbox"], (prev) => {
       if (!prev) return prev;
       return {
         ...prev,
-        threads: prev.threads.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+        threads: prev.threads.map((t) =>
+          t.id === id ? { ...t, ...patch } : t,
+        ),
       };
     });
   }
@@ -191,6 +200,8 @@ export function InboxView() {
         sending={sending}
         replyRef={replyRef}
         onSend={handleSend}
+        onPatch={patch}
+        onStar={handleStar}
         onReplyChange={setReply}
       />
 
@@ -199,7 +210,6 @@ export function InboxView() {
         open={workPanelOpen}
         integrations={integrations}
         onToggle={() => setWorkPanelOpen((v) => !v)}
-        onStar={handleStar}
         onPatch={patch}
       />
     </div>

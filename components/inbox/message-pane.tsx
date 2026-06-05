@@ -1,7 +1,16 @@
 "use client";
 
-import { Inbox, Loader2, Reply, Send } from "lucide-react";
+import {
+  Inbox,
+  Loader2,
+  Mail,
+  MailOpen,
+  Reply,
+  Send,
+  Star,
+} from "lucide-react";
 import { type Thread, formatFullDate } from "./inbox-types";
+import { cn } from "@/lib/utils";
 
 interface MessagePaneProps {
   selected: Thread | null;
@@ -9,6 +18,8 @@ interface MessagePaneProps {
   sending: boolean;
   replyRef: React.RefObject<HTMLTextAreaElement | null>;
   onSend: () => void;
+  onPatch: (id: string, patch: Partial<Thread>) => void;
+  onStar: (t: Thread) => void;
   onReplyChange: (value: string) => void;
 }
 
@@ -18,6 +29,8 @@ export function MessagePane({
   sending,
   replyRef,
   onSend,
+  onPatch,
+  onStar,
   onReplyChange,
 }: MessagePaneProps) {
   return (
@@ -27,15 +40,57 @@ export function MessagePane({
         {selected ? (
           <>
             <div className="px-6 py-4 border-b border-border-light shrink-0">
-              <h2 className="text-base font-semibold mb-1 leading-snug">
-                {selected.subject}
-              </h2>
+              <div className="flex justify-between items-center ">
+                <h2 className="text-base font-semibold mb-1 leading-snug">
+                  {selected.subject}
+                </h2>
+
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => onStar(selected)}
+                    className={cn(
+                      "w-9 h-9 rounded-xl flex items-center justify-center transition-colors",
+                      selected.starred
+                        ? "text-yellow-400 bg-yellow-400/10"
+                        : "text-muted-foreground hover:bg-muted",
+                    )}
+                    title="Markieren"
+                  >
+                    <Star
+                      className={cn(
+                        "w-4 h-4",
+                        selected.starred && "fill-yellow-400",
+                      )}
+                    />
+                  </button>
+                  <button
+                    onClick={() =>
+                      onPatch(selected.id, { unread: !selected.unread })
+                    }
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
+                    title={
+                      selected.unread
+                        ? "Als gelesen markieren"
+                        : "Als ungelesen markieren"
+                    }
+                  >
+                    {selected.unread ? (
+                      <MailOpen className="w-4 h-4" />
+                    ) : (
+                      <Mail className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">
                   {selected.sender_name ?? selected.sender_email}
                 </span>
                 {selected.sender_name && (
-                  <span className="text-xs">&lt;{selected.sender_email}&gt;</span>
+                  <span className="text-xs">
+                    &lt;{selected.sender_email}&gt;
+                  </span>
                 )}
                 <span className="ml-auto text-xs">
                   {formatFullDate(selected.received_at)}

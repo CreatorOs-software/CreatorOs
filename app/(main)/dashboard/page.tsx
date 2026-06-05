@@ -1,12 +1,9 @@
-import {
-  AccordionSection,
-  DeviceItem,
-} from "@/components/dashboard/accordion-section";
+import { AccordionSection } from "@/components/dashboard/accordion-section";
 import { CalendarCard } from "@/components/dashboard/calendar-card";
 import { CreatorCard } from "@/components/dashboard/creator-card";
+import { IncomeCard } from "@/components/dashboard/income-card";
 import { OnboardingCard } from "@/components/dashboard/onboarding-card";
 import { OnboardingTaskCard } from "@/components/dashboard/onboarding-task.card";
-import { IncomeCard, ProgressCard } from "@/components/dashboard/income-card";
 import { StatGroup } from "@/components/dashboard/stat-card";
 import { StatusBar, StatusBarGroup } from "@/components/dashboard/status-bar";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +27,11 @@ export default function DashboardPage() {
               value="13000 EUR"
               variant="striped"
             />
-            <StatusBar label="Rechnung" value="1" variant="light" />
+            <StatusBar
+              label="Anstieg zu Vormonat"
+              value="12%"
+              variant="light"
+            />
           </StatusBarGroup>
         </div>
 
@@ -49,7 +50,7 @@ export default function DashboardPage() {
         />
 
         {/* Row 1, col 4-9 */}
-        <IncomeCaØrd className="col-span-6 lg:col-span-3" />
+        <IncomeCard className="col-span-6 lg:col-span-3" />
         <IncomeCard className="col-span-6 lg:col-span-3" />
 
         {/* col 10-12 — spans row 1 + row 2, flex column inside */}

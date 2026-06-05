@@ -14,6 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Inbox,
+  File,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { clientCache } from "@/lib/client-cache";
@@ -21,11 +23,10 @@ import { clientCache } from "@/lib/client-cache";
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
   { label: "Inbox", icon: Inbox, href: "/inbox" },
-  { label: "Deals", icon: UserPlus, href: "/deals" },
-  { label: "Creator", icon: Monitor, href: "/creators" },
-  { label: "Events", icon: AppWindow, href: "/events" },
-  { label: "Salary", icon: Wallet, href: "/salary" },
-  { label: "Calendar", icon: Calendar, href: "/calendar" },
+  { label: "Deals", icon: File, href: "/deals" },
+  { label: "Creator", icon: User, href: "/creators" },
+  { label: "Events", icon: Calendar, href: "/events" },
+  { label: "Invoice", icon: Wallet, href: "/salary" },
   { label: "Reviews", icon: Star, href: "/reviews" },
 ];
 

@@ -16,7 +16,6 @@ interface WorkPanelProps {
   open: boolean;
   integrations: Integration[];
   onToggle: () => void;
-  onStar: (t: Thread) => void;
   onPatch: (id: string, patch: Partial<Thread>) => void;
 }
 
@@ -25,7 +24,6 @@ export function WorkPanel({
   open,
   integrations,
   onToggle,
-  onStar,
   onPatch,
 }: WorkPanelProps) {
   return (
@@ -57,29 +55,6 @@ export function WorkPanel({
       {/* Collapsed: icon shortcuts */}
       {!open && selected && (
         <div className="flex flex-col items-center gap-1 py-3 px-1">
-          <button
-            onClick={() => onStar(selected)}
-            className={cn(
-              "w-9 h-9 rounded-xl flex items-center justify-center transition-colors",
-              selected.starred
-                ? "text-yellow-400 bg-yellow-400/10"
-                : "text-muted-foreground hover:bg-muted",
-            )}
-            title="Markieren"
-          >
-            <Star className={cn("w-4 h-4", selected.starred && "fill-yellow-400")} />
-          </button>
-          <button
-            onClick={() => onPatch(selected.id, { unread: !selected.unread })}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
-            title={selected.unread ? "Als gelesen markieren" : "Als ungelesen markieren"}
-          >
-            {selected.unread ? (
-              <MailOpen className="w-4 h-4" />
-            ) : (
-              <Mail className="w-4 h-4" />
-            )}
-          </button>
           <div className="w-5 h-px bg-border-light my-1" />
           {(["high", "med", "low"] as const).map((p) => (
             <button
@@ -106,23 +81,7 @@ export function WorkPanel({
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
               Aktionen
             </p>
-            <button
-              onClick={() => onStar(selected)}
-              className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors",
-                selected.starred
-                  ? "bg-yellow-400/10 text-yellow-600"
-                  : "hover:bg-muted text-muted-foreground",
-              )}
-            >
-              <Star
-                className={cn(
-                  "w-4 h-4",
-                  selected.starred && "fill-yellow-400 text-yellow-400",
-                )}
-              />
-              {selected.starred ? "Markierung entfernen" : "Markieren"}
-            </button>
+
             <button
               onClick={() => onPatch(selected.id, { unread: !selected.unread })}
               className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-muted text-muted-foreground transition-colors"
@@ -132,7 +91,9 @@ export function WorkPanel({
               ) : (
                 <Mail className="w-4 h-4" />
               )}
-              {selected.unread ? "Als gelesen markieren" : "Als ungelesen markieren"}
+              {selected.unread
+                ? "Als gelesen markieren"
+                : "Als ungelesen markieren"}
             </button>
           </div>
 
@@ -177,14 +138,18 @@ export function WorkPanel({
               </div>
               <div className="flex justify-between gap-2">
                 <span className="text-muted-foreground shrink-0">Datum</span>
-                <span className="font-medium">{formatDate(selected.received_at)}</span>
+                <span className="font-medium">
+                  {formatDate(selected.received_at)}
+                </span>
               </div>
               {selected.integration_id && (
                 <div className="flex justify-between gap-2">
-                  <span className="text-muted-foreground shrink-0">Postfach</span>
+                  <span className="text-muted-foreground shrink-0">
+                    Postfach
+                  </span>
                   <span className="font-medium text-right truncate">
-                    {integrations.find((i) => i.id === selected.integration_id)?.email ??
-                      "—"}
+                    {integrations.find((i) => i.id === selected.integration_id)
+                      ?.email ?? "—"}
                   </span>
                 </div>
               )}

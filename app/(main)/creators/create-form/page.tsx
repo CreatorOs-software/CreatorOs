@@ -27,7 +27,11 @@ const CREATOR_COLORS = [
   "oklch(0.62 0.18 100)",
 ];
 
-const PLATFORM_OPTIONS = ["Instagram", "TikTok", "YouTube", "Twitch", "LinkedIn"];
+const PLATFORM_OPTIONS = [
+  "Instagram", "TikTok", "YouTube", "Twitch", "LinkedIn",
+  "Spotify", "OnlyFans", "X", "Snapchat", "Pinterest",
+  "Facebook", "Patreon", "Substack",
+];
 
 function getInitials(name: string) {
   return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
