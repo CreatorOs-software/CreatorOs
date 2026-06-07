@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/features/auth/hooks/use-auth";
+import { useAuth } from "@/components/auth/use-auth";
 import { Avatar } from "@base-ui/react";
 import { Settings, Bell, Menu, X, LogOut, PuzzleIcon } from "lucide-react";
 import Link from "next/link";

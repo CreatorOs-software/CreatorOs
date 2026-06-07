@@ -1,39 +1,9 @@
-export type Thread = {
-  id: string;
-  sender_email: string;
-  sender_name: string | null;
-  subject: string;
-  preview: string | null;
-  body: string | null;
-  body_html: string | null;
-  received_at: string;
-  unread: boolean;
-  starred: boolean;
-  priority: "low" | "med" | "high";
-  integration_id: string | null;
-  folder: string | null;
-};
-
-export type Integration = {
-  id: string;
-  email: string;
-  display_name: string | null;
-  provider: string;
-  creator_id: string | null;
-};
-
-export type Creator = {
-  id: string;
-  full_name: string;
-  initials: string;
-  color: string;
-};
-
-export type InboxData = {
-  threads: Thread[];
-  integrations: Integration[];
-  creators: Creator[];
-};
+export type {
+  EmailThread as Thread,
+  InboxIntegration as Integration,
+  InboxCreator as Creator,
+  InboxPageData as InboxData,
+} from "@/domains/communication";
 
 export type Filter = "all" | "unread" | "starred";
 export type MailboxId = string | "__all__" | "__sent__" | "__starred__";

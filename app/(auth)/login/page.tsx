@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Eye, EyeOff, ArrowRight, Info } from "lucide-react";
-import { login } from "@/features/auth/actions";
+import { login } from "@/domains/auth";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");

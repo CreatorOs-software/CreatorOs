@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/features/auth/auth-provider";
-import { QueryProvider } from "@/providers/query-provider";
+import { AuthProvider } from "@/components/context/auth-provider";
+import { QueryProvider } from "@/components/context/query-provider";
 import "./globals.css";
 
 const inter = Inter({

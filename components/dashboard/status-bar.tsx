@@ -39,8 +39,7 @@ export function StatusBar({
             {Array.from({ length: 20 }).map((_, i) => (
               <div
                 key={i}
-                className="h-full w-1.5 bg-border-light"
-                style={{ marginRight: "3px" }}
+                className="h-full w-1.5 bg-border-light mr-0.75"
               />
             ))}
           </div>

@@ -2,8 +2,18 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-const PROTECTED = ["/dashboard", "/settings", "/app"];
-const AUTH_PAGES = ["/login", "/signup"];
+const PROTECTED = [
+  "/dashboard",
+  "/creators",
+  "/inbox",
+  "/integrations",
+  "/deals",
+  "/events",
+  "/salary",
+  "/reviews",
+  "/settings",
+];
+const AUTH_PAGES = ["/login", "/signup", "/register"];
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });
@@ -17,11 +27,11 @@ export async function middleware(request: NextRequest) {
         getAll: () => request.cookies.getAll(),
         setAll: (cookiesToSet) => {
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, options),
           );
         },
       },
-    }
+    },
   );
 
   const {
@@ -44,9 +54,16 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/dashboard/:path*",
+    "/creators/:path*",
+    "/inbox/:path*",
+    "/integrations/:path*",
+    "/deals/:path*",
+    "/events/:path*",
+    "/salary/:path*",
+    "/reviews/:path*",
     "/settings/:path*",
-    "/app/:path*",
     "/login",
     "/signup",
+    "/register",
   ],
 };

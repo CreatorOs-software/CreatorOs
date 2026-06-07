@@ -6,7 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
 import { MobileSidebar } from "./mobile-sidebar";
-import { useAuth } from "@/features/auth/hooks/use-auth";
+import { useAuth } from "@/components/auth/use-auth";
 
 interface AppLayoutProps {
   children: React.ReactNode;

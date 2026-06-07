@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { LayoutGrid, List, Plus, Loader2, Star } from "lucide-react";
+import { Plus, Loader2, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   SiInstagram,
@@ -186,7 +186,6 @@ export function CreatorsPage() {
   const deals = data?.deals ?? [];
   const mailboxes = data?.mailboxes ?? [];
 
-  const [layout, setLayout] = useState<"grid" | "table">("table");
   const [search, setSearch] = useState("");
   const [profileId, setProfileId] = useState<string | null>(null);
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

@@ -1,10 +1,11 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { logout } from "@/domains/auth";
 import type { User } from "@supabase/supabase-js";
 
-type AuthContextValue = {
+export type AuthContextValue = {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
@@ -35,14 +36,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function signOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-  }
-
   return (
     <AuthContext.Provider
-      value={{ user, loading, isAuthenticated: !!user, signOut }}
+      value={{ user, loading, isAuthenticated: !!user, signOut: logout }}
     >
       {children}
     </AuthContext.Provider>

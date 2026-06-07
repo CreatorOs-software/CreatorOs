@@ -1,26 +1,26 @@
-import { createClient } from "@/lib/supabase/server";
+import { CommunicationService } from "@/domains/communication";
+import { toErrorResponse } from "@/lib/auth-context";
+
+const ALLOWED_PATCH_KEYS = ["unread", "starred", "priority"] as const;
+type PatchKey = (typeof ALLOWED_PATCH_KEYS)[number];
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const { id } = await params;
+    const body = await request.json();
 
-  const patch = await request.json();
+    const patch = Object.fromEntries(
+      Object.entries(body).filter(([k]) =>
+        ALLOWED_PATCH_KEYS.includes(k as PatchKey),
+      ),
+    ) as import("@/domains/communication").ThreadPatch;
 
-  const allowed = ["unread", "starred", "priority"];
-  const safe = Object.fromEntries(
-    Object.entries(patch).filter(([k]) => allowed.includes(k)),
-  );
-
-  const { error } = await supabase
-    .from("email_threads")
-    .update(safe)
-    .eq("id", id);
-
-  if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json({ ok: true });
+    await CommunicationService.patchThread(id, patch);
+    return Response.json({ ok: true });
+  } catch (e) {
+    return toErrorResponse(e);
+  }
 }
