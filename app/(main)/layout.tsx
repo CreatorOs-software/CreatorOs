@@ -15,8 +15,14 @@ export default async function MainLayout({
 
   if (!user) redirect("/login");
 
+  const displayUser = {
+    id: user.id,
+    name: (user.user_metadata?.full_name as string | undefined) ?? user.email,
+    email: user.email,
+  };
+
   return (
-    <AppLayout fullHeight>
+    <AppLayout fullHeight user={displayUser}>
       <Prefetch />
       {children}
     </AppLayout>

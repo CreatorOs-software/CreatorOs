@@ -1,42 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useState } from "react";
 
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
 import { MobileSidebar } from "./mobile-sidebar";
-import { useAuth } from "@/components/auth/use-auth";
 
 interface AppLayoutProps {
   children: React.ReactNode;
   fullHeight?: boolean;
+  user?: { id: string; name?: string; email?: string } | null;
 }
 
-export function AppLayout({ children, fullHeight = false }: AppLayoutProps) {
+export function AppLayout({ children, fullHeight = false, user }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, loading } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
-    }
-  }, [user, loading, router]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
 
   return (
     <div
