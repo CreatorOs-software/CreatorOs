@@ -21,16 +21,25 @@ export type CreatorPatch = Partial<
 export type Brand = {
   id: string;
   agency_id: string;
-  name: string;
-  [key: string]: unknown;
+  company_name: string;
+  short_code: string;
+  color: string;
+  industry: string | null;
+  contact_name: string | null;
+  contact_email: string | null;
 };
 
 export type Deal = {
   id: string;
   agency_id: string;
-  creator_id: string;
+  creator_id: string | null;
+  brand_id: string | null;
+  title: string;
+  budget: number;
   status: string;
-  [key: string]: unknown;
+  deadline: string | null;
+  campaign_type: string | null;
+  deliverables: string[];
 };
 
 export type CreatorMailbox = {

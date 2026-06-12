@@ -10,6 +10,18 @@ export const CreatorService = {
     return CreatorRepository.findPageData(supabase, agencyId);
   },
 
+  async getById(id: string): Promise<Creator | null> {
+    const supabase = await createClient();
+    await getAuthContext(supabase);
+    return CreatorRepository.findById(supabase, id);
+  },
+
+  async getListData(): Promise<Creator[]> {
+    const supabase = await createClient();
+    const { agencyId } = await getAuthContext(supabase);
+    return CreatorRepository.findListData(supabase, agencyId);
+  },
+
   async create(input: Omit<CreatorInsert, "agency_id">): Promise<Creator> {
     const supabase = await createClient();
     const { agencyId } = await getAuthContext(supabase);

@@ -20,7 +20,7 @@ export function InboxView() {
   const queryClient = useQueryClient();
 
   const { data, isPending, isFetching } = useQuery<InboxData>({
-    queryKey: QueryKeys.inbox,
+    queryKey: QueryKeys.inbox.all(),
     queryFn: async () => {
       const prev = queryClient.getQueryData<InboxData>(["inbox"]);
       const prevIntegrations = prev?.integrations ?? [];
@@ -146,11 +146,11 @@ export function InboxView() {
     });
     setReply("");
     setSending(false);
-    queryClient.invalidateQueries({ queryKey: QueryKeys.inbox });
+    queryClient.invalidateQueries({ queryKey: QueryKeys.inbox.all() });
   }
 
   function handleSync() {
-    queryClient.refetchQueries({ queryKey: QueryKeys.inbox });
+    queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() });
   }
 
   function openMailbox(id: MailboxId) {

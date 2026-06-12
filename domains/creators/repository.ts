@@ -34,7 +34,33 @@ export const CreatorRepository = {
     };
   },
 
-  async create(supabase: SupabaseClient, data: CreatorInsert): Promise<Creator> {
+  async findListData(
+    supabase: SupabaseClient,
+    agencyId: string,
+  ): Promise<Creator[]> {
+    const { data, error } = await supabase
+      .from("creators")
+      .select("*")
+      .eq("agency_id", agencyId)
+      .order("full_name");
+
+    if (error) throw new Error(error.message);
+    return (data ?? []) as Creator[];
+  },
+
+  async findById(supabase: SupabaseClient, id: string): Promise<Creator | null> {
+    const { data } = await supabase
+      .from("creators")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    return (data as Creator | null) ?? null;
+  },
+
+  async create(
+    supabase: SupabaseClient,
+    data: CreatorInsert,
+  ): Promise<Creator> {
     const { data: row, error } = await supabase
       .from("creators")
       .insert(data)

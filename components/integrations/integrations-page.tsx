@@ -115,13 +115,13 @@ export function IntegrationsPage() {
   const queryClient = useQueryClient();
 
   const { data: integrationsData, isPending: loading } = useQuery<{ integrations: Integration[] }>({
-    queryKey: QueryKeys.integrations,
+    queryKey: QueryKeys.integrations.list(),
     queryFn: () => fetch("/api/integrations").then((r) => r.json()),
     staleTime: 5 * 60_000,
   });
 
   const { data: creatorsData } = useQuery<{ creators: Creator[] }>({
-    queryKey: QueryKeys.creators,
+    queryKey: QueryKeys.creators.list(),
     queryFn: () => fetch("/api/creators").then((r) => r.json()),
     staleTime: 5 * 60_000,
   });
@@ -154,7 +154,7 @@ export function IntegrationsPage() {
         ),
       };
     });
-    queryClient.invalidateQueries({ queryKey: QueryKeys.inbox });
+    queryClient.invalidateQueries({ queryKey: QueryKeys.inbox.all() });
     setAssigningId(null);
   }
 
@@ -247,8 +247,8 @@ export function IntegrationsPage() {
         setSaveError(json.error ?? "Verbindung fehlgeschlagen");
       } else {
         closeModal();
-        await queryClient.refetchQueries({ queryKey: QueryKeys.integrations });
-        queryClient.invalidateQueries({ queryKey: QueryKeys.inbox });
+        await queryClient.refetchQueries({ queryKey: QueryKeys.integrations.list() });
+        queryClient.invalidateQueries({ queryKey: QueryKeys.inbox.all() });
       }
     } catch {
       setSaveError("Netzwerkfehler");
@@ -261,8 +261,8 @@ export function IntegrationsPage() {
     setSyncingId(id);
     try {
       await fetch(`/api/integrations/${id}/sync`, { method: "POST" });
-      await queryClient.refetchQueries({ queryKey: QueryKeys.integrations });
-      queryClient.invalidateQueries({ queryKey: QueryKeys.inbox });
+      await queryClient.refetchQueries({ queryKey: QueryKeys.integrations.list() });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.inbox.all() });
     } finally {
       setSyncingId(null);
     }
@@ -276,7 +276,7 @@ export function IntegrationsPage() {
         if (!prev) return prev;
         return { integrations: prev.integrations.filter((i) => i.id !== id) };
       });
-      queryClient.invalidateQueries({ queryKey: QueryKeys.inbox });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.inbox.all() });
     } finally {
       setDeletingId(null);
     }

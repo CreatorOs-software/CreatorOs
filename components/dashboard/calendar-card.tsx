@@ -76,7 +76,7 @@ export function CalendarCard({ className }: CalendarCardProps) {
   const to = new Date(days[6].getTime() + 86_400_000 - 1).toISOString();
 
   const { data, isPending } = useQuery<{ events: CalendarEvent[] }>({
-    queryKey: QueryKeys.events(from, to),
+    queryKey: QueryKeys.events.range(from, to),
     queryFn: () =>
       fetch(`/api/events?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`).then(
         (r) => r.json(),

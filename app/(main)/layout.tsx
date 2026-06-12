@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AppLayout } from "@/components/layout/app-layout";
+import { Prefetch } from "@/components/context/prefetch";
 
 export default async function MainLayout({
   children,
@@ -14,5 +15,10 @@ export default async function MainLayout({
 
   if (!user) redirect("/login");
 
-  return <AppLayout fullHeight>{children}</AppLayout>;
+  return (
+    <AppLayout fullHeight>
+      <Prefetch />
+      {children}
+    </AppLayout>
+  );
 }

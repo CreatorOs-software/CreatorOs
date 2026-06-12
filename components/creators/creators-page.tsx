@@ -22,6 +22,7 @@ import {
 } from "react-icons/si";
 import { FaLinkedinIn } from "react-icons/fa";
 import { CreatorSheet, type Creator, type CreatorsData } from "./creator-sheet";
+import { CreatorsPageData } from "@/domains/creators";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -176,16 +177,23 @@ function CreatorCard({
 export function CreatorsPage() {
   const router = useRouter();
 
-  const { data, isPending } = useQuery<CreatorsData>({
-    queryKey: QueryKeys.creators,
+  //!list ist semantisch nicht korrekt prüfen ob all notwendig ist?
+  const { data: listData, isPending } = useQuery<{ creators: Creator[] }>({
+    queryKey: QueryKeys.creators.list(),
+    queryFn: () => fetch("/api/creators/list").then((r) => r.json()),
+    staleTime: 5 * 60_000,
+  });
+
+  const { data: allData } = useQuery<CreatorsPageData>({
+    queryKey: QueryKeys.creators.all(),
     queryFn: () => fetch("/api/creators").then((r) => r.json()),
     staleTime: 5 * 60_000,
   });
 
-  const creators: Creator[] = data?.creators ?? [];
-  const brands = data?.brands ?? [];
-  const deals = data?.deals ?? [];
-  const mailboxes = data?.mailboxes ?? [];
+  const creators: Creator[] = allData?.creators ?? [];
+  const brands = allData?.brands ?? [];
+  const deals = allData?.deals ?? [];
+  const mailboxes = allData?.mailboxes ?? [];
 
   const [search, setSearch] = useState("");
   const [profileId, setProfileId] = useState<string | null>(null);
@@ -204,7 +212,7 @@ export function CreatorsPage() {
     }
   }
 
-  const filtered = creators.filter(
+  const filtered = (listData?.creators ?? []).filter(
     (c) =>
       !search ||
       c.full_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -264,7 +272,7 @@ export function CreatorsPage() {
 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto pb-4">
-        {filtered.length === 0 ? (
+        {filtered?.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
             <Star className="w-10 h-10 opacity-20" />
             <p className="text-sm">
@@ -275,7 +283,7 @@ export function CreatorsPage() {
           </div>
         ) : (
           <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
-            {filtered.map((c) => (
+            {filtered?.map((c) => (
               <CreatorCard
                 key={c.id}
                 c={c}

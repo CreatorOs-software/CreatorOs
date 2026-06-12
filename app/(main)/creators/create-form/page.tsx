@@ -92,7 +92,7 @@ export default function CreateCreatorPage() {
       setError(json.error ?? "Fehler beim Anlegen.");
       return;
     }
-    queryClient.invalidateQueries({ queryKey: QueryKeys.creators });
+    queryClient.invalidateQueries({ queryKey: QueryKeys.creators.all() });
     router.push("/creators");
   }
 

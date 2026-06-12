@@ -38,13 +38,11 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const { data } = useQuery<{ threads: { unread: boolean; folder: string | null }[] }>({
-    queryKey: QueryKeys.inbox,
+    queryKey: QueryKeys.inbox.all(),
     queryFn: () => fetch("/api/inbox").then((r) => r.json()),
     staleTime: 2 * 60_000,
   });
-  const unreadCount = (data?.threads ?? []).filter(
-    (t) => t.unread && t.folder !== "sent",
-  ).length;
+  const unreadCount = (data?.threads ?? []).filter((t) => t.unread && t.folder !== "sent").length;
 
   return (
     <aside

@@ -213,9 +213,9 @@ export default function EditCreatorPage() {
   const params = useParams();
   const id = params.id as string;
 
-  const { data, isPending } = useQuery<CreatorsData>({
-    queryKey: QueryKeys.creators,
-    queryFn: () => fetch("/api/creators").then((r) => r.json()),
+  const { data, isPending } = useQuery<{ creator: CreatorsData["creators"][number] | null }>({
+    queryKey: QueryKeys.creators.detail(id),
+    queryFn: () => fetch(`/api/creators/${id}`).then((r) => r.json()),
     staleTime: 5 * 60_000,
   });
 
@@ -227,7 +227,7 @@ export default function EditCreatorPage() {
     );
   }
 
-  const creator = data?.creators.find((c) => c.id === id);
+  const creator = data?.creator;
 
   if (!creator) {
     return (
