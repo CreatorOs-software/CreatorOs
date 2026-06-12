@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { Eye, EyeOff, ArrowRight, Info } from "lucide-react";
 import { login } from "@/domains/auth";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -84,13 +86,12 @@ export default function LoginPage() {
               <label htmlFor="email" className="text-sm font-medium">
                 Email address
               </label>
-              <input
+              <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
-                className="w-full px-4 py-3 bg-card border border-border-light rounded-xl text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                 required
                 disabled={isPending}
               />
@@ -101,27 +102,29 @@ export default function LoginPage() {
                 Password
               </label>
               <div className="relative">
-                <input
+                <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full px-4 py-3 bg-card border border-border-light rounded-xl text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all pr-12"
+                  className="pr-12"
                   required
                   disabled={isPending}
                 />
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />
                   ) : (
                     <Eye className="w-4 h-4" />
                   )}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -131,10 +134,10 @@ export default function LoginPage() {
               </div>
             )}
 
-            <button
+            <Button
               type="submit"
               disabled={isPending}
-              className="w-full flex items-center justify-center gap-2 bg-secondary text-secondary-foreground px-6 py-3 rounded-xl font-medium hover:bg-secondary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full"
             >
               {isPending ? (
                 <>
@@ -147,14 +150,14 @@ export default function LoginPage() {
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
-            </button>
+            </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground">
             {"Don't have an account? "}
-            <button className="text-foreground hover:underline font-medium">
+            <Button variant="link" className="p-0 h-auto font-medium text-foreground">
               Contact admin
-            </button>
+            </Button>
           </p>
         </div>
       </div>

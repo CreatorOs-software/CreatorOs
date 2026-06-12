@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Plus, Loader2, Star } from "lucide-react";
 import { QueryKeys } from "@/lib/query-keys";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { CreatorCard, formatMoney } from "@/components/creators/creator-card";
 import { CreatorSheet, type Creator } from "@/components/creators/creator-sheet";
 import type { CreatorsPageData } from "@/domains/creators";
@@ -37,7 +39,7 @@ export default function CreatorsPage() {
     if (clickTimer.current) {
       clearTimeout(clickTimer.current);
       clickTimer.current = null;
-      router.push(`/creators/edit-form/${id}`);
+      router.push(`/creators/dashboard/${id}`);
     } else {
       clickTimer.current = setTimeout(() => {
         clickTimer.current = null;
@@ -81,19 +83,19 @@ export default function CreatorsPage() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <input
+          <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Suchen…"
-            className="w-44 px-3 py-1.5 rounded-xl bg-card border border-border-light text-sm outline-none focus:ring-1 focus:ring-foreground/20 placeholder:text-muted-foreground"
+            className="w-44"
           />
-          <button
+          <Button
             onClick={() => router.push("/creators/create-form")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-yellow-400 text-black text-sm font-medium hover:bg-yellow-300 transition-colors"
+            className="bg-yellow-400 text-black hover:bg-yellow-300"
           >
             <Plus className="w-4 h-4" />
             Creator hinzufügen
-          </button>
+          </Button>
         </div>
       </div>
 

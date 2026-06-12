@@ -252,7 +252,8 @@ export function CreatorSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex flex-col gap-0 p-0 overflow-hidden rounded-tl-4xl rounded-bl-4xl w-200 max-w-[80vw]"
+        className="flex flex-col gap-0 p-0 overflow-hidden rounded-tl-4xl rounded-bl-4xl"
+        style={{ width: "50vw", minWidth: "400px", maxWidth: "95vw" }}
       >
         {/* Header */}
         <SheetHeader className="px-6 pt-5 pb-0 border-b border-border-light shrink-0">
