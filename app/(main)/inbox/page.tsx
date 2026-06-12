@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { QueryKeys } from "@/lib/query-keys";
 import { useRef, useState } from "react";
 import {
   type Thread,
@@ -19,7 +20,7 @@ export default function InboxPage() {
   const queryClient = useQueryClient();
 
   const { data, isPending, isFetching } = useQuery<InboxData>({
-    queryKey: ["inbox"],
+    queryKey: QueryKeys.inbox,
     queryFn: async () => {
       const prev = queryClient.getQueryData<InboxData>(["inbox"]);
       const prevIntegrations = prev?.integrations ?? [];
@@ -145,11 +146,11 @@ export default function InboxPage() {
     });
     setReply("");
     setSending(false);
-    queryClient.invalidateQueries({ queryKey: ["inbox"] });
+    queryClient.invalidateQueries({ queryKey: QueryKeys.inbox });
   }
 
   function handleSync() {
-    queryClient.refetchQueries({ queryKey: ["inbox"] });
+    queryClient.refetchQueries({ queryKey: QueryKeys.inbox });
   }
 
   function openMailbox(id: MailboxId) {

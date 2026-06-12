@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { QueryKeys } from "@/lib/query-keys";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Plus, Loader2, Star } from "lucide-react";
@@ -176,7 +177,7 @@ export function CreatorsPage() {
   const router = useRouter();
 
   const { data, isPending } = useQuery<CreatorsData>({
-    queryKey: ["creators"],
+    queryKey: QueryKeys.creators,
     queryFn: () => fetch("/api/creators").then((r) => r.json()),
     staleTime: 5 * 60_000,
   });

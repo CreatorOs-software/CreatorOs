@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   UserPlus,
@@ -18,7 +18,7 @@ import {
   User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { clientCache } from "@/lib/client-cache";
+import { QueryKeys } from "@/lib/query-keys";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
@@ -37,25 +37,15 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const pathname = usePathname();
-  const [unreadCount, setUnreadCount] = useState(
-    () => clientCache.get<number>("inbox:unread") ?? 0,
-  );
+  const { data } = useQuery<{ threads: { unread: boolean; folder: string | null }[] }>({
+    queryKey: QueryKeys.inbox,
+    queryFn: () => fetch("/api/inbox").then((r) => r.json()),
+    staleTime: 2 * 60_000,
+  });
+  const unreadCount = (data?.threads ?? []).filter(
+    (t) => t.unread && t.folder !== "sent",
+  ).length;
 
-  useEffect(() => {
-    if (clientCache.get<number>("inbox:unread") !== null) return;
-    fetch("/api/inbox")
-      .then((r) => r.json())
-      .then((json) => {
-        const threads: { unread: boolean; folder: string | null }[] =
-          json.threads ?? [];
-        const count = threads.filter(
-          (t) => t.unread && t.folder !== "sent",
-        ).length;
-        clientCache.set("inbox:unread", count, 2 * 60_000);
-        setUnreadCount(count);
-      })
-      .catch(() => {});
-  }, [pathname]);
   return (
     <aside
       className={cn(

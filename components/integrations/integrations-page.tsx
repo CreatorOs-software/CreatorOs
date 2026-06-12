@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { QueryKeys } from "@/lib/query-keys";
 import { useState } from "react";
 import { Inbox, RefreshCw, X, Check, AlertCircle, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -114,13 +115,13 @@ export function IntegrationsPage() {
   const queryClient = useQueryClient();
 
   const { data: integrationsData, isPending: loading } = useQuery<{ integrations: Integration[] }>({
-    queryKey: ["integrations"],
+    queryKey: QueryKeys.integrations,
     queryFn: () => fetch("/api/integrations").then((r) => r.json()),
     staleTime: 5 * 60_000,
   });
 
   const { data: creatorsData } = useQuery<{ creators: Creator[] }>({
-    queryKey: ["creators"],
+    queryKey: QueryKeys.creators,
     queryFn: () => fetch("/api/creators").then((r) => r.json()),
     staleTime: 5 * 60_000,
   });
@@ -153,7 +154,7 @@ export function IntegrationsPage() {
         ),
       };
     });
-    queryClient.invalidateQueries({ queryKey: ["inbox"] });
+    queryClient.invalidateQueries({ queryKey: QueryKeys.inbox });
     setAssigningId(null);
   }
 
@@ -246,8 +247,8 @@ export function IntegrationsPage() {
         setSaveError(json.error ?? "Verbindung fehlgeschlagen");
       } else {
         closeModal();
-        await queryClient.refetchQueries({ queryKey: ["integrations"] });
-        queryClient.invalidateQueries({ queryKey: ["inbox"] });
+        await queryClient.refetchQueries({ queryKey: QueryKeys.integrations });
+        queryClient.invalidateQueries({ queryKey: QueryKeys.inbox });
       }
     } catch {
       setSaveError("Netzwerkfehler");
@@ -260,8 +261,8 @@ export function IntegrationsPage() {
     setSyncingId(id);
     try {
       await fetch(`/api/integrations/${id}/sync`, { method: "POST" });
-      await queryClient.refetchQueries({ queryKey: ["integrations"] });
-      queryClient.invalidateQueries({ queryKey: ["inbox"] });
+      await queryClient.refetchQueries({ queryKey: QueryKeys.integrations });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.inbox });
     } finally {
       setSyncingId(null);
     }
@@ -275,7 +276,7 @@ export function IntegrationsPage() {
         if (!prev) return prev;
         return { integrations: prev.integrations.filter((i) => i.id !== id) };
       });
-      queryClient.invalidateQueries({ queryKey: ["inbox"] });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.inbox });
     } finally {
       setDeletingId(null);
     }

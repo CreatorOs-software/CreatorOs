@@ -1,6 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
+import { QueryKeys } from "@/lib/query-keys";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
@@ -91,7 +92,7 @@ export default function CreateCreatorPage() {
       setError(json.error ?? "Fehler beim Anlegen.");
       return;
     }
-    queryClient.invalidateQueries({ queryKey: ["creators"] });
+    queryClient.invalidateQueries({ queryKey: QueryKeys.creators });
     router.push("/creators");
   }
 

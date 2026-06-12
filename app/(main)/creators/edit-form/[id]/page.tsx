@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { QueryKeys } from "@/lib/query-keys";
 import { useRouter, useParams } from "next/navigation";
 import { useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -213,7 +214,7 @@ export default function EditCreatorPage() {
   const id = params.id as string;
 
   const { data, isPending } = useQuery<CreatorsData>({
-    queryKey: ["creators"],
+    queryKey: QueryKeys.creators,
     queryFn: () => fetch("/api/creators").then((r) => r.json()),
     staleTime: 5 * 60_000,
   });

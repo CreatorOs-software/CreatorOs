@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { QueryKeys } from "@/lib/query-keys";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -75,7 +76,7 @@ export function CalendarCard({ className }: CalendarCardProps) {
   const to = new Date(days[6].getTime() + 86_400_000 - 1).toISOString();
 
   const { data, isPending } = useQuery<{ events: CalendarEvent[] }>({
-    queryKey: ["events", from, to],
+    queryKey: QueryKeys.events(from, to),
     queryFn: () =>
       fetch(`/api/events?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`).then(
         (r) => r.json(),
