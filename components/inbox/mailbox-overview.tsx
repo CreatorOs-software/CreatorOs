@@ -1,6 +1,13 @@
 "use client";
 
-import { ChevronRight, Inbox, Loader2, RefreshCw, Send, Star } from "lucide-react";
+import {
+  ChevronRight,
+  Inbox,
+  Loader2,
+  RefreshCw,
+  Send,
+  Star,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,7 +40,7 @@ function MailboxRow({
       <span className="w-9 h-9 rounded-xl bg-sidebar flex items-center justify-center text-muted-foreground shrink-0">
         {icon}
       </span>
-      <div className="flex-1 min-w-0">
+      <div className="flex flex-col text-left min-w-0">
         <div className="text-sm font-medium">{label}</div>
         <div className="text-xs text-muted-foreground">{sub}</div>
       </div>
@@ -83,7 +90,9 @@ export function MailboxOverview({
           disabled={isFetching || integrations.length === 0}
           className="text-muted-foreground disabled:opacity-40"
         >
-          <RefreshCw className={cn("w-3.5 h-3.5", isFetching && "animate-spin")} />
+          <RefreshCw
+            className={cn("w-3.5 h-3.5", isFetching && "animate-spin")}
+          />
         </Button>
       </div>
 
@@ -108,7 +117,8 @@ export function MailboxOverview({
             : null;
           const displayName =
             linkedCreator?.full_name ?? integ.display_name ?? integ.email;
-          const initials = linkedCreator?.initials ?? mailboxInitials(integ.email);
+          const initials =
+            linkedCreator?.initials ?? mailboxInitials(integ.email);
           const avatarBg = linkedCreator?.color ?? undefined;
           return (
             <Button
@@ -126,8 +136,10 @@ export function MailboxOverview({
               >
                 {initials}
               </span>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate">{displayName}</div>
+              <div className="flex flex-col text-left min-w-0">
+                <div className="text-sm font-medium truncate">
+                  {displayName}
+                </div>
                 <div className="text-xs text-muted-foreground truncate">
                   {integ.email}
                 </div>
