@@ -38,7 +38,13 @@ export function formatMoney(n: number) {
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
-export function Avatar({ c, size = "md" }: { c: Creator; size?: "sm" | "md" | "lg" }) {
+export function Avatar({
+  c,
+  size = "md",
+}: {
+  c: Creator;
+  size?: "sm" | "md" | "lg";
+}) {
   const cls = {
     sm: "w-7 h-7 text-[10px]",
     md: "w-9 h-9 text-xs",
@@ -63,22 +69,18 @@ const PLATFORM_ICONS: Record<string, React.ReactNode> = {
   Instagram: <SiInstagram />,
   TikTok: <SiTiktok />,
   YouTube: <SiYoutube />,
-  Twitch: <SiTwitch />,
-  LinkedIn: <FaLinkedinIn />,
   Spotify: <SiSpotify />,
   OnlyFans: <SiOnlyfans />,
   X: <SiX />,
-  Snapchat: <SiSnapchat />,
-  Pinterest: <SiPinterest />,
-  Facebook: <SiFacebook />,
-  Patreon: <SiPatreon />,
-  Substack: <SiSubstack />,
 };
 
 function PlatformIcon({ p }: { p: string }) {
   const icon = PLATFORM_ICONS[p];
   return icon ? (
-    <span className="text-muted-foreground hover:text-foreground transition-colors text-base" title={p}>
+    <span
+      className="text-muted-foreground hover:text-foreground transition-colors text-base"
+      title={p}
+    >
       {icon}
     </span>
   ) : (
@@ -108,10 +110,17 @@ export function CreatorCard({
         <Avatar c={c} size="lg" />
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold truncate">{c.full_name}</div>
-          <div className="text-xs text-muted-foreground truncate">{c.handle ?? "—"}</div>
+          <div className="text-xs text-muted-foreground truncate">
+            {c.handle ?? "—"}
+          </div>
         </div>
         {c.status !== "active" && (
-          <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0", STATUS_CLASS[c.status])}>
+          <span
+            className={cn(
+              "text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0",
+              STATUS_CLASS[c.status],
+            )}
+          >
             {STATUS_LABEL[c.status]}
           </span>
         )}
@@ -133,15 +142,21 @@ export function CreatorCard({
       <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border-light">
         <div>
           <div className="text-[10px] text-muted-foreground mb-0.5">Reach</div>
-          <div className="text-sm font-semibold tabular-nums">{c.followers ?? "—"}</div>
+          <div className="text-sm font-semibold tabular-nums">
+            {c.followers ?? "—"}
+          </div>
         </div>
         <div>
           <div className="text-[10px] text-muted-foreground mb-0.5">Deals</div>
-          <div className="text-sm font-semibold tabular-nums">{activeDeals}</div>
+          <div className="text-sm font-semibold tabular-nums">
+            {activeDeals}
+          </div>
         </div>
         <div>
           <div className="text-[10px] text-muted-foreground mb-0.5">MTD</div>
-          <div className="text-sm font-semibold tabular-nums">{formatMoney(c.monthly_revenue)}</div>
+          <div className="text-sm font-semibold tabular-nums">
+            {formatMoney(c.monthly_revenue)}
+          </div>
         </div>
       </div>
     </button>

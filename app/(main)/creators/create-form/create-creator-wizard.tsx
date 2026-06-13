@@ -25,13 +25,15 @@ export function CreateCreatorWizard() {
 
   const [step, setStep] = useState(1);
   const [done, setDone] = useState(false);
+  const [createdCreatorId, setCreatedCreatorId] = useState<string | null>(null);
   // Errors from Zod step validation — cleared on every step advance attempt
   const [stepErrors, setStepErrors] = useState<StepErrors>({});
 
   const form = useForm<CreatorFormValues>({
     defaultValues: INITIAL_VALUES,
     onSubmit: async ({ value }) => {
-      await mutation.mutateAsync(value);
+      const result = await mutation.mutateAsync(value);
+      setCreatedCreatorId((result as { creator: { id: string } }).creator.id);
       setDone(true);
     },
   });
@@ -74,6 +76,7 @@ export function CreateCreatorWizard() {
     form.reset();
     setStep(1);
     setDone(false);
+    setCreatedCreatorId(null);
     setStepErrors({});
   }
 
@@ -101,6 +104,8 @@ export function CreateCreatorWizard() {
         <div className="max-w-3xl mx-auto">
           {done ? (
             <StepSuccess
+              creatorId={createdCreatorId}
+              platforms={form.state.values.platforms}
               onReset={handleReset}
               onGoBack={() => router.push("/creators")}
             />

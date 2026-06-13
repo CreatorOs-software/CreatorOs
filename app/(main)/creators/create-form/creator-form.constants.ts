@@ -8,21 +8,40 @@ export const STEPS = [
 ];
 
 export const PLATFORM_OPTIONS = [
-  "Instagram", "TikTok", "YouTube", "Twitch", "LinkedIn",
-  "Spotify", "OnlyFans", "X", "Snapchat", "Pinterest",
-  "Facebook", "Patreon", "Substack",
+  "Instagram",
+  "TikTok",
+  "YouTube",
+  "Spotify",
+  "OnlyFans",
+  "X",
 ];
 
 export const NICHE_OPTIONS = [
-  "Lifestyle", "Fashion", "Beauty", "Food", "Travel",
-  "Fitness", "Gaming", "Tech", "Business", "Comedy",
-  "Music", "Education", "Automotive", "Sports",
+  "Lifestyle",
+  "Fashion",
+  "Beauty",
+  "Food",
+  "Travel",
+  "Fitness",
+  "Gaming",
+  "Tech",
+  "Business",
+  "Comedy",
+  "Music",
+  "Education",
+  "Automotive",
+  "Sports",
 ];
 
 export const CREATOR_COLORS = [
-  "oklch(0.62 0.18 25)",  "oklch(0.60 0.18 145)", "oklch(0.60 0.18 230)",
-  "oklch(0.62 0.18 270)", "oklch(0.65 0.18 50)",  "oklch(0.62 0.18 190)",
-  "oklch(0.62 0.18 310)", "oklch(0.62 0.18 100)",
+  "oklch(0.62 0.18 25)",
+  "oklch(0.60 0.18 145)",
+  "oklch(0.60 0.18 230)",
+  "oklch(0.62 0.18 270)",
+  "oklch(0.65 0.18 50)",
+  "oklch(0.62 0.18 190)",
+  "oklch(0.62 0.18 310)",
+  "oklch(0.62 0.18 100)",
 ];
 
 export const INITIAL_VALUES: CreatorFormValues = {

@@ -1,32 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Inbox, Pencil } from "lucide-react";
-import {
-  SiInstagram,
-  SiTiktok,
-  SiYoutube,
-  SiTwitch,
-  SiSpotify,
-  SiOnlyfans,
-  SiX,
-  SiSnapchat,
-  SiPinterest,
-  SiFacebook,
-  SiPatreon,
-  SiSubstack,
-} from "react-icons/si";
-import { FaLinkedinIn } from "react-icons/fa";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import { Inbox, Pencil } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import {
+  SiInstagram,
+  SiOnlyfans,
+  SiSpotify,
+  SiTiktok,
+  SiX,
+  SiYoutube,
+} from "react-icons/si";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -108,16 +101,9 @@ const PLATFORM_ICONS: Record<string, React.ReactNode> = {
   Instagram: <SiInstagram />,
   TikTok: <SiTiktok />,
   YouTube: <SiYoutube />,
-  Twitch: <SiTwitch />,
-  LinkedIn: <FaLinkedinIn />,
   Spotify: <SiSpotify />,
   OnlyFans: <SiOnlyfans />,
   X: <SiX />,
-  Snapchat: <SiSnapchat />,
-  Pinterest: <SiPinterest />,
-  Facebook: <SiFacebook />,
-  Patreon: <SiPatreon />,
-  Substack: <SiSubstack />,
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

@@ -1,11 +1,11 @@
 "use client";
 
-import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type Step = {
   id: number;
   label: string;
+  sub?: string;
 };
 
 interface StepperProps {
@@ -13,51 +13,110 @@ interface StepperProps {
   current: number;
 }
 
+// Arrow notch size in px — both left indent and right protrusion
+const NOTCH = 16;
+
+// Clip-path polygon for each position variant.
+//
+// Left notch (steps 2+): outer corners sit at x=0, the inward tip at x=NOTCH y=50%.
+//   Path traces: … (0,100%) → (NOTCH,50%) → (0,0) …
+//   The "V" points RIGHT into the step = Einkerbung.
+//
+// Right arrow: base at x=100%-NOTCH, tip at x=100% y=50%.
+function chevronPath(isFirst: boolean, isLast: boolean): string {
+  // First: flat left + arrow right
+  if (isFirst)
+    return `polygon(0 0, calc(100% - ${NOTCH}px) 0, 100% 50%, calc(100% - ${NOTCH}px) 100%, 0 100%)`;
+  // Last: inward notch left + flat right
+  if (isLast) return `polygon(0 0, 100% 0, 100% 100%, 0 100%, ${NOTCH}px 50%)`;
+  // Middle: inward notch left + arrow right
+  return `polygon(0 0, calc(100% - ${NOTCH}px) 0, 100% 50%, calc(100% - ${NOTCH}px) 100%, 0 100%, ${NOTCH}px 50%)`;
+}
+
 export function Stepper({ steps, current }: StepperProps) {
+  const total = steps.length;
+
   return (
-    <div className="flex items-start w-full">
+    <div className="flex items-stretch w-full h-[52px]">
       {steps.map((step, i) => {
-        const state =
-          step.id < current ? "done" : step.id === current ? "active" : "future";
-        const isLast = i === steps.length - 1;
+        const isFirst = i === 0;
+        const isLast = i === total - 1;
+        const state: "done" | "active" | "future" =
+          step.id < current
+            ? "done"
+            : step.id === current
+              ? "active"
+              : "future";
+
+        const clip = chevronPath(isFirst, isLast);
+
+        // Padding pushes text away from notch/arrow areas so centering is accurate
+        const pl = isFirst ? 12 : NOTCH + 12;
+        const pr = isLast ? 12 : NOTCH + 12;
 
         return (
           <div
             key={step.id}
-            className={cn("flex items-start", !isLast && "flex-1")}
+            className="relative flex-1"
+            style={{
+              // Overlap: each step (except the first) slides left by NOTCH px
+              // so the previous step's arrow fills the next step's notch
+
+              // Done steps render on top — their arrow covers the next step's notch indent
+              zIndex: total - i,
+            }}
           >
-            <div className="flex flex-col items-center gap-1.5">
+            {/* ── Active border layer ──────────────────────────────────────
+                clip-path doesn't support outline/border. Instead, we place a
+                fully-coloured layer behind the fill, then inset the fill by
+                BORDER px — the colour "peeks through" as a consistent border. */}
+            {state === "active" && (
               <div
-                className={cn(
-                  "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 transition-colors",
-                  state === "done" && "bg-yellow-400 text-black",
-                  state === "active" && "bg-foreground text-background ring-4 ring-foreground/10",
-                  state === "future" && "bg-muted text-muted-foreground",
-                )}
-              >
-                {state === "done" ? <Check className="w-3.5 h-3.5" /> : step.id}
-              </div>
+                className="absolute inset-0 bg-yellow-400"
+                style={{ clipPath: clip }}
+              />
+            )}
+
+            {/* ── Fill layer ──────────────────────────────────────────────── */}
+            <div
+              className={cn(
+                "absolute flex flex-col items-center justify-center",
+                state === "done" && "bg-foreground",
+                state === "active" && "bg-card",
+                state === "future" && "bg-muted",
+              )}
+              style={{
+                clipPath: clip,
+                // Inset creates the border gap (only needed for active)
+                inset: state === "active" ? "2px" : 0,
+                paddingLeft: `${pl}px`,
+                paddingRight: `${pr}px`,
+              }}
+            >
               <span
                 className={cn(
-                  "text-[10px] font-medium whitespace-nowrap",
-                  state === "active" && "text-foreground",
-                  state !== "active" && "text-muted-foreground",
+                  "text-sm font-semibold leading-tight text-center w-full truncate",
+                  state === "done" && "text-background",
+                  state === "active" && "text-yellow-400",
+                  state === "future" && "text-foreground/50",
                 )}
               >
                 {step.label}
               </span>
-            </div>
 
-            {!isLast && (
-              <div className="flex-1 h-[1px] mt-3.5 mx-2 bg-border-light overflow-hidden">
-                <div
+              {step.sub && (
+                <span
                   className={cn(
-                    "h-full bg-yellow-400 transition-all duration-300",
-                    state === "done" ? "w-full" : "w-0",
+                    "text-[11px] leading-tight text-center w-full truncate",
+                    state === "done" && "text-background/60",
+                    state === "active" && "text-muted-foreground",
+                    state === "future" && "text-muted-foreground/60",
                   )}
-                />
-              </div>
-            )}
+                >
+                  {step.sub}
+                </span>
+              )}
+            </div>
           </div>
         );
       })}
