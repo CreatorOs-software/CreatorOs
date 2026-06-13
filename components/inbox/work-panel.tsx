@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Mail, MailOpen, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   type Thread,
   type Integration,
@@ -33,11 +34,12 @@ export function WorkPanel({
         open ? "w-64" : "w-12",
       )}
     >
-      <button
+      <Button
+        variant="ghost"
         onClick={onToggle}
         className={cn(
-          "flex items-center gap-2 px-3 py-4 border-b border-border-light hover:bg-muted transition-colors w-full shrink-0",
-          !open && "justify-center",
+          "w-full h-auto flex items-center gap-2 px-3 py-4 border-b border-border-light shrink-0 rounded-none",
+          open ? "justify-start" : "justify-center",
         )}
       >
         {open ? (
@@ -50,26 +52,28 @@ export function WorkPanel({
         ) : (
           <ChevronLeft className="w-4 h-4 text-muted-foreground" />
         )}
-      </button>
+      </Button>
 
       {/* Collapsed: icon shortcuts */}
       {!open && selected && (
         <div className="flex flex-col items-center gap-1 py-3 px-1">
           <div className="w-5 h-px bg-border-light my-1" />
           {(["high", "med", "low"] as const).map((p) => (
-            <button
+            <Button
               key={p}
+              variant="ghost"
+              size="icon"
               onClick={() => onPatch(selected.id, { priority: p })}
               className={cn(
-                "w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold transition-colors",
+                "rounded-xl text-xs font-bold",
                 selected.priority === p
                   ? PRIORITY_COLOR[p]
-                  : "text-muted-foreground hover:bg-muted",
+                  : "text-muted-foreground",
               )}
               title={PRIORITY_FULL[p]}
             >
               {PRIORITY_LABEL[p]}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -82,9 +86,10 @@ export function WorkPanel({
               Aktionen
             </p>
 
-            <button
+            <Button
+              variant="ghost"
               onClick={() => onPatch(selected.id, { unread: !selected.unread })}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-muted text-muted-foreground transition-colors"
+              className="h-auto justify-start gap-2 px-3 py-2 rounded-xl text-sm text-muted-foreground"
             >
               {selected.unread ? (
                 <MailOpen className="w-4 h-4" />
@@ -94,7 +99,7 @@ export function WorkPanel({
               {selected.unread
                 ? "Als gelesen markieren"
                 : "Als ungelesen markieren"}
-            </button>
+            </Button>
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -103,18 +108,19 @@ export function WorkPanel({
             </p>
             <div className="flex gap-1.5">
               {(["high", "med", "low"] as const).map((p) => (
-                <button
+                <Button
                   key={p}
+                  variant="ghost"
                   onClick={() => onPatch(selected.id, { priority: p })}
                   className={cn(
-                    "flex-1 text-xs py-1.5 rounded-xl border transition-colors",
+                    "flex-1 h-auto text-xs py-1.5 rounded-xl border",
                     selected.priority === p
                       ? PRIORITY_COLOR[p] + " border-transparent font-medium"
-                      : "border-border-light text-muted-foreground hover:bg-muted",
+                      : "border-border-light text-muted-foreground",
                   )}
                 >
                   {PRIORITY_FULL[p]}
-                </button>
+                </Button>
               ))}
             </div>
           </div>

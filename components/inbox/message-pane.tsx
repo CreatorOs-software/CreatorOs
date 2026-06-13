@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { type Thread, formatFullDate } from "./inbox-types";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface MessagePaneProps {
   selected: Thread | null;
@@ -46,13 +47,15 @@ export function MessagePane({
                 </h2>
 
                 <div className="flex gap-1">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => onStar(selected)}
                     className={cn(
-                      "w-9 h-9 rounded-xl flex items-center justify-center transition-colors",
+                      "rounded-xl",
                       selected.starred
                         ? "text-yellow-400 bg-yellow-400/10"
-                        : "text-muted-foreground hover:bg-muted",
+                        : "text-muted-foreground",
                     )}
                     title="Markieren"
                   >
@@ -62,12 +65,14 @@ export function MessagePane({
                         selected.starred && "fill-yellow-400",
                       )}
                     />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() =>
                       onPatch(selected.id, { unread: !selected.unread })
                     }
-                    className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
+                    className="rounded-xl text-muted-foreground"
                     title={
                       selected.unread
                         ? "Als gelesen markieren"
@@ -79,7 +84,7 @@ export function MessagePane({
                     ) : (
                       <Mail className="w-4 h-4" />
                     )}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -141,10 +146,11 @@ export function MessagePane({
               className="w-full resize-none text-sm bg-transparent outline-none placeholder:text-muted-foreground"
             />
             <div className="flex justify-end mt-2">
-              <button
+              <Button
+                variant="ghost"
                 onClick={onSend}
                 disabled={!reply.trim() || sending}
-                className="flex items-center gap-1.5 text-sm px-4 py-1.5 rounded-xl bg-yellow-400 text-black font-medium hover:bg-yellow-300 transition-colors disabled:opacity-40"
+                className="h-auto gap-1.5 text-sm px-4 py-1.5 rounded-xl bg-yellow-400 text-black font-medium hover:bg-yellow-300 hover:text-black disabled:opacity-40"
               >
                 {sending ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -152,7 +158,7 @@ export function MessagePane({
                   <Send className="w-3.5 h-3.5" />
                 )}
                 {sending ? "Senden…" : "Senden"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

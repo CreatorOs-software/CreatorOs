@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { MoreVertical } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import {
   Accordion,
@@ -57,9 +58,9 @@ export function DeviceItem() {
         <p className="font-medium text-sm">MacBook Air</p>
         <p className="text-xs text-muted-foreground">Version M1</p>
       </div>
-      <button className="p-2 hover:bg-muted rounded-lg transition-colors">
+      <Button variant="ghost" size="icon-sm">
         <MoreVertical className="w-4 h-4 text-muted-foreground" />
-      </button>
+      </Button>
     </div>
   );
 }

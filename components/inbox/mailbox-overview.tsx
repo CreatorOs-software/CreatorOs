@@ -2,6 +2,7 @@
 
 import { ChevronRight, Inbox, Loader2, RefreshCw, Send, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   type Thread,
   type Integration,
@@ -24,9 +25,10 @@ function MailboxRow({
   onClick: () => void;
 }) {
   return (
-    <button
+    <Button
+      variant="ghost"
       onClick={onClick}
-      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
+      className="w-full h-auto flex justify-start whitespace-normal gap-3 px-4 py-2.5 hover:bg-muted/50"
     >
       <span className="w-9 h-9 rounded-xl bg-sidebar flex items-center justify-center text-muted-foreground shrink-0">
         {icon}
@@ -41,7 +43,7 @@ function MailboxRow({
         </span>
       )}
       <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-    </button>
+    </Button>
   );
 }
 
@@ -74,13 +76,15 @@ export function MailboxOverview({
     <>
       <div className="px-4 pt-4 pb-3 border-b border-border-light flex items-center justify-between">
         <span className="text-sm font-semibold">Postfächer</span>
-        <button
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={onSync}
           disabled={isFetching || integrations.length === 0}
-          className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground disabled:opacity-40"
+          className="text-muted-foreground disabled:opacity-40"
         >
           <RefreshCw className={cn("w-3.5 h-3.5", isFetching && "animate-spin")} />
-        </button>
+        </Button>
       </div>
 
       {loading ? (
@@ -107,10 +111,11 @@ export function MailboxOverview({
           const initials = linkedCreator?.initials ?? mailboxInitials(integ.email);
           const avatarBg = linkedCreator?.color ?? undefined;
           return (
-            <button
+            <Button
               key={integ.id}
+              variant="ghost"
               onClick={() => onOpenMailbox(integ.id)}
-              className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
+              className="w-full h-auto flex justify-start whitespace-normal gap-3 px-4 py-2.5 hover:bg-muted/50"
             >
               <span
                 className={cn(
@@ -133,7 +138,7 @@ export function MailboxOverview({
                 </span>
               )}
               <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-            </button>
+            </Button>
           );
         })
       )}

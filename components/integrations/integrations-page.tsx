@@ -5,6 +5,7 @@ import { QueryKeys } from "@/lib/query-keys";
 import { useState } from "react";
 import { Inbox, RefreshCw, X, Check, AlertCircle, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 type Provider = "gmail" | "outlook" | "imap";
 
@@ -371,20 +372,24 @@ export function IntegrationsPage() {
                   >
                     {integ.status}
                   </span>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => handleSync(integ.id)}
                     disabled={syncingId === integ.id}
-                    className="p-2 rounded-xl hover:bg-muted transition-colors text-muted-foreground"
+                    className="rounded-xl text-muted-foreground"
                     title="Sync"
                   >
                     <RefreshCw
                       className={cn("w-4 h-4", syncingId === integ.id && "animate-spin")}
                     />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => handleDisconnect(integ.id)}
                     disabled={deletingId === integ.id}
-                    className="p-2 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors text-muted-foreground"
+                    className="rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                     title="Trennen"
                   >
                     {deletingId === integ.id ? (
@@ -392,7 +397,7 @@ export function IntegrationsPage() {
                     ) : (
                       <X className="w-4 h-4" />
                     )}
-                  </button>
+                  </Button>
                 </div>
               );
             })}
@@ -416,13 +421,14 @@ export function IntegrationsPage() {
                 <span className="text-sm font-medium">{p.name}</span>
               </div>
               <p className="text-xs text-muted-foreground flex-1">{p.description}</p>
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => openModal(p.id)}
-                className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl bg-sidebar hover:bg-muted transition-colors w-fit"
+                className="h-auto gap-1.5 text-sm font-medium px-3 py-2 rounded-xl bg-sidebar hover:bg-muted w-fit"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Verbinden
-              </button>
+              </Button>
             </div>
           ))}
         </div>
@@ -448,9 +454,9 @@ export function IntegrationsPage() {
                   Nachrichten werden in deinen Inbox gezogen.
                 </div>
               </div>
-              <button onClick={closeModal} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+              <Button variant="ghost" size="icon-sm" onClick={closeModal}>
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
 
             {/* Gmail hint */}
@@ -581,29 +587,32 @@ export function IntegrationsPage() {
 
             {/* Footer */}
             <div className="px-5 py-4 border-t border-border-light flex items-center justify-between gap-2">
-              <button
+              <Button
+                variant="outline"
                 onClick={handleTest}
                 disabled={!canTest || testing}
-                className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl border border-border-light hover:bg-muted transition-colors disabled:opacity-50"
+                className="h-auto gap-1.5 text-sm px-3 py-2 rounded-xl border-border-light"
               >
                 {testing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                 {testing ? "Teste…" : "Verbindung testen"}
-              </button>
+              </Button>
               <div className="flex gap-2">
-                <button
+                <Button
+                  variant="ghost"
                   onClick={closeModal}
-                  className="text-sm px-3 py-2 rounded-xl hover:bg-muted transition-colors"
+                  className="h-auto text-sm px-3 py-2 rounded-xl"
                 >
                   Abbrechen
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
                   onClick={handleSave}
                   disabled={!canSave || saving}
-                  className="flex items-center gap-1.5 text-sm px-4 py-2 rounded-xl bg-foreground text-background hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="h-auto gap-1.5 text-sm px-4 py-2 rounded-xl bg-foreground text-background hover:bg-foreground hover:text-background hover:opacity-90"
                 >
                   {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                   {saving ? "Verbinde…" : "Postfach verbinden"}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

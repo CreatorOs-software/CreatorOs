@@ -3,6 +3,7 @@
 import { ArrowLeft, Inbox, RefreshCw, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type Thread, type Filter, type MailboxId, formatDate } from "./inbox-types";
+import { Button } from "@/components/ui/button";
 
 interface ThreadListProps {
   filtered: Thread[];
@@ -39,42 +40,47 @@ export function ThreadList({
     <>
       <div className="px-4 pt-4 pb-3 border-b border-border-light">
         <div className="flex items-center gap-2 mb-3">
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={onBack}
-            className="p-1 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+            className="text-muted-foreground"
           >
             <ArrowLeft className="w-4 h-4" />
-          </button>
+          </Button>
           <span className="text-sm font-semibold flex-1 truncate">{activeLabel}</span>
           {unreadCount > 0 && (
             <span className="text-[10px] font-semibold bg-yellow-400 text-black rounded-full px-1.5 py-0.5 leading-none">
               {unreadCount}
             </span>
           )}
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={onSync}
             disabled={isFetching || integrationsCount === 0}
-            className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground disabled:opacity-40"
+            className="text-muted-foreground disabled:opacity-40"
           >
             <RefreshCw className={cn("w-3.5 h-3.5", isFetching && "animate-spin")} />
-          </button>
+          </Button>
         </div>
 
         {activeMailboxId !== "__sent__" && (
           <div className="flex gap-1 bg-muted rounded-xl p-1">
             {(["all", "unread", "starred"] as Filter[]).map((f) => (
-              <button
+              <Button
                 key={f}
+                variant="ghost"
                 onClick={() => onSetFilter(f)}
                 className={cn(
-                  "flex-1 text-xs py-1 rounded-lg transition-colors font-medium",
+                  "flex-1 h-auto text-xs py-1 rounded-lg font-medium",
                   filter === f
                     ? "bg-card text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {f === "all" ? "Alle" : f === "unread" ? "Ungelesen" : "Markiert"}
-              </button>
+              </Button>
             ))}
           </div>
         )}
@@ -88,11 +94,12 @@ export function ThreadList({
           </div>
         ) : (
           filtered.map((t) => (
-            <button
+            <Button
               key={t.id}
+              variant="ghost"
               onClick={() => onSelectThread(t)}
               className={cn(
-                "w-full text-left px-4 py-3 border-b border-border-light/50 hover:bg-muted/50 transition-colors group",
+                "w-full h-auto flex-col items-start justify-start whitespace-normal px-4 py-3 border-b border-border-light/50 hover:bg-muted/50 group rounded-none",
                 selectedId === t.id && "bg-muted",
               )}
             >
@@ -125,10 +132,12 @@ export function ThreadList({
                   {t.unread && (
                     <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
                   )}
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
                     onClick={(e) => onStar(t, e)}
                     className={cn(
-                      "opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded",
+                      "opacity-0 group-hover:opacity-100 transition-opacity rounded",
                       t.starred && "opacity-100",
                     )}
                   >
@@ -140,10 +149,10 @@ export function ThreadList({
                           : "text-muted-foreground",
                       )}
                     />
-                  </button>
+                  </Button>
                 </div>
               </div>
-            </button>
+            </Button>
           ))
         )}
       </div>

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthContext } from "@/domains/auth";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Prefetch } from "@/components/context/prefetch";
 
@@ -9,11 +10,10 @@ export default async function MainLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  const auth = await getAuthContext(supabase);
 
   const displayUser = {
     id: user.id,
@@ -22,7 +22,12 @@ export default async function MainLayout({
   };
 
   return (
-    <AppLayout fullHeight user={displayUser}>
+    <AppLayout
+      fullHeight
+      user={displayUser}
+      role={auth.role}
+      permissions={auth.permissions}
+    >
       <Prefetch />
       {children}
     </AppLayout>
