@@ -1,6 +1,8 @@
 import { CreatorService } from "@/domains/creators";
 import { toErrorResponse } from "@/domains/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const creators = await CreatorService.getListData();

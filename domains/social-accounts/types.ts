@@ -48,6 +48,10 @@ export type MetricsCurrent = {
   audience_growth_7d: number;
   audience_growth_30d: number;
   monthly_revenue: number | null;
+  subscribers_gained_30d: number;
+  subscribers_lost_30d: number;
+  avg_view_duration_secs: number;
+  watch_time_hours_30d: number;
   raw: Record<string, unknown>;
   synced_at: string;
 };

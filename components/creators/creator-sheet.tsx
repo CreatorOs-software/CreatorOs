@@ -16,10 +16,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CreatorAccount } from "@/domains/social-accounts/types";
 import {
   SiInstagram,
@@ -167,6 +167,8 @@ export function CreatorSheet({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const queryClient = useQueryClient();
+
   const { data: accountsData } = useQuery<{ accounts: CreatorAccount[] }>({
     queryKey: ["creator-accounts", creator?.id],
     queryFn: () =>
@@ -175,10 +177,25 @@ export function CreatorSheet({
     staleTime: 60_000,
   });
 
-  const connectedByKey = new Set(
+  const syncMutation = useMutation({
+    mutationFn: (accountId: string) =>
+      fetch("/api/integrations/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ account_id: accountId }),
+      }).then((r) => {
+        if (!r.ok) throw new Error("Sync fehlgeschlagen");
+        return r.json();
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["creator-accounts", creator?.id] });
+    },
+  });
+
+  const connectedByKey = new Set<string>(
     (accountsData?.accounts ?? [])
-      .filter((a) => a.sync_status === "active")
-      .map((a) => a.platform),
+      .filter((a) => a.sync_status !== "disconnected")
+      .map((a) => a.platform as string),
   );
 
   async function handleDelete() {
@@ -291,7 +308,7 @@ export function CreatorSheet({
                   const account = (accountsData?.accounts ?? []).find(
                     (a) =>
                       (a.platform as string) === key &&
-                      a.sync_status === "active",
+                      a.sync_status !== "disconnected",
                   );
                   return (
                     <div
@@ -310,14 +327,54 @@ export function CreatorSheet({
                             @{account.username}
                           </p>
                         )}
+                        {account?.last_sync_at && (
+                          <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                            Sync:{" "}
+                            {new Date(account.last_sync_at).toLocaleString("de-DE", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        )}
                       </div>
                       {isConnected ? (
-                        <span className="flex items-center gap-1.5 text-xs text-success">
-                          <span className="w-1.5 h-1.5 rounded-full bg-success" />
-                          Verbunden
-                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={cn(
+                            "flex items-center gap-1.5 text-xs",
+                            account?.sync_status === "error"
+                              ? "text-destructive"
+                              : "text-success",
+                          )}>
+                            <span className={cn(
+                              "w-1.5 h-1.5 rounded-full",
+                              account?.sync_status === "error"
+                                ? "bg-destructive"
+                                : "bg-success",
+                            )} />
+                            {account?.sync_status === "error" ? "Sync-Fehler" : "Verbunden"}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            disabled={syncMutation.isPending && syncMutation.variables === account!.id}
+                            onClick={() => syncMutation.mutate(account!.id)}
+                            title="Jetzt synchronisieren"
+                          >
+                            <RefreshCw
+                              className={cn(
+                                "w-3.5 h-3.5",
+                                syncMutation.isPending &&
+                                  syncMutation.variables === account!.id &&
+                                  "animate-spin",
+                              )}
+                            />
+                          </Button>
+                        </div>
                       ) : (
-                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
                           Nicht verbunden
                         </span>

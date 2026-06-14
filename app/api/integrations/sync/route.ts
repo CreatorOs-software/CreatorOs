@@ -1,9 +1,7 @@
 import { getAuthContext, toErrorResponse } from "@/lib/auth-context";
-import { SocialAccountService } from "@/domains/social-accounts";
-import { serviceClient } from "@/lib/supabase/service";
 
-// Manual sync trigger — agency user initiates a resync for one account.
-// Service role client is needed because platform_connections has USING (false) RLS.
+// Manual sync trigger — delegates to the sync-youtube Edge Function so that
+// both the cron job and the manual button use identical sync logic.
 export async function POST(req: Request) {
   try {
     await getAuthContext(); // auth gate — verifies the request is from a valid agency user
@@ -13,10 +11,28 @@ export async function POST(req: Request) {
       return Response.json({ error: "account_id is required" }, { status: 400 });
     }
 
-    const service = new SocialAccountService(serviceClient);
-    await service.syncAccount(account_id);
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-    return Response.json({ ok: true, synced_at: new Date().toISOString() });
+    const res = await fetch(`${supabaseUrl}/functions/v1/sync-youtube`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${serviceRoleKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ account_id }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      return Response.json(
+        { error: data?.error ?? "Edge Function Fehler" },
+        { status: res.status },
+      );
+    }
+
+    return Response.json({ ok: true, synced_at: new Date().toISOString(), result: data });
   } catch (e) {
     return toErrorResponse(e);
   }
