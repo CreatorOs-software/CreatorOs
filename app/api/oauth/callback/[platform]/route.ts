@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { serviceClient } from "@/lib/supabase/service";
 import { SocialAccountService } from "@/domains/social-accounts";
 import { isSupported } from "@/lib/platforms/registry";
 
@@ -28,8 +28,7 @@ export async function GET(
   }
 
   try {
-    const supabase = await createClient();
-    const service = new SocialAccountService(supabase);
+    const service = new SocialAccountService(serviceClient);
 
     const redirectUri = `${origin}/api/oauth/callback/${platform}`;
 
@@ -43,7 +42,10 @@ export async function GET(
 
     return Response.redirect(`${origin}/connect/success?platform=${platform}`);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "unknown";
+    const message =
+      err instanceof Error
+        ? err.message
+        : (err as { message?: string })?.message ?? "unknown";
     console.error(`[oauth:${platform}] callback failed:`, message);
     return Response.redirect(
       `${origin}/connect/error?reason=${encodeURIComponent(message)}`,

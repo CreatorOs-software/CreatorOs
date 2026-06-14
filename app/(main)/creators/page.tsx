@@ -42,9 +42,7 @@ export default function CreatorsPage() {
   });
 
   const creators: Creator[] = allData?.creators ?? [];
-  const brands = allData?.brands ?? [];
   const deals = allData?.deals ?? [];
-  const mailboxes = allData?.mailboxes ?? [];
 
   const [search, setSearch] = useState("");
   const [profileId, setProfileId] = useState<string | null>(null);
@@ -145,9 +143,7 @@ export default function CreatorsPage() {
 
       <CreatorSheet
         creator={profile}
-        brands={brands}
         deals={deals}
-        mailboxes={mailboxes}
         open={!!profileId}
         onOpenChange={(open) => {
           if (!open) setProfileId(null);
