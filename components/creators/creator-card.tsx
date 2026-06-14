@@ -1,21 +1,18 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { Eye } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   SiInstagram,
-  SiTiktok,
-  SiYoutube,
-  SiTwitch,
-  SiSpotify,
   SiOnlyfans,
+  SiSpotify,
+  SiTiktok,
   SiX,
-  SiSnapchat,
-  SiPinterest,
-  SiFacebook,
-  SiPatreon,
-  SiSubstack,
+  SiYoutube,
 } from "react-icons/si";
-import { FaLinkedinIn } from "react-icons/fa";
-import { cn } from "@/lib/utils";
+import { Card } from "../ui/card";
+import { Button } from "../ui/button";
 import type { Creator } from "./creator-sheet";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -95,19 +92,35 @@ function PlatformIcon({ p }: { p: string }) {
 export function CreatorCard({
   c,
   activeDeals,
-  onClick,
+  onOpenSheet,
 }: {
   c: Creator;
   activeDeals: number;
-  onClick: () => void;
+  onOpenSheet: () => void;
 }) {
+  const router = useRouter();
+
   return (
-    <button
-      onClick={onClick}
-      className="w-full text-left bg-card rounded-2xl p-4 flex flex-col gap-3 hover:shadow-md transition-shadow"
+    <Card
+      onClick={() => router.push(`/creators/dashboard/${c.id}`)}
+      className="relative w-full text-left cursor-pointer bg-card rounded-2xl p-4 flex flex-col gap-3 hover:shadow-md transition-shadow"
     >
+      {/* Eye icon — opens detail sheet without navigating */}
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenSheet();
+        }}
+        className="absolute top-3 right-3 z-10"
+        aria-label="Details anzeigen"
+      >
+        <Eye />
+      </Button>
+
       <div className="flex items-start gap-3">
-        <Avatar c={c} size="lg" />
+        <Avatar c={c} size="md" />
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold truncate">{c.full_name}</div>
           <div className="text-xs text-muted-foreground truncate">
@@ -117,7 +130,7 @@ export function CreatorCard({
         {c.status !== "active" && (
           <span
             className={cn(
-              "text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0",
+              "text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 mr-6",
               STATUS_CLASS[c.status],
             )}
           >
@@ -159,6 +172,6 @@ export function CreatorCard({
           </div>
         </div>
       </div>
-    </button>
+    </Card>
   );
 }

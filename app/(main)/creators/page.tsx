@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Plus, Loader2, Star } from "lucide-react";
@@ -8,11 +8,26 @@ import { QueryKeys } from "@/lib/query-keys";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CreatorCard, formatMoney } from "@/components/creators/creator-card";
-import { CreatorSheet, type Creator } from "@/components/creators/creator-sheet";
+import {
+  CreatorSheet,
+  type Creator,
+} from "@/components/creators/creator-sheet";
 import type { CreatorsPageData } from "@/domains/creators";
 
 export default function CreatorsPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) =>
+      fetch(`/api/creators/${id}`, { method: "DELETE" }).then((r) => {
+        if (!r.ok) throw new Error("Löschen fehlgeschlagen");
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QueryKeys.creators.all() });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.creators.list() });
+    },
+  });
 
   const { data: listData, isPending } = useQuery<{ creators: Creator[] }>({
     queryKey: QueryKeys.creators.list(),
@@ -57,12 +72,16 @@ export default function CreatorsPage() {
   );
 
   const activePerCreator = (id: string) =>
-    deals.filter((d) => d.creator_id === id && !["paid", "posted"].includes(d.status)).length;
+    deals.filter(
+      (d) => d.creator_id === id && !["paid", "posted"].includes(d.status),
+    ).length;
 
   const totalMtd = creators.reduce((s, c) => s + Number(c.monthly_revenue), 0);
   const totalActive = creators.reduce((s, c) => s + activePerCreator(c.id), 0);
 
-  const profile = profileId ? (creators.find((c) => c.id === profileId) ?? null) : null;
+  const profile = profileId
+    ? (creators.find((c) => c.id === profileId) ?? null)
+    : null;
 
   if (isPending) {
     return (
@@ -78,7 +97,8 @@ export default function CreatorsPage() {
         <div>
           <h1 className="text-base font-semibold">Creator</h1>
           <p className="text-xs text-muted-foreground">
-            {creators.length} Creator · {totalActive} aktive Deals · {formatMoney(totalMtd)} MTD
+            {creators.length} Creator · {totalActive} aktive Deals ·{" "}
+            {formatMoney(totalMtd)} MTD
           </p>
         </div>
 
@@ -104,17 +124,19 @@ export default function CreatorsPage() {
           <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
             <Star className="w-10 h-10 opacity-20" />
             <p className="text-sm">
-              {search ? "Kein Creator gefunden." : "Noch keine Creator. Füge den ersten hinzu!"}
+              {search
+                ? "Kein Creator gefunden."
+                : "Noch keine Creator. Füge den ersten hinzu!"}
             </p>
           </div>
         ) : (
-          <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
+          <div className="grid gap-8 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
             {filtered.map((c) => (
               <CreatorCard
                 key={c.id}
                 c={c}
                 activeDeals={activePerCreator(c.id)}
-                onClick={() => handleCardClick(c.id)}
+                onOpenSheet={() => handleCardClick(c.id)}
               />
             ))}
           </div>
@@ -127,7 +149,13 @@ export default function CreatorsPage() {
         deals={deals}
         mailboxes={mailboxes}
         open={!!profileId}
-        onOpenChange={(open) => { if (!open) setProfileId(null); }}
+        onOpenChange={(open) => {
+          if (!open) setProfileId(null);
+        }}
+        onDelete={async (id) => {
+          await deleteMutation.mutateAsync(id);
+          setProfileId(null);
+        }}
       />
     </div>
   );

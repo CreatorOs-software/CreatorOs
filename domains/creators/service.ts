@@ -33,4 +33,10 @@ export const CreatorService = {
     await getAuthContext(supabase);
     return CreatorRepository.patch(supabase, id, patch);
   },
+
+  async remove(id: string): Promise<void> {
+    const supabase = await createClient();
+    await getAuthContext(supabase);
+    return CreatorRepository.remove(supabase, id);
+  },
 };

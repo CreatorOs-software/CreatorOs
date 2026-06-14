@@ -2,6 +2,14 @@
 
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -9,7 +17,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { Inbox, Pencil } from "lucide-react";
+import { Inbox, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
@@ -212,6 +220,7 @@ interface CreatorSheetProps {
   mailboxes: Mailbox[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDelete?: (id: string) => Promise<void>;
 }
 
 export function CreatorSheet({
@@ -221,9 +230,24 @@ export function CreatorSheet({
   mailboxes,
   open,
   onOpenChange,
+  onDelete,
 }: CreatorSheetProps) {
   const router = useRouter();
   const [tab, setTab] = useState("overview");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  async function handleDelete() {
+    if (!creator || !onDelete) return;
+    setIsDeleting(true);
+    try {
+      await onDelete(creator.id);
+      setConfirmDelete(false);
+      onOpenChange(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   if (!creator) return null;
 
@@ -235,6 +259,7 @@ export function CreatorSheet({
     : 0;
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
@@ -247,15 +272,28 @@ export function CreatorSheet({
             <span className="text-[10px] font-mono bg-muted px-2 py-0.5 rounded-md text-muted-foreground">
               {creator.id.slice(0, 8).toUpperCase()}
             </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-auto gap-1.5"
-              onClick={() => router.push(`/creators/edit-form/${creator.id}`)}
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              Bearbeiten
-            </Button>
+            <div className="ml-auto flex items-center gap-1.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => router.push(`/creators/edit-form/${creator.id}`)}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Bearbeiten
+              </Button>
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Löschen
+                </Button>
+              )}
+            </div>
           </div>
 
           <>
@@ -566,5 +604,34 @@ export function CreatorSheet({
         </div>
       </SheetContent>
     </Sheet>
+
+    <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+      <DialogContent showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>Creator löschen?</DialogTitle>
+          <DialogDescription>
+            <strong>{creator.full_name}</strong> wird dauerhaft gelöscht. Diese
+            Aktion kann nicht rückgängig gemacht werden.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setConfirmDelete(false)}
+            disabled={isDeleting}
+          >
+            Abbrechen
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Wird gelöscht…" : "Löschen"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
