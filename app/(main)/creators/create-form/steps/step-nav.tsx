@@ -9,9 +9,15 @@ interface StepNavProps {
   nextDisabled?: boolean;
 }
 
-export function StepNav({ onPrev, onNext, onSubmit, saving, nextDisabled }: StepNavProps) {
+export function StepNav({
+  onPrev,
+  onNext,
+  onSubmit,
+  saving,
+  nextDisabled,
+}: StepNavProps) {
   return (
-    <div className="flex items-center justify-between pt-6 border-t border-border-light mt-2">
+    <div className="flex items-center justify-between pt-6 border-t border-border-light mt-8">
       {onPrev ? (
         <Button type="button" variant="ghost" onClick={onPrev}>
           <ArrowLeft className="w-4 h-4" />
@@ -26,6 +32,7 @@ export function StepNav({ onPrev, onNext, onSubmit, saving, nextDisabled }: Step
           type="button"
           onClick={onNext}
           disabled={nextDisabled}
+          size={"xl"}
           className="bg-yellow-400 text-black hover:bg-yellow-300"
         >
           Weiter

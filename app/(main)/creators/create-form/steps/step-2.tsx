@@ -22,79 +22,95 @@ interface Step2Props {
 
 export function Step2({ form, errors, onNext, onPrev }: Step2Props) {
   return (
-    <div className="flex flex-col gap-5">
-      <div>
-        <p className="text-sm font-semibold">Profil & Kategorie</p>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Nische und Beschreibung des Creators
-        </p>
-      </div>
+    <div className="flex flex-col gap-0">
+      <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+        {/* Section header */}
+        <div>
+          <h2 className="font-semibold text-foreground">Profil & Kategorie</h2>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            Nische, Beschreibung und aktueller Status des Creators.
+          </p>
+        </div>
 
-      <form.Field name="bio">
-        {(field: CreatorField<"bio">) => (
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="bio">Bio</Label>
-            <Textarea
-              id="bio"
-              placeholder="Kurze Beschreibung des Creators…"
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-              onBlur={field.handleBlur}
-              className="resize-none h-20"
-            />
-          </div>
-        )}
-      </form.Field>
+        {/* Fields */}
+        <div className="sm:col-span-2">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-6">
+            <div className="col-span-full">
+              <form.Field name="bio">
+                {(field: CreatorField<"bio">) => (
+                  <>
+                    <Label htmlFor="bio" className="text-sm font-medium">
+                      Bio
+                    </Label>
+                    <Textarea
+                      id="bio"
+                      placeholder="Kurze Beschreibung des Creators…"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      className="mt-2 resize-none h-20"
+                    />
+                  </>
+                )}
+              </form.Field>
+            </div>
 
-      <form.Field name="niche">
-        {(field: CreatorField<"niche">) => (
-          <div className="flex flex-col gap-1.5">
-            <Label>Nische / Kategorie</Label>
-            <div className="flex flex-wrap gap-2">
-              {NICHE_OPTIONS.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() =>
-                    field.handleChange(field.state.value === tag ? "" : tag)
-                  }
-                  className={cn(
-                    "text-xs px-3 py-1.5 rounded-xl border bg-input transition-colors",
-                    field.state.value === tag
-                      ? "bg-yellow-400 text-black border-yellow-400"
-                      : "border-border-light text-muted-foreground hover:text-foreground hover:border-foreground/30",
-                  )}
-                >
-                  {tag}
-                </button>
-              ))}
+            <div className="col-span-full">
+              <form.Field name="niche">
+                {(field: CreatorField<"niche">) => (
+                  <>
+                    <Label className="text-sm font-medium">Nische / Kategorie</Label>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {NICHE_OPTIONS.map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() =>
+                            field.handleChange(field.state.value === tag ? "" : tag)
+                          }
+                          className={cn(
+                            "text-xs px-3 py-1.5 rounded-xl border transition-colors",
+                            field.state.value === tag
+                              ? "bg-yellow-400 text-black border-yellow-400"
+                              : "border-border-light bg-input text-muted-foreground hover:text-foreground hover:border-foreground/30",
+                          )}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </form.Field>
+            </div>
+
+            <div className="col-span-full sm:col-span-3">
+              <form.Field name="status">
+                {(field: CreatorField<"status">) => (
+                  <>
+                    <Label className="text-sm font-medium">Status</Label>
+                    <Select
+                      value={field.state.value}
+                      onValueChange={(val) => {
+                        if (val) field.handleChange(val as CreatorFormValues["status"]);
+                      }}
+                    >
+                      <SelectTrigger className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Aktiv</SelectItem>
+                        <SelectItem value="on-break">Pause</SelectItem>
+                        <SelectItem value="inactive">Inaktiv</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </>
+                )}
+              </form.Field>
             </div>
           </div>
-        )}
-      </form.Field>
-
-      <form.Field name="status">
-        {(field: CreatorField<"status">) => (
-          <div className="flex flex-col gap-1.5">
-            <Label>Status</Label>
-            <Select
-              value={field.state.value}
-              onValueChange={(val) => {
-                if (val) field.handleChange(val as CreatorFormValues["status"]);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Aktiv</SelectItem>
-                <SelectItem value="on-break">Pause</SelectItem>
-                <SelectItem value="inactive">Inaktiv</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-      </form.Field>
+        </div>
+      </div>
 
       <StepNav onPrev={onPrev} onNext={onNext} />
     </div>

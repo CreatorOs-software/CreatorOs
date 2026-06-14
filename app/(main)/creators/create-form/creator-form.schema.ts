@@ -9,6 +9,10 @@ export const creatorFormSchema = z.object({
     .refine((v) => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), {
       message: "Ungültige E-Mail-Adresse",
     }),
+  street: z.string(),
+  postal_code: z.string(),
+  city: z.string(),
+  country: z.string(),
   niche: z.string(),
   bio: z.string(),
   status: z.enum(["active", "on-break", "inactive"]),
@@ -25,7 +29,7 @@ export type CreatorFormValues = z.infer<typeof creatorFormSchema>;
 
 // Which fields belong to each step — used for scoped validation
 export const STEP_FIELDS = {
-  1: ["vorname", "nachname", "handle", "email"],
+  1: ["vorname", "nachname", "handle", "email", "street", "postal_code", "city", "country"],
   2: ["niche", "bio", "status"],
   3: ["platforms", "followers", "monthly_revenue"],
   4: [],
@@ -43,6 +47,10 @@ export const STEP_SCHEMAS = {
       .refine((v) => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), {
         message: "Ungültige E-Mail-Adresse",
       }),
+    street: z.string(),
+    postal_code: z.string(),
+    city: z.string(),
+    country: z.string(),
   }),
   2: z.object({
     niche: z.string(),

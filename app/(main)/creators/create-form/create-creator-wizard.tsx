@@ -24,9 +24,10 @@ export function CreateCreatorWizard() {
   const mutation = useCreateCreator();
 
   const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [done, setDone] = useState(false);
   const [createdCreatorId, setCreatedCreatorId] = useState<string | null>(null);
-  // Errors from Zod step validation — cleared on every step advance attempt
+  const [contractFile, setContractFile] = useState<File | null>(null);
   const [stepErrors, setStepErrors] = useState<StepErrors>({});
 
   const form = useForm<CreatorFormValues>({
@@ -60,11 +61,13 @@ export function CreateCreatorWizard() {
       return;
     }
     setStepErrors({});
+    setDirection("forward");
     setStep((s) => s + 1);
   }
 
   function handlePrev() {
     setStepErrors({});
+    setDirection("backward");
     setStep((s) => s - 1);
   }
 
@@ -82,58 +85,77 @@ export function CreateCreatorWizard() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="bg-card rounded-2xl p-6 flex-1 overflow-y-auto">
-        <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div>
-            <h1 className="text-base font-semibold">Neuer Creator</h1>
-            <p className="text-xs text-muted-foreground">
-              Creator-Profil anlegen
-            </p>
+      <div className="bg-card rounded-2xl flex-1 flex flex-col overflow-hidden">
+        {/* Fixed: header + stepper */}
+        <div className="px-6 pt-6 shrink-0">
+          <div className="flex items-center gap-3 mb-6">
+            <Button variant="ghost" size="icon" onClick={() => router.back()}>
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div>
+              <h1 className="text-base font-semibold">Neuer Creator</h1>
+              <p className="text-xs text-muted-foreground">
+                Creator-Profil anlegen
+              </p>
+            </div>
           </div>
+
+          {!done && (
+            <div className="mb-8">
+              <Stepper steps={STEPS} current={step} />
+            </div>
+          )}
         </div>
 
-        {!done && (
-          <div className="mb-8">
-            <Stepper steps={STEPS} current={step} />
+        {/* Scrollable: form content only */}
+        <div className="flex-1 overflow-y-auto px-6 pb-6 overflow-x-hidden">
+          <div
+            key={done ? "success" : step}
+            className={
+              direction === "forward"
+                ? "animate-in slide-in-from-right-8 fade-in duration-300"
+                : "animate-in slide-in-from-left-8 fade-in duration-300"
+            }
+          >
+            {done ? (
+              <StepSuccess
+                creatorId={createdCreatorId}
+                platforms={form.state.values.platforms}
+                onReset={handleReset}
+                onGoBack={() => router.push("/creators")}
+              />
+            ) : step === 1 ? (
+              <Step1
+                form={form}
+                errors={stepErrors}
+                contractFile={contractFile}
+                onContractFileChange={setContractFile}
+                onNext={handleNext}
+              />
+            ) : step === 2 ? (
+              <Step2
+                form={form}
+                errors={stepErrors}
+                onNext={handleNext}
+                onPrev={handlePrev}
+              />
+            ) : step === 3 ? (
+              <Step3
+                form={form}
+                errors={stepErrors}
+                onNext={handleNext}
+                onPrev={handlePrev}
+              />
+            ) : (
+              <Step4
+                form={form}
+                saving={mutation.isPending}
+                error={mutation.error?.message ?? null}
+                onPrev={handlePrev}
+                onSubmit={handleSubmit}
+              />
+            )}
           </div>
-        )}
-
-        <div className="max-w-3xl mx-auto">
-          {done ? (
-            <StepSuccess
-              creatorId={createdCreatorId}
-              platforms={form.state.values.platforms}
-              onReset={handleReset}
-              onGoBack={() => router.push("/creators")}
-            />
-          ) : step === 1 ? (
-            <Step1 form={form} errors={stepErrors} onNext={handleNext} />
-          ) : step === 2 ? (
-            <Step2
-              form={form}
-              errors={stepErrors}
-              onNext={handleNext}
-              onPrev={handlePrev}
-            />
-          ) : step === 3 ? (
-            <Step3
-              form={form}
-              errors={stepErrors}
-              onNext={handleNext}
-              onPrev={handlePrev}
-            />
-          ) : (
-            <Step4
-              form={form}
-              saving={mutation.isPending}
-              error={mutation.error?.message ?? null}
-              onPrev={handlePrev}
-              onSubmit={handleSubmit}
-            />
-          )}
         </div>
       </div>
     </div>
