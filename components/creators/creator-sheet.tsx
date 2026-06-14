@@ -16,7 +16,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { Pencil, RefreshCw, Trash2 } from "lucide-react";
+import { Check, Copy, ExternalLink, Loader2, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -112,6 +112,8 @@ const PLATFORM_KEY: Record<string, string> = {
   X: "x",
 };
 
+const OAUTH_SUPPORTED = new Set(["youtube"]);
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatMoney(n: number) {
@@ -166,6 +168,41 @@ export function CreatorSheet({
   const router = useRouter();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [inviteLoading, setInviteLoading] = useState<string | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function handleCreateInvite(platformKey: string) {
+    if (!creator) return;
+    setInviteLoading(platformKey);
+    setInviteError(null);
+    try {
+      const res = await fetch("/api/integrations/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ creator_id: creator.id, platform: platformKey }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setInviteError(data.error ?? "Fehler beim Erstellen des Links");
+      } else {
+        setInviteUrl(data.invite_url);
+      }
+    } catch {
+      setInviteError("Netzwerkfehler");
+    } finally {
+      setInviteLoading(null);
+    }
+  }
+
+  function handleCopyInvite() {
+    if (!inviteUrl) return;
+    navigator.clipboard.writeText(inviteUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
 
   const queryClient = useQueryClient();
 
@@ -373,6 +410,19 @@ export function CreatorSheet({
                             />
                           </Button>
                         </div>
+                      ) : OAUTH_SUPPORTED.has(key) ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0 h-7 text-xs gap-1"
+                          disabled={inviteLoading === key}
+                          onClick={() => handleCreateInvite(key)}
+                        >
+                          {inviteLoading === key ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : null}
+                          Verbinden
+                        </Button>
                       ) : (
                         <span className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
@@ -387,6 +437,46 @@ export function CreatorSheet({
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* ── Invite-URL Dialog ── */}
+      <Dialog open={!!inviteUrl} onOpenChange={(o) => !o && setInviteUrl(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>OAuth-Link erstellt</DialogTitle>
+            <DialogDescription>
+              Teile diesen Link mit dem Creator. Er ist 48 Stunden gültig und
+              startet den Verbindungs-Flow direkt.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2 rounded-lg border bg-muted px-3 py-2.5">
+            <p className="flex-1 text-xs font-mono truncate text-muted-foreground">
+              {inviteUrl}
+            </p>
+            <button
+              onClick={handleCopyInvite}
+              className="shrink-0 p-1 rounded hover:bg-background transition-colors"
+            >
+              {copied ? (
+                <Check className="w-4 h-4 text-green-500" />
+              ) : (
+                <Copy className="w-4 h-4 text-muted-foreground" />
+              )}
+            </button>
+          </div>
+          {inviteError && (
+            <p className="text-xs text-destructive">{inviteError}</p>
+          )}
+          <a
+            href={inviteUrl ?? "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ExternalLink className="w-3 h-3" />
+            Link im Browser öffnen
+          </a>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <DialogContent showCloseButton={false}>

@@ -15,9 +15,10 @@ interface Step4Props {
   error: string | null;
   onPrev: () => void;
   onSubmit: () => void;
+  submitLabel?: string;
 }
 
-export function Step4({ form, saving, error, onPrev, onSubmit }: Step4Props) {
+export function Step4({ form, saving, error, onPrev, onSubmit, submitLabel }: Step4Props) {
   const v = form.state.values;
   const name = fullName(v.vorname, v.nachname);
 
@@ -81,7 +82,7 @@ export function Step4({ form, saving, error, onPrev, onSubmit }: Step4Props) {
         </div>
       </div>
 
-      <StepNav onPrev={onPrev} onSubmit={onSubmit} saving={saving} />
+      <StepNav onPrev={onPrev} onSubmit={onSubmit} saving={saving} submitLabel={submitLabel} />
     </div>
   );
 }

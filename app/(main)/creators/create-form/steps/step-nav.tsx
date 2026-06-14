@@ -7,6 +7,7 @@ interface StepNavProps {
   onSubmit?: () => void;
   saving?: boolean;
   nextDisabled?: boolean;
+  submitLabel?: string;
 }
 
 export function StepNav({
@@ -15,6 +16,7 @@ export function StepNav({
   onSubmit,
   saving,
   nextDisabled,
+  submitLabel = "Creator anlegen",
 }: StepNavProps) {
   return (
     <div className="flex items-center justify-between pt-6 border-t border-border-light mt-8">
@@ -47,7 +49,7 @@ export function StepNav({
           disabled={saving}
           className="bg-yellow-400 text-black hover:bg-yellow-300"
         >
-          {saving ? "Speichern…" : "Creator anlegen"}
+          {saving ? "Speichern…" : submitLabel}
         </Button>
       )}
     </div>

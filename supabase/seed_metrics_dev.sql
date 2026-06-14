@@ -1,4 +1,54 @@
 -- ─────────────────────────────────────────────────────────────
+-- Dev Seed: Fake Events für Samuel Reinholz
+-- ─────────────────────────────────────────────────────────────
+
+DO $$
+DECLARE
+  v_creator_id  uuid;
+  v_agency_id   uuid := '00000000-0000-0000-0000-000000000001';
+BEGIN
+  -- Creator ID aus dem bekannten Account holen
+  SELECT creator_id INTO v_creator_id
+  FROM public.creator_accounts
+  WHERE id = '59f903c1-1c40-4a14-81e2-83d90ae1b5bc';
+
+  IF v_creator_id IS NULL THEN
+    RAISE NOTICE 'Samuel Reinholz creator_id nicht gefunden – Events werden übersprungen.';
+    RETURN;
+  END IF;
+
+  -- Alte Dev-Events für Samuel löschen
+  DELETE FROM public.events
+  WHERE creator_id = v_creator_id
+    AND agency_id  = v_agency_id
+    AND title LIKE '[DEV]%';
+
+  -- Events einfügen
+  INSERT INTO public.events (agency_id, creator_id, title, type, start_at, end_at, location) VALUES
+
+  -- Vergangene Events
+  (v_agency_id, v_creator_id, '[DEV] Shoot – Adidas Kampagne',     'shoot',    now() - interval '18 days',                    now() - interval '18 days' + interval '3 hours', 'Studio Berlin Mitte'),
+  (v_agency_id, v_creator_id, '[DEV] Posting Deadline – Nike Reel', 'deadline', now() - interval '10 days',                    now() - interval '10 days' + interval '1 hour',  NULL),
+  (v_agency_id, v_creator_id, '[DEV] Brand Call – Red Bull',        'brand',    now() - interval '5 days' + interval '14 hours',now() - interval '5 days' + interval '15 hours', 'Zoom'),
+
+  -- Diese Woche
+  (v_agency_id, v_creator_id, '[DEV] Content Review – Q3 Plan',     'internal', now() + interval '1 day'  + interval '10 hours',now() + interval '1 day'  + interval '11 hours', 'Büro Hamburg'),
+  (v_agency_id, v_creator_id, '[DEV] Shoot – Samsung Galaxy S25',   'shoot',    now() + interval '3 days' + interval '9 hours', now() + interval '3 days' + interval '17 hours','Studio München'),
+
+  -- Nächste Woche
+  (v_agency_id, v_creator_id, '[DEV] Reise – Creator Summit Wien',  'travel',   now() + interval '8 days' + interval '7 hours', now() + interval '10 days' + interval '20 hours','Wien, Austria'),
+  (v_agency_id, v_creator_id, '[DEV] Posting – Dyson Collab',       'posting',  now() + interval '9 days' + interval '12 hours',now() + interval '9 days' + interval '13 hours', NULL),
+  (v_agency_id, v_creator_id, '[DEV] Brand Meeting – Spotify',      'brand',    now() + interval '11 days'+ interval '15 hours',now() + interval '11 days'+ interval '16 hours','Spotify HQ Berlin'),
+
+  -- Übernächste Woche
+  (v_agency_id, v_creator_id, '[DEV] Shoot – H&M Winter Kollektion','shoot',    now() + interval '15 days'+ interval '9 hours', now() + interval '15 days'+ interval '18 hours','Location TBD'),
+  (v_agency_id, v_creator_id, '[DEV] Posting Deadline – H&M Reel',  'deadline', now() + interval '17 days'+ interval '23 hours',now() + interval '17 days'+ interval '23 hours', NULL);
+
+  RAISE NOTICE 'Events für creator_id=% eingefügt.', v_creator_id;
+END $$;
+
+
+-- ─────────────────────────────────────────────────────────────
 -- Dev Seed: Fake YouTube Metrics für UI-Entwicklung
 -- Account: 59f903c1-1c40-4a14-81e2-83d90ae1b5bc (Samuel Reinholz / YouTube)
 -- ─────────────────────────────────────────────────────────────

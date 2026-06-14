@@ -4,24 +4,13 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
-  DollarSign,
-  Eye,
+  Check,
+  Copy,
+  ExternalLink,
   Loader2,
-  Pencil,
   TrendingUp,
-  Users,
 } from "lucide-react";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { useState } from "react";
 import {
   SiInstagram,
   SiOnlyfans,
@@ -31,21 +20,59 @@ import {
   SiYoutube,
 } from "react-icons/si";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StatusBar, StatusBarGroup } from "@/components/dashboard/status-bar";
+import { CalendarCard } from "@/components/dashboard/calendar-card";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import type { CreatorAccount, MetricsCurrent, MetricsDaily } from "@/domains/social-accounts/types";
+import type {
+  CreatorAccount,
+  MetricsCurrent,
+  MetricsDaily,
+} from "@/domains/social-accounts/types";
 import type { Creator } from "@/domains/creators/types";
+
+const OAUTH_SUPPORTED = new Set(["youtube"]);
+
+// ─── Copy Button ──────────────────────────────────────────────────────────────
+
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  function handleCopy() {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+  return (
+    <button
+      onClick={handleCopy}
+      className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+      title="Kopieren"
+    >
+      {copied ? (
+        <Check className="w-3.5 h-3.5 text-green-500" />
+      ) : (
+        <Copy className="w-3.5 h-3.5" />
+      )}
+    </button>
+  );
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type MetricsResponse = {
   accounts: CreatorAccount[];
-  metrics: Record<string, { current: MetricsCurrent | null; daily: MetricsDaily[] }>;
+  metrics: Record<
+    string,
+    { current: MetricsCurrent | null; daily: MetricsDaily[] }
+  >;
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -76,60 +103,196 @@ function fmt(n: number): string {
   return String(n);
 }
 
-function fmtDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("de-DE", { day: "2-digit", month: "short" });
+function fmtDuration(secs: number): string {
+  const m = Math.floor(secs / 60);
+  const s = Math.round(secs % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
+function fmtMoney(cents: number): string {
+  if (cents >= 1_000_000) return `€${(cents / 1_000_000).toFixed(1)}M`;
+  if (cents >= 1_000) return `€${(cents / 1_000).toFixed(1)}K`;
+  return `€${cents}`;
+}
 
-function StatCard({
-  label,
-  value,
-  icon,
-  sub,
+function shortDay(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("de-DE", { weekday: "short" });
+}
+
+// ─── Mini Bar Chart (IncomeCard-Style) ────────────────────────────────────────
+
+function MiniBarChart({
+  title,
+  data,
+  valueKey,
+  formatter = fmt,
+  className,
 }: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  sub?: string;
+  title: string;
+  data: MetricsDaily[];
+  valueKey: keyof MetricsDaily;
+  formatter?: (v: number) => string;
+  className?: string;
 }) {
+  const last7 = data.slice(-7);
+  const values = last7.map((d) => Number(d[valueKey] ?? 0));
+  const max = Math.max(...values, 1);
+  const total = values.reduce((s, v) => s + v, 0);
+
   return (
-    <div className="flex-1 min-w-0 rounded-xl border border-border-light bg-card px-5 py-4 flex gap-4 items-start">
-      <span className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 text-base">
-        {icon}
-      </span>
-      <div className="min-w-0">
-        <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
-        <p className="text-2xl font-bold tabular-nums tracking-tight">{value}</p>
-        {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
+    <div className={cn("bg-card rounded-2xl p-5", className)}>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-lg font-semibold">{title}</p>
+        <CopyButton value={formatter(total)} />
+      </div>
+
+      <div className="flex items-baseline gap-2 mb-6">
+        <span className="text-4xl font-light tracking-tight">
+          {formatter(total)}
+        </span>
+        <div className="ml-1">
+          <p className="text-xs text-muted-foreground">Letzte</p>
+          <p className="text-xs text-muted-foreground">7 Tage</p>
+        </div>
+      </div>
+
+      <div className="flex items-end justify-between gap-1 h-24">
+        {last7.map((d, idx) => {
+          const val = Number(d[valueKey] ?? 0);
+          const heightPct = max > 0 ? (val / max) * 100 : 0;
+          return (
+            <div key={idx} className="flex flex-col items-center flex-1 group">
+              <div className="relative flex items-end justify-center w-full h-20">
+                <div
+                  className="rounded-full w-full max-w-2.5 bg-secondary group-hover:bg-primary transition-colors duration-150"
+                  style={{ height: `${Math.max(heightPct, 6)}%` }}
+                />
+              </div>
+              <span className="text-[10px] mt-1.5 text-muted-foreground">
+                {shortDay(d.date)}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-// ─── Custom Tooltip ───────────────────────────────────────────────────────────
+// ─── Subscriber Growth Chart ───────────────────────────────────────────────────
 
-function ChartTooltip({
-  active,
-  payload,
-  label,
-  formatter,
+function SubscriberChart({
+  data,
+  className,
 }: {
-  active?: boolean;
-  payload?: { value: number; name: string }[];
-  label?: string;
-  formatter?: (v: number) => string;
+  data: MetricsDaily[];
+  className?: string;
 }) {
-  if (!active || !payload?.length) return null;
+  const last7 = data.slice(-7);
+  const values = last7.map((d) => d.audience ?? 0);
+  const min = Math.min(...values);
+  const max = Math.max(...values, min + 1);
+  const range = max - min || 1;
+
   return (
-    <div className="rounded-lg border border-border-light bg-card shadow-md px-3 py-2 text-xs">
-      <p className="text-muted-foreground mb-1">{label}</p>
-      {payload.map((p, i) => (
-        <p key={i} className="font-semibold">
-          {formatter ? formatter(p.value) : fmt(p.value)}
-        </p>
-      ))}
+    <div className={cn("bg-card rounded-2xl p-5", className)}>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-lg font-semibold">Abonnenten</p>
+        <CopyButton value={fmt(values[values.length - 1] ?? 0)} />
+      </div>
+
+      <div className="flex items-baseline gap-2 mb-6">
+        <span className="text-4xl font-light tracking-tight">
+          {fmt(values[values.length - 1] ?? 0)}
+        </span>
+        <div className="ml-1">
+          <p className="text-xs text-muted-foreground">Aktuell</p>
+          <p className="text-xs text-muted-foreground">Gesamt</p>
+        </div>
+      </div>
+
+      {/* SVG Line */}
+      <div className="h-24 w-full">
+        {values.length > 1 && (
+          <svg
+            viewBox={`0 0 ${(last7.length - 1) * 40} 80`}
+            className="w-full h-full overflow-visible"
+            preserveAspectRatio="none"
+          >
+            <defs>
+              <linearGradient id="subGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="0%"
+                  stopColor="var(--chart-yellow)"
+                  stopOpacity="0.25"
+                />
+                <stop
+                  offset="100%"
+                  stopColor="var(--chart-yellow)"
+                  stopOpacity="0"
+                />
+              </linearGradient>
+            </defs>
+            {/* Fill area */}
+            <path
+              d={[
+                ...values.map(
+                  (v, i) =>
+                    `${i === 0 ? "M" : "L"} ${i * 40} ${80 - ((v - min) / range) * 70}`,
+                ),
+                `L ${(values.length - 1) * 40} 80`,
+                "L 0 80 Z",
+              ].join(" ")}
+              fill="url(#subGrad)"
+            />
+            {/* Line */}
+            <path
+              d={values
+                .map(
+                  (v, i) =>
+                    `${i === 0 ? "M" : "L"} ${i * 40} ${80 - ((v - min) / range) * 70}`,
+                )
+                .join(" ")}
+              fill="none"
+              stroke="var(--chart-yellow)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </div>
+
+      <div className="flex justify-between mt-1">
+        {last7.map((d, i) => (
+          <span key={i} className="text-[10px] text-muted-foreground">
+            {shortDay(d.date)}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Stat Block (right column) ────────────────────────────────────────────────
+
+function StatBlock({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <CopyButton value={value} />
+      </div>
+      <p className="text-4xl font-light tracking-tight">{value}</p>
+      {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
     </div>
   );
 }
@@ -137,7 +300,6 @@ function ChartTooltip({
 // ─── Platform Content ─────────────────────────────────────────────────────────
 
 function PlatformContent({
-  account,
   current,
   daily,
 }: {
@@ -147,164 +309,214 @@ function PlatformContent({
 }) {
   if (!current) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-2">
-        <TrendingUp className="w-8 h-8 opacity-20" />
-        <p className="text-sm">Noch keine Daten.</p>
-        <p className="text-xs">Starte den ersten Sync im Creator-Profil.</p>
+      <div className="flex flex-col items-center justify-center py-24 gap-3 text-muted-foreground">
+        <TrendingUp className="w-10 h-10 opacity-20" />
+        <p className="text-sm">
+          Noch keine Daten — starte den ersten Sync im Creator-Profil.
+        </p>
       </div>
     );
   }
 
-  const audienceData = daily.map((d) => ({
-    date: fmtDate(d.date),
-    value: d.audience ?? 0,
-  }));
-
-  const viewsData = daily.map((d) => ({
-    date: fmtDate(d.date),
-    value: d.views ?? 0,
-  }));
-
-  const hasDaily = daily.length > 0;
+  const hasDaily = daily.length >= 2;
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* Stats row */}
-      <div className="flex gap-3 flex-wrap">
-        <StatCard
-          label="Abonnenten"
-          value={fmt(current.audience)}
-          icon={<Users className="w-4 h-4" />}
+    <div className="flex-1 min-h-0 grid grid-cols-12 grid-rows-[auto_1fr] gap-4">
+      {/* Row 1 – Views bars */}
+      {hasDaily ? (
+        <MiniBarChart
+          title="Views"
+          data={daily}
+          valueKey="views"
+          className="col-span-12 lg:col-span-4"
+        />
+      ) : (
+        <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex items-center justify-center text-sm text-muted-foreground">
+          Noch keine Verlaufsdaten
+        </div>
+      )}
+
+      {/* Row 1 – Subscriber line */}
+      {hasDaily ? (
+        <SubscriberChart data={daily} className="col-span-12 lg:col-span-4" />
+      ) : (
+        <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex items-center justify-center text-sm text-muted-foreground">
+          Noch keine Verlaufsdaten
+        </div>
+      )}
+
+      {/* Row 1 – Key Stats */}
+      <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
+        <StatBlock
+          label="Avg. View-Zeit"
+          value={fmtDuration(current.avg_view_duration_secs)}
+          sub={`${current.watch_time_hours_30d.toFixed(0)}h Watch Time (30d)`}
+        />
+        <div className="h-px bg-border-light" />
+        <StatBlock
+          label="Abo-Gewinn (30d)"
+          value={`+${fmt(current.subscribers_gained_30d)}`}
           sub={
-            current.audience_growth_30d
-              ? `${current.audience_growth_30d > 0 ? "+" : ""}${fmt(current.audience_growth_30d)} (30d)`
+            current.subscribers_lost_30d > 0
+              ? `−${fmt(current.subscribers_lost_30d)} verloren`
               : undefined
           }
         />
-        <StatCard
-          label="Views (30d)"
-          value={fmt(current.views_30d)}
-          icon={<Eye className="w-4 h-4" />}
+      </div>
+
+      {/* Row 2 – Likes bar chart */}
+      {hasDaily && (
+        <MiniBarChart
+          title="Likes"
+          data={daily}
+          valueKey="likes"
+          className="col-span-12 lg:col-span-4"
         />
-        <StatCard
+      )}
+
+      {/* Row 2 – Comments bar chart */}
+      {hasDaily && (
+        <MiniBarChart
+          title="Kommentare"
+          data={daily}
+          valueKey="comments"
+          className="col-span-12 lg:col-span-4"
+        />
+      )}
+
+      {/* Row 2 – More stats */}
+      <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
+        <StatBlock label="Views (30d)" value={fmt(current.views_30d)} />
+        <div className="h-px bg-border-light" />
+        <StatBlock
           label="Engagement Rate"
           value={`${current.engagement_rate?.toFixed(1) ?? "0"}%`}
-          icon={<TrendingUp className="w-4 h-4" />}
+          sub="Likes + Kommentare / Views"
         />
-        {current.monthly_revenue != null && (
-          <StatCard
-            label="MTD Revenue"
-            value={`$${(current.monthly_revenue / 1000).toFixed(1)}k`}
-            icon={<DollarSign className="w-4 h-4" />}
-          />
-        )}
-        {current.subscribers_gained_30d > 0 && (
-          <StatCard
-            label="Abo-Gewinn (30d)"
-            value={`+${fmt(current.subscribers_gained_30d)}`}
-            icon={<Users className="w-4 h-4" />}
-            sub={
-              current.subscribers_lost_30d > 0
-                ? `−${fmt(current.subscribers_lost_30d)} verloren`
-                : undefined
-            }
-          />
-        )}
-        {current.avg_view_duration_secs > 0 && (
-          <StatCard
-            label="Avg. View-Zeit"
-            value={`${Math.floor(current.avg_view_duration_secs / 60)}:${String(Math.round(current.avg_view_duration_secs % 60)).padStart(2, "0")}`}
-            icon={<Eye className="w-4 h-4" />}
-            sub={
-              current.watch_time_hours_30d > 0
-                ? `${current.watch_time_hours_30d.toFixed(0)}h gesamt (30d)`
-                : undefined
-            }
-          />
+      </div>
+    </div>
+  );
+}
+
+// ─── Connect Platform Card ────────────────────────────────────────────────────
+
+function ConnectPlatformCard({
+  creatorId,
+  platform,
+}: {
+  creatorId: string;
+  platform: string;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const supported = OAUTH_SUPPORTED.has(platform);
+
+  async function handleConnect() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/integrations/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ creator_id: creatorId, platform }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Fehler beim Erstellen des Links");
+      } else {
+        setInviteUrl(data.invite_url);
+      }
+    } catch {
+      setError("Netzwerkfehler");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleCopy() {
+    if (!inviteUrl) return;
+    navigator.clipboard.writeText(inviteUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+
+  return (
+    <>
+      <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-border-light bg-card">
+        <div className="flex items-center gap-2.5">
+          <span className="text-lg text-muted-foreground">
+            {PLATFORM_ICONS[platform] ?? null}
+          </span>
+          <div>
+            <p className="text-sm font-medium">
+              {PLATFORM_LABEL[platform] ?? platform}
+            </p>
+            <p className="text-xs text-muted-foreground">Nicht verbunden</p>
+          </div>
+        </div>
+
+        {supported ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleConnect}
+            disabled={loading}
+            className="gap-1.5 shrink-0"
+          >
+            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+            Verbinden
+          </Button>
+        ) : (
+          <span className="text-xs text-muted-foreground">Kommt bald</span>
         )}
       </div>
 
-      {hasDaily ? (
-        <div className="grid grid-cols-2 gap-4">
-          {/* Audience Trend */}
-          <div className="rounded-xl border border-border-light bg-card p-4">
-            <p className="text-xs font-semibold text-muted-foreground mb-4">
-              Abonnenten (30d)
+      {error && <p className="text-xs text-destructive px-1">{error}</p>}
+
+      <Dialog open={!!inviteUrl} onOpenChange={(o) => !o && setInviteUrl(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {PLATFORM_LABEL[platform] ?? platform} verbinden
+            </DialogTitle>
+            <DialogDescription>
+              Teile diesen Link mit dem Creator. Er ist 48 Stunden gültig und
+              startet den OAuth-Flow direkt.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex items-center gap-2 rounded-lg border bg-muted px-3 py-2.5">
+            <p className="flex-1 text-xs font-mono truncate text-muted-foreground">
+              {inviteUrl}
             </p>
-            <ResponsiveContainer width="100%" height={180}>
-              <AreaChart data={audienceData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-                <defs>
-                  <linearGradient id="colorAudience" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--chart-yellow)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="var(--chart-yellow)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                  tickLine={false}
-                  axisLine={false}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={fmt}
-                  width={40}
-                />
-                <Tooltip content={<ChartTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke="var(--chart-yellow)"
-                  strokeWidth={2}
-                  fill="url(#colorAudience)"
-                  dot={false}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <button
+              onClick={handleCopy}
+              className="shrink-0 p-1 rounded hover:bg-background transition-colors"
+            >
+              {copied ? (
+                <Check className="w-4 h-4 text-green-500" />
+              ) : (
+                <Copy className="w-4 h-4 text-muted-foreground" />
+              )}
+            </button>
           </div>
 
-          {/* Views per day */}
-          <div className="rounded-xl border border-border-light bg-card p-4">
-            <p className="text-xs font-semibold text-muted-foreground mb-4">
-              Views pro Tag (30d)
-            </p>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={viewsData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                  tickLine={false}
-                  axisLine={false}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={fmt}
-                  width={40}
-                />
-                <Tooltip content={<ChartTooltip />} />
-                <Bar
-                  dataKey="value"
-                  fill="var(--chart-yellow)"
-                  radius={[3, 3, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-xl border border-border-light bg-muted/30 flex items-center justify-center py-12 text-xs text-muted-foreground">
-          Noch keine Verlaufsdaten. Daten erscheinen nach dem ersten Sync.
-        </div>
-      )}
-    </div>
+          <a
+            href={inviteUrl ?? "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ExternalLink className="w-3 h-3" />
+            Link im Browser öffnen
+          </a>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -343,12 +555,25 @@ export default function CreatorDashboardPage() {
   const accounts = metricsData?.accounts ?? [];
   const metrics = metricsData?.metrics ?? {};
 
-  const activeAccounts = accounts.filter((a) => a.sync_status !== "disconnected");
+  const activeAccounts = accounts.filter(
+    (a) => a.sync_status !== "disconnected",
+  );
+  const firstAccount = activeAccounts[0];
+  const firstCurrent = firstAccount
+    ? (metrics[firstAccount.id]?.current ?? null)
+    : null;
+
+  const connectedPlatforms = new Set(
+    activeAccounts.map((a) => a.platform as string),
+  );
+  const disconnectedPlatforms = (creator?.platforms ?? []).filter(
+    (p) => !connectedPlatforms.has(p),
+  );
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="shrink-0 flex items-center gap-3 mb-6">
+      {/* Nav */}
+      <div className="shrink-0 flex items-center gap-2 mb-6">
         <Button
           variant="ghost"
           size="icon"
@@ -358,59 +583,89 @@ export default function CreatorDashboardPage() {
           <ArrowLeft className="w-4 h-4" />
         </Button>
 
-        {creator ? (
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+        {creator && (
+          <div className="flex items-center gap-2">
             <Avatar c={creator} />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold leading-tight truncate">
-                {creator.full_name}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {creator.handle ?? "—"} · {creator.niche ?? "—"}
-              </p>
-            </div>
+            <span className="text-sm text-muted-foreground">
+              {creator.handle ?? creator.full_name}
+            </span>
           </div>
-        ) : (
-          <div className="flex-1" />
         )}
-
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => router.push(`/creators/edit-form/${id}`)}
-          className="shrink-0"
-        >
-          <Pencil className="w-3.5 h-3.5 mr-1.5" />
-          Bearbeiten
-        </Button>
       </div>
 
-      {/* Content */}
       {isPending ? (
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
         </div>
       ) : activeAccounts.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-          <TrendingUp className="w-10 h-10 opacity-20" />
-          <p className="text-sm font-medium">Keine Plattform verbunden</p>
-          <p className="text-xs">Verbinde eine Plattform im Creator-Profil.</p>
+        /* ── Empty state: show all configured platforms with connect buttons ── */
+        <div className="flex-1 flex flex-col items-center justify-center gap-6">
+          {disconnectedPlatforms.length > 0 ? (
+            <div className="w-full max-w-sm flex flex-col gap-3">
+              <div className="flex flex-col items-center gap-1 mb-2 text-muted-foreground">
+                <TrendingUp className="w-8 h-8 opacity-20" />
+                <p className="text-sm font-medium">
+                  Noch keine Plattform verbunden
+                </p>
+              </div>
+              {disconnectedPlatforms.map((p) => (
+                <ConnectPlatformCard key={p} creatorId={id} platform={p} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+              <TrendingUp className="w-10 h-10 opacity-20" />
+              <p className="text-sm font-medium">Keine Plattform verbunden</p>
+            </div>
+          )}
         </div>
       ) : (
         <Tabs
-          defaultValue={activeAccounts[0]?.id}
+          defaultValue={firstAccount?.id}
           className="flex-1 min-h-0 flex flex-col"
         >
-          <TabsList variant="line" className="shrink-0 mb-5">
-            {activeAccounts.map((a) => (
-              <TabsTrigger key={a.id} value={a.id} className="gap-1.5 px-3">
-                <span className="text-base leading-none">
-                  {PLATFORM_ICONS[a.platform] ?? null}
-                </span>
-                {PLATFORM_LABEL[a.platform] ?? a.platform}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          {/* Header + Tabs combined */}
+          <div className="shrink-0 flex flex-col xl:flex-row xl:items-start xl:justify-between mb-6 gap-4">
+            <div>
+              {firstCurrent && (
+                <StatusBarGroup>
+                  <StatusBar
+                    label="Abonnenten"
+                    value={fmt(firstCurrent.audience)}
+                    variant="dark"
+                  />
+                  <StatusBar
+                    label="Views (30d)"
+                    value={fmt(firstCurrent.views_30d)}
+                    variant="yellow"
+                  />
+                  <StatusBar
+                    label="Engagement"
+                    value={`${firstCurrent.engagement_rate?.toFixed(1) ?? "0"}%`}
+                    variant="striped"
+                  />
+                  {firstCurrent.monthly_revenue != null && (
+                    <StatusBar
+                      label="MTD Revenue"
+                      value={fmtMoney(firstCurrent.monthly_revenue)}
+                      variant="light"
+                    />
+                  )}
+                </StatusBarGroup>
+              )}
+            </div>
+
+            <TabsList variant="line" className="shrink-0 self-end">
+              {activeAccounts.map((a) => (
+                <TabsTrigger key={a.id} value={a.id} className="gap-1.5 px-3">
+                  <span className="text-base leading-none">
+                    {PLATFORM_ICONS[a.platform] ?? null}
+                  </span>
+                  {PLATFORM_LABEL[a.platform] ?? a.platform}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto pb-4">
             {activeAccounts.map((a) => (
@@ -422,6 +677,8 @@ export default function CreatorDashboardPage() {
                 />
               </TabsContent>
             ))}
+
+            <CalendarCard creatorId={id} className="mt-4" />
           </div>
         </Tabs>
       )}
