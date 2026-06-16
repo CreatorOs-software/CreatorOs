@@ -156,3 +156,65 @@ SELECT
   '{}'::jsonb AS raw_data
 
 FROM generate_series(0, 29) AS s(i);
+
+
+-- ─────────────────────────────────────────────────────────────
+-- Dev Seed: Brands + Deals für Samuel Reinholz
+-- ─────────────────────────────────────────────────────────────
+
+DO $$
+DECLARE
+  v_creator_id  uuid;
+  v_agency_id   uuid := '00000000-0000-0000-0000-000000000001';
+  v_brand_adidas   uuid;
+  v_brand_nike     uuid;
+  v_brand_redbull  uuid;
+  v_brand_spotify  uuid;
+  v_brand_samsung  uuid;
+BEGIN
+  -- Creator ID holen
+  SELECT creator_id INTO v_creator_id
+  FROM public.creator_accounts
+  WHERE id = '59f903c1-1c40-4a14-81e2-83d90ae1b5bc';
+
+  IF v_creator_id IS NULL THEN
+    RAISE NOTICE 'Creator nicht gefunden – Deals werden übersprungen.';
+    RETURN;
+  END IF;
+
+  -- ── Brands upsert ──────────────────────────────────────────
+  INSERT INTO public.brands (agency_id, company_name, short_code, color, industry)
+  VALUES
+    (v_agency_id, 'Adidas',   'ADS', '#000000', 'Sports'),
+    (v_agency_id, 'Nike',     'NKE', '#FF6B00', 'Sports'),
+    (v_agency_id, 'Red Bull', 'RBL', '#CC0000', 'Beverages'),
+    (v_agency_id, 'Spotify',  'SPT', '#1DB954', 'Music'),
+    (v_agency_id, 'Samsung',  'SAM', '#1428A0', 'Tech')
+  ON CONFLICT DO NOTHING;
+
+  SELECT id INTO v_brand_adidas  FROM public.brands WHERE agency_id = v_agency_id AND short_code = 'ADS' LIMIT 1;
+  SELECT id INTO v_brand_nike    FROM public.brands WHERE agency_id = v_agency_id AND short_code = 'NKE' LIMIT 1;
+  SELECT id INTO v_brand_redbull FROM public.brands WHERE agency_id = v_agency_id AND short_code = 'RBL' LIMIT 1;
+  SELECT id INTO v_brand_spotify FROM public.brands WHERE agency_id = v_agency_id AND short_code = 'SPT' LIMIT 1;
+  SELECT id INTO v_brand_samsung FROM public.brands WHERE agency_id = v_agency_id AND short_code = 'SAM' LIMIT 1;
+
+  -- ── Alte Dev-Deals löschen ─────────────────────────────────
+  DELETE FROM public.deals
+  WHERE creator_id = v_creator_id
+    AND agency_id  = v_agency_id
+    AND title LIKE '[DEV]%';
+
+  -- ── Deals einfügen ─────────────────────────────────────────
+  INSERT INTO public.deals
+    (agency_id, creator_id, brand_id, title, budget, status, priority, deadline, campaign_type, deliverables)
+  VALUES
+    (v_agency_id, v_creator_id, v_brand_adidas,  '[DEV] Adidas Summer Campaign',    8500,  'production',  'high', current_date + 12,  'YouTube Reel',      ARRAY['1x YouTube Video', '3x Stories']),
+    (v_agency_id, v_creator_id, v_brand_nike,    '[DEV] Nike Running Series',       5000,  'negotiation', 'high', current_date + 21,  'Product Review',    ARRAY['2x YouTube Shorts']),
+    (v_agency_id, v_creator_id, v_brand_samsung, '[DEV] Samsung Galaxy S25 Review', 6200,  'confirmed',   'med',  current_date + 8,   'Tech Review',       ARRAY['1x YouTube Video']),
+    (v_agency_id, v_creator_id, v_brand_redbull, '[DEV] Red Bull Creator Camp',     3800,  'scheduled',   'med',  current_date + 35,  'Event Coverage',    ARRAY['2x YouTube Vlogs', '5x Stories']),
+    (v_agency_id, v_creator_id, v_brand_spotify, '[DEV] Spotify Podcast Promo',     2500,  'approval',    'low',  current_date + 5,   'Audio Integration', ARRAY['1x Mention', '1x Pinned Post']),
+    (v_agency_id, v_creator_id, v_brand_adidas,  '[DEV] Adidas Originals Drop',     4200,  'evaluating',  'med',  current_date + 45,  'Lifestyle',         ARRAY['1x YouTube Video', '2x Reels']),
+    (v_agency_id, v_creator_id, v_brand_nike,    '[DEV] Nike Collab Q3 2026',       12000, 'incoming',    'high', current_date + 60,  'Brand Collab',      ARRAY['3x YouTube Videos']);
+
+  RAISE NOTICE 'Brands + Deals für creator_id=% eingefügt.', v_creator_id;
+END $$;

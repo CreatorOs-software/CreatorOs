@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBar, StatusBarGroup } from "@/components/dashboard/status-bar";
 import { CalendarCard } from "@/components/dashboard/calendar-card";
+import { DealsCard } from "@/components/dashboard/deals-card";
 import {
   Dialog,
   DialogContent,
@@ -95,6 +96,16 @@ const PLATFORM_LABEL: Record<string, string> = {
   x: "X",
 };
 
+// Maps display names (stored in creator.platforms) → lowercase platform keys
+const PLATFORM_KEY: Record<string, string> = {
+  YouTube: "youtube",
+  Instagram: "instagram",
+  TikTok: "tiktok",
+  Spotify: "spotify",
+  OnlyFans: "onlyfans",
+  X: "x",
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmt(n: number): string {
@@ -134,8 +145,9 @@ function MiniBarChart({
   formatter?: (v: number) => string;
   className?: string;
 }) {
-  const last7 = data.slice(-7);
-  const values = last7.map((d) => Number(d[valueKey] ?? 0));
+  const [days, setDays] = useState<7 | 30>(7);
+  const slice = data.slice(-days);
+  const values = slice.map((d) => Number(d[valueKey] ?? 0));
   const max = Math.max(...values, 1);
   const total = values.reduce((s, v) => s + v, 0);
 
@@ -143,7 +155,23 @@ function MiniBarChart({
     <div className={cn("bg-card rounded-2xl p-5", className)}>
       <div className="flex items-center justify-between mb-4">
         <p className="text-lg font-semibold">{title}</p>
-        <CopyButton value={formatter(total)} />
+        <div className="flex items-center gap-1">
+          {([7, 30] as const).map((d) => (
+            <button
+              key={d}
+              onClick={() => setDays(d)}
+              className={cn(
+                "text-[10px] px-1.5 py-0.5 rounded-md transition-colors",
+                days === d
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {d}T
+            </button>
+          ))}
+          <CopyButton value={formatter(total)} />
+        </div>
       </div>
 
       <div className="flex items-baseline gap-2 mb-6">
@@ -152,25 +180,30 @@ function MiniBarChart({
         </span>
         <div className="ml-1">
           <p className="text-xs text-muted-foreground">Letzte</p>
-          <p className="text-xs text-muted-foreground">7 Tage</p>
+          <p className="text-xs text-muted-foreground">{days} Tage</p>
         </div>
       </div>
 
       <div className="flex items-end justify-between gap-1 h-24">
-        {last7.map((d, idx) => {
+        {slice.map((d, idx) => {
           const val = Number(d[valueKey] ?? 0);
           const heightPct = max > 0 ? (val / max) * 100 : 0;
           return (
             <div key={idx} className="flex flex-col items-center flex-1 group">
               <div className="relative flex items-end justify-center w-full h-20">
                 <div
-                  className="rounded-full w-full max-w-2.5 bg-secondary group-hover:bg-primary transition-colors duration-150"
-                  style={{ height: `${Math.max(heightPct, 6)}%` }}
+                  className="rounded-full w-full bg-secondary group-hover:bg-primary transition-colors duration-150"
+                  style={{
+                    height: `${Math.max(heightPct, 6)}%`,
+                    maxWidth: days === 30 ? "4px" : "10px",
+                  }}
                 />
               </div>
-              <span className="text-[10px] mt-1.5 text-muted-foreground">
-                {shortDay(d.date)}
-              </span>
+              {days === 7 && (
+                <span className="text-[10px] mt-1.5 text-muted-foreground">
+                  {shortDay(d.date)}
+                </span>
+              )}
             </div>
           );
         })}
@@ -398,21 +431,23 @@ function PlatformContent({
   );
 }
 
-// ─── Connect Platform Card ────────────────────────────────────────────────────
+// ─── Disconnected Platform Tab Content ───────────────────────────────────────
 
-function ConnectPlatformCard({
+function DisconnectedPlatformTab({
   creatorId,
-  platform,
+  platformKey,
+  platformLabel,
 }: {
   creatorId: string;
-  platform: string;
+  platformKey: string;
+  platformLabel: string;
 }) {
   const [loading, setLoading] = useState(false);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const supported = OAUTH_SUPPORTED.has(platform);
+  const supported = OAUTH_SUPPORTED.has(platformKey);
 
   async function handleConnect() {
     setLoading(true);
@@ -421,7 +456,7 @@ function ConnectPlatformCard({
       const res = await fetch("/api/integrations/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ creator_id: creatorId, platform }),
+        body: JSON.stringify({ creator_id: creatorId, platform: platformKey }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -446,43 +481,41 @@ function ConnectPlatformCard({
 
   return (
     <>
-      <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-border-light bg-card">
-        <div className="flex items-center gap-2.5">
-          <span className="text-lg text-muted-foreground">
-            {PLATFORM_ICONS[platform] ?? null}
-          </span>
-          <div>
-            <p className="text-sm font-medium">
-              {PLATFORM_LABEL[platform] ?? platform}
-            </p>
-            <p className="text-xs text-muted-foreground">Nicht verbunden</p>
+      <div className="flex flex-col items-center justify-center py-24 gap-5">
+        <div className="flex flex-col items-center gap-4 max-w-xs text-center">
+          <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center text-2xl text-muted-foreground">
+            {PLATFORM_ICONS[platformKey] ?? null}
           </div>
+          <div className="flex flex-col gap-1">
+            <p className="text-base font-semibold">Achtung!</p>
+            <p className="text-sm text-muted-foreground">
+              Es ist noch kein Account verbunden
+            </p>
+          </div>
+
+          {supported ? (
+            <Button
+              onClick={handleConnect}
+              disabled={loading}
+              className="gap-2 mt-1"
+            >
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              Jetzt {platformLabel} verbinden
+            </Button>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              OAuth für {platformLabel} wird demnächst unterstützt.
+            </p>
+          )}
+
+          {error && <p className="text-xs text-destructive">{error}</p>}
         </div>
-
-        {supported ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleConnect}
-            disabled={loading}
-            className="gap-1.5 shrink-0"
-          >
-            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-            Verbinden
-          </Button>
-        ) : (
-          <span className="text-xs text-muted-foreground">Kommt bald</span>
-        )}
       </div>
-
-      {error && <p className="text-xs text-destructive px-1">{error}</p>}
 
       <Dialog open={!!inviteUrl} onOpenChange={(o) => !o && setInviteUrl(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {PLATFORM_LABEL[platform] ?? platform} verbinden
-            </DialogTitle>
+            <DialogTitle>{platformLabel} verbinden</DialogTitle>
             <DialogDescription>
               Teile diesen Link mit dem Creator. Er ist 48 Stunden gültig und
               startet den OAuth-Flow direkt.
@@ -563,12 +596,26 @@ export default function CreatorDashboardPage() {
     ? (metrics[firstAccount.id]?.current ?? null)
     : null;
 
-  const connectedPlatforms = new Set(
+  // creator.platforms stores display names ("YouTube"), accounts use lowercase keys ("youtube")
+  const connectedKeys = new Set(
     activeAccounts.map((a) => a.platform as string),
   );
-  const disconnectedPlatforms = (creator?.platforms ?? []).filter(
-    (p) => !connectedPlatforms.has(p),
+  const disconnectedDisplayNames = (creator?.platforms ?? []).filter(
+    (p) => !connectedKeys.has(PLATFORM_KEY[p] ?? p.toLowerCase()),
   );
+
+  const allCreatorPlatforms = creator?.platforms ?? [];
+  const hasPlatforms = allCreatorPlatforms.length > 0;
+
+  // Tab value for disconnected platforms to avoid collision with account UUIDs
+  const disTabValue = (displayName: string) =>
+    `dis-${PLATFORM_KEY[displayName] ?? displayName.toLowerCase()}`;
+
+  const defaultTab =
+    firstAccount?.id ??
+    (disconnectedDisplayNames[0]
+      ? disTabValue(disconnectedDisplayNames[0])
+      : undefined);
 
   return (
     <div className="h-full flex flex-col">
@@ -597,35 +644,18 @@ export default function CreatorDashboardPage() {
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
         </div>
-      ) : activeAccounts.length === 0 ? (
-        /* ── Empty state: show all configured platforms with connect buttons ── */
-        <div className="flex-1 flex flex-col items-center justify-center gap-6">
-          {disconnectedPlatforms.length > 0 ? (
-            <div className="w-full max-w-sm flex flex-col gap-3">
-              <div className="flex flex-col items-center gap-1 mb-2 text-muted-foreground">
-                <TrendingUp className="w-8 h-8 opacity-20" />
-                <p className="text-sm font-medium">
-                  Noch keine Plattform verbunden
-                </p>
-              </div>
-              {disconnectedPlatforms.map((p) => (
-                <ConnectPlatformCard key={p} creatorId={id} platform={p} />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2 text-muted-foreground">
-              <TrendingUp className="w-10 h-10 opacity-20" />
-              <p className="text-sm font-medium">Keine Plattform verbunden</p>
-            </div>
-          )}
+      ) : !hasPlatforms ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+          <TrendingUp className="w-10 h-10 opacity-20" />
+          <p className="text-sm font-medium">Keine Plattform konfiguriert</p>
         </div>
       ) : (
         <Tabs
-          defaultValue={firstAccount?.id}
+          defaultValue={defaultTab}
           className="flex-1 min-h-0 flex flex-col"
         >
-          {/* Header + Tabs combined */}
-          <div className="shrink-0 flex flex-col xl:flex-row xl:items-start xl:justify-between mb-6 gap-4">
+          {/* Header + Tabs */}
+          <div className="shrink-0 flex flex-col xl:flex-row xl:items-end xl:justify-between mb-4 gap-4">
             <div>
               {firstCurrent && (
                 <StatusBarGroup>
@@ -655,19 +685,33 @@ export default function CreatorDashboardPage() {
               )}
             </div>
 
-            <TabsList variant="line" className="shrink-0 self-end">
+            <TabsList variant="underline">
+              {/* Connected platform tabs */}
               {activeAccounts.map((a) => (
-                <TabsTrigger key={a.id} value={a.id} className="gap-1.5 px-3">
-                  <span className="text-base leading-none">
+                <TabsTrigger key={a.id} value={a.id}>
+                  <span className="text-lg leading-none opacity-60">
                     {PLATFORM_ICONS[a.platform] ?? null}
                   </span>
                   {PLATFORM_LABEL[a.platform] ?? a.platform}
                 </TabsTrigger>
               ))}
+              {/* Disconnected platform tabs */}
+              {disconnectedDisplayNames.map((p) => {
+                const key = PLATFORM_KEY[p] ?? p.toLowerCase();
+                return (
+                  <TabsTrigger key={key} value={disTabValue(p)}>
+                    <span className="text-lg leading-none opacity-60">
+                      {PLATFORM_ICONS[key] ?? null}
+                    </span>
+                    {p}
+                  </TabsTrigger>
+                );
+              })}
             </TabsList>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto pb-4">
+          <div className="flex-1 min-h-0 overflow-y-auto pt-4 pb-2">
+            {/* Connected tab contents */}
             {activeAccounts.map((a) => (
               <TabsContent key={a.id} value={a.id}>
                 <PlatformContent
@@ -678,7 +722,24 @@ export default function CreatorDashboardPage() {
               </TabsContent>
             ))}
 
-            <CalendarCard creatorId={id} className="mt-4" />
+            {/* Disconnected tab contents */}
+            {disconnectedDisplayNames.map((p) => {
+              const key = PLATFORM_KEY[p] ?? p.toLowerCase();
+              return (
+                <TabsContent key={key} value={disTabValue(p)}>
+                  <DisconnectedPlatformTab
+                    creatorId={id}
+                    platformKey={key}
+                    platformLabel={p}
+                  />
+                </TabsContent>
+              );
+            })}
+
+            <div className="mt-4 grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <CalendarCard creatorId={id} />
+              <DealsCard creatorId={id} />
+            </div>
           </div>
         </Tabs>
       )}
