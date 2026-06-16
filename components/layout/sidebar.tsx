@@ -10,15 +10,27 @@ import {
   Calendar,
   Wallet,
   Star,
-  ChevronLeft,
-  ChevronRight,
   Inbox,
   Users,
   Settings2,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { QueryKeys } from "@/lib/query-keys";
 import { usePermissions } from "@/components/context/permission-provider";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuBadge,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarRail,
+  useSidebar,
+} from "@/components/ui/sidebar";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
@@ -35,105 +47,120 @@ const adminItems = [
   { label: "Settings", icon: Settings2, href: "/admin/settings" },
 ];
 
-interface SidebarProps {
-  isOpen: boolean;
-  onToggle: () => void;
-}
-
-export function Sidebar({ isOpen, onToggle }: SidebarProps) {
+export function AppSidebar() {
   const pathname = usePathname();
   const { isAdmin } = usePermissions();
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
 
-  const { data } = useQuery<{ threads: { unread: boolean; folder: string | null }[] }>({
+  const { data } = useQuery<{
+    threads: { unread: boolean; folder: string | null }[];
+  }>({
     queryKey: QueryKeys.inbox.all(),
     queryFn: () => fetch("/api/inbox").then((r) => r.json()),
     staleTime: 2 * 60_000,
   });
-  const unreadCount = (data?.threads ?? []).filter((t) => t.unread && t.folder !== "sent").length;
-
-  function NavItem({ item }: { item: { label: string; icon: React.ElementType; href: string } }) {
-    const Icon = item.icon;
-    const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-    return (
-      <li>
-        <Link
-          href={item.href}
-          className={cn(
-            "w-full flex items-center gap-3 rounded-xl text-sm font-medium transition-colors",
-            isOpen ? "px-4 py-3" : "px-0 py-3 justify-center",
-            isActive
-              ? "bg-sidebar-primary text-sidebar-primary-foreground"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted",
-          )}
-          title={!isOpen ? item.label : undefined}
-        >
-          <div className="relative">
-            <Icon className="w-5 h-5 shrink-0" />
-            {!isOpen && item.label === "Inbox" && unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-400" />
-            )}
-          </div>
-          {isOpen && <span className="flex-1">{item.label}</span>}
-          {isOpen && item.label === "Inbox" && unreadCount > 0 && (
-            <span className="text-[10px] bg-yellow-400 text-black rounded-full px-1.5 py-0.5 leading-none font-semibold">
-              {unreadCount}
-            </span>
-          )}
-        </Link>
-      </li>
-    );
-  }
+  const unreadCount = (data?.threads ?? []).filter(
+    (t) => t.unread && t.folder !== "sent",
+  ).length;
 
   return (
-    <aside
-      className={cn(
-        "hidden lg:flex flex-col bg-sidebar rounded-2xl fixed left-4 top-20 bottom-4 z-40 transition-all duration-300",
-        isOpen ? "w-56" : "w-16",
-      )}
-    >
-      {/* Toggle Button */}
-      <button
-        onClick={onToggle}
-        className="absolute -right-3 top-6 w-6 h-6 bg-card border border-border-light rounded-full flex items-center justify-center hover:bg-muted transition-colors"
-      >
-        {isOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-      </button>
+    <Sidebar collapsible="icon">
+      {/* Logo */}
+      <SidebarHeader className="p-3">
+        <div className="flex items-center h-9">
+          {isCollapsed ? (
+            <div className="w-8 h-8 rounded-lg border border-foreground/20 flex items-center justify-center shrink-0">
+              <span className="text-xs font-bold">C</span>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-foreground/20 px-3 py-1.5">
+              <span className="text-base font-semibold">Crextio</span>
+            </div>
+          )}
+        </div>
+      </SidebarHeader>
 
-      {/* Main Navigation */}
-      <nav className="flex-1 px-2 py-2 overflow-y-auto">
-        <ul className="space-y-2">
-          {navItems.map((item) => (
-            <NavItem key={item.label} item={item} />
-          ))}
-        </ul>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive =
+                  pathname === item.href ||
+                  pathname.startsWith(item.href + "/");
+                const isInbox = item.label === "Inbox";
+                return (
+                  <SidebarMenuItem key={item.label}>
+                    <SidebarMenuButton
+                      render={<Link href={item.href} />}
+                      isActive={isActive}
+                      tooltip={item.label}
+                      className="h-10"
+                    >
+                      <div className="relative">
+                        <Icon />
+                        {isCollapsed && isInbox && unreadCount > 0 && (
+                          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-400" />
+                        )}
+                      </div>
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                    {!isCollapsed && isInbox && unreadCount > 0 && (
+                      <SidebarMenuBadge className="bg-yellow-400 text-black text-[10px] font-semibold rounded-full px-1.5">
+                        {unreadCount}
+                      </SidebarMenuBadge>
+                    )}
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-        {/* Admin Section */}
         {isAdmin && (
-          <>
-            <div className={cn("my-3 border-t border-border-light", !isOpen && "mx-2")} />
-            {isOpen && (
-              <p className="px-4 mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-                Admin
-              </p>
-            )}
-            <ul className="space-y-2">
-              {adminItems.map((item) => (
-                <NavItem key={item.label} item={item} />
-              ))}
-            </ul>
-          </>
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive =
+                    pathname === item.href ||
+                    pathname.startsWith(item.href + "/");
+                  return (
+                    <SidebarMenuItem key={item.label}>
+                      <SidebarMenuButton
+                        render={<Link href={item.href} />}
+                        isActive={isActive}
+                        tooltip={item.label}
+                        className="h-10"
+                      >
+                        <Icon />
+                        <span>{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
         )}
-      </nav>
+      </SidebarContent>
 
-      {/* Bottom Section */}
-      {isOpen && (
-        <div className="p-3 border-t border-border-light">
-          <div className="bg-accent/50 rounded-xl p-3">
-            <p className="text-xs text-muted-foreground mb-1">Need help?</p>
+      {!isCollapsed && (
+        <SidebarFooter className="p-3">
+          <div className="bg-sidebar-accent/50 rounded-xl p-3">
+            <p className="text-xs text-sidebar-foreground/60 mb-1">
+              Need help?
+            </p>
             <p className="text-sm font-medium">Contact Support</p>
           </div>
-        </div>
+        </SidebarFooter>
       )}
-    </aside>
+
+      <SidebarRail />
+    </Sidebar>
   );
 }
