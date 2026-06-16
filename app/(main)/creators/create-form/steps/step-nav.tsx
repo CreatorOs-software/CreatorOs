@@ -34,7 +34,7 @@ export function StepNav({
           type="button"
           onClick={onNext}
           disabled={nextDisabled}
-          size={"xl"}
+          size={"lg"}
           className="bg-yellow-400 text-black hover:bg-yellow-300"
         >
           Weiter
