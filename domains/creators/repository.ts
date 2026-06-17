@@ -83,4 +83,9 @@ export const CreatorRepository = {
 
     if (error) throw new Error(error.message);
   },
+
+  async remove(supabase: SupabaseClient, id: string): Promise<void> {
+    const { error } = await supabase.from("creators").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+  },
 };

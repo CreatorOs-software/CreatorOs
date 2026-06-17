@@ -66,9 +66,10 @@ function isToday(d: Date) {
 
 interface CalendarCardProps {
   className?: string;
+  creatorId?: string;
 }
 
-export function CalendarCard({ className }: CalendarCardProps) {
+export function CalendarCard({ className, creatorId }: CalendarCardProps) {
   const [weekOffset, setWeekOffset] = useState(0);
 
   const days = getWeekDays(weekOffset);
@@ -76,11 +77,12 @@ export function CalendarCard({ className }: CalendarCardProps) {
   const to = new Date(days[6].getTime() + 86_400_000 - 1).toISOString();
 
   const { data, isPending } = useQuery<{ events: CalendarEvent[] }>({
-    queryKey: QueryKeys.events.range(from, to),
-    queryFn: () =>
-      fetch(`/api/events?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`).then(
-        (r) => r.json(),
-      ),
+    queryKey: [...QueryKeys.events.range(from, to), creatorId ?? "all"],
+    queryFn: () => {
+      const params = new URLSearchParams({ from, to });
+      if (creatorId) params.set("creator_id", creatorId);
+      return fetch(`/api/events?${params}`).then((r) => r.json());
+    },
     staleTime: 5 * 60_000,
   });
 

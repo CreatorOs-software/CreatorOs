@@ -7,6 +7,8 @@ export async function GET(req: Request) {
     const from = searchParams.get("from");
     const to = searchParams.get("to");
 
+    const creatorId = searchParams.get("creator_id");
+
     let query = supabase
       .from("events")
       .select(
@@ -17,6 +19,7 @@ export async function GET(req: Request) {
 
     if (from) query = query.gte("start_at", from);
     if (to) query = query.lte("start_at", to);
+    if (creatorId) query = query.eq("creator_id", creatorId);
 
     const { data, error } = await query;
     if (error) throw new Error(error.message);

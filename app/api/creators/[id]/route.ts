@@ -28,3 +28,16 @@ export async function PATCH(
     return toErrorResponse(e);
   }
 }
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
+    await CreatorService.remove(id);
+    return Response.json({ ok: true });
+  } catch (e) {
+    return toErrorResponse(e);
+  }
+}
