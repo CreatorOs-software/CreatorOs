@@ -112,7 +112,7 @@ const PLATFORM_KEY: Record<string, string> = {
   X: "x",
 };
 
-const OAUTH_SUPPORTED = new Set(["youtube"]);
+const OAUTH_SUPPORTED = new Set(["youtube", "instagram"]);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -215,11 +215,11 @@ export function CreatorSheet({
   });
 
   const syncMutation = useMutation({
-    mutationFn: (accountId: string) =>
+    mutationFn: ({ accountId, platform }: { accountId: string; platform: string }) =>
       fetch("/api/integrations/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ account_id: accountId }),
+        body: JSON.stringify({ account_id: accountId, platform }),
       }).then((r) => {
         if (!r.ok) throw new Error("Sync fehlgeschlagen");
         return r.json();
@@ -396,15 +396,15 @@ export function CreatorSheet({
                             variant="ghost"
                             size="sm"
                             className="h-7 w-7 p-0"
-                            disabled={syncMutation.isPending && syncMutation.variables === account!.id}
-                            onClick={() => syncMutation.mutate(account!.id)}
+                            disabled={syncMutation.isPending && syncMutation.variables?.accountId === account!.id}
+                            onClick={() => syncMutation.mutate({ accountId: account!.id, platform: key })}
                             title="Jetzt synchronisieren"
                           >
                             <RefreshCw
                               className={cn(
                                 "w-3.5 h-3.5",
                                 syncMutation.isPending &&
-                                  syncMutation.variables === account!.id &&
+                                  syncMutation.variables?.accountId === account!.id &&
                                   "animate-spin",
                               )}
                             />

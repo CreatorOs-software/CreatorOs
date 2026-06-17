@@ -1,20 +1,24 @@
 import { getAuthContext, toErrorResponse } from "@/lib/auth-context";
 
-// Manual sync trigger — delegates to the sync-youtube Edge Function so that
-// both the cron job and the manual button use identical sync logic.
+const PLATFORM_FUNCTION: Record<string, string> = {
+  youtube: "sync-youtube",
+  instagram: "sync-instagram",
+};
+
 export async function POST(req: Request) {
   try {
-    await getAuthContext(); // auth gate — verifies the request is from a valid agency user
-    const { account_id } = await req.json();
+    await getAuthContext();
+    const { account_id, platform = "youtube" } = await req.json();
 
     if (!account_id) {
       return Response.json({ error: "account_id is required" }, { status: 400 });
     }
 
+    const fnName = PLATFORM_FUNCTION[platform] ?? "sync-youtube";
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-    const res = await fetch(`${supabaseUrl}/functions/v1/sync-youtube`, {
+    const res = await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${serviceRoleKey}`,

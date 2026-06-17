@@ -17,6 +17,9 @@ export async function GET(
   const state = searchParams.get("state"); // raw invite token
   const error = searchParams.get("error");
 
+  // Use NEXT_PUBLIC_APP_URL so redirect_uri in token exchange matches
+  // exactly what was sent in the initial OAuth authorization request.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? req.nextUrl.origin;
   const origin = req.nextUrl.origin;
 
   if (error) {
@@ -30,7 +33,7 @@ export async function GET(
   try {
     const service = new SocialAccountService(serviceClient);
 
-    const redirectUri = `${origin}/api/oauth/callback/${platform}`;
+    const redirectUri = `${appUrl}/api/oauth/callback/${platform}`;
 
     await service.handleOAuthCallback({
       rawToken: state,

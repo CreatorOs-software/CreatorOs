@@ -217,9 +217,15 @@ function MiniBarChart({
 function SubscriberChart({
   data,
   className,
+  title = "Abonnenten",
+  color = "var(--chart-yellow)",
+  gradientId = "subGrad",
 }: {
   data: MetricsDaily[];
   className?: string;
+  title?: string;
+  color?: string;
+  gradientId?: string;
 }) {
   const last7 = data.slice(-7);
   const values = last7.map((d) => d.audience ?? 0);
@@ -230,7 +236,7 @@ function SubscriberChart({
   return (
     <div className={cn("bg-card rounded-2xl p-5", className)}>
       <div className="flex items-center justify-between mb-4">
-        <p className="text-lg font-semibold">Abonnenten</p>
+        <p className="text-lg font-semibold">{title}</p>
         <CopyButton value={fmt(values[values.length - 1] ?? 0)} />
       </div>
 
@@ -253,20 +259,11 @@ function SubscriberChart({
             preserveAspectRatio="none"
           >
             <defs>
-              <linearGradient id="subGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop
-                  offset="0%"
-                  stopColor="var(--chart-yellow)"
-                  stopOpacity="0.25"
-                />
-                <stop
-                  offset="100%"
-                  stopColor="var(--chart-yellow)"
-                  stopOpacity="0"
-                />
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+                <stop offset="100%" stopColor={color} stopOpacity="0" />
               </linearGradient>
             </defs>
-            {/* Fill area */}
             <path
               d={[
                 ...values.map(
@@ -276,9 +273,8 @@ function SubscriberChart({
                 `L ${(values.length - 1) * 40} 80`,
                 "L 0 80 Z",
               ].join(" ")}
-              fill="url(#subGrad)"
+              fill={`url(#${gradientId})`}
             />
-            {/* Line */}
             <path
               d={values
                 .map(
@@ -287,7 +283,7 @@ function SubscriberChart({
                 )
                 .join(" ")}
               fill="none"
-              stroke="var(--chart-yellow)"
+              stroke={color}
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -330,46 +326,27 @@ function StatBlock({
   );
 }
 
-// ─── Platform Content ─────────────────────────────────────────────────────────
+// ─── YouTube Content ──────────────────────────────────────────────────────────
 
-function PlatformContent({
+function YouTubeContent({
   current,
   daily,
 }: {
-  account: CreatorAccount;
-  current: MetricsCurrent | null;
+  current: MetricsCurrent;
   daily: MetricsDaily[];
 }) {
-  if (!current) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 gap-3 text-muted-foreground">
-        <TrendingUp className="w-10 h-10 opacity-20" />
-        <p className="text-sm">
-          Noch keine Daten — starte den ersten Sync im Creator-Profil.
-        </p>
-      </div>
-    );
-  }
-
   const hasDaily = daily.length >= 2;
 
   return (
     <div className="flex-1 min-h-0 grid grid-cols-12 grid-rows-[auto_1fr] gap-4">
-      {/* Row 1 – Views bars */}
       {hasDaily ? (
-        <MiniBarChart
-          title="Views"
-          data={daily}
-          valueKey="views"
-          className="col-span-12 lg:col-span-4"
-        />
+        <MiniBarChart title="Views" data={daily} valueKey="views" className="col-span-12 lg:col-span-4" />
       ) : (
         <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex items-center justify-center text-sm text-muted-foreground">
           Noch keine Verlaufsdaten
         </div>
       )}
 
-      {/* Row 1 – Subscriber line */}
       {hasDaily ? (
         <SubscriberChart data={daily} className="col-span-12 lg:col-span-4" />
       ) : (
@@ -378,7 +355,6 @@ function PlatformContent({
         </div>
       )}
 
-      {/* Row 1 – Key Stats */}
       <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
         <StatBlock
           label="Avg. View-Zeit"
@@ -397,27 +373,13 @@ function PlatformContent({
         />
       </div>
 
-      {/* Row 2 – Likes bar chart */}
       {hasDaily && (
-        <MiniBarChart
-          title="Likes"
-          data={daily}
-          valueKey="likes"
-          className="col-span-12 lg:col-span-4"
-        />
+        <MiniBarChart title="Likes" data={daily} valueKey="likes" className="col-span-12 lg:col-span-4" />
+      )}
+      {hasDaily && (
+        <MiniBarChart title="Kommentare" data={daily} valueKey="comments" className="col-span-12 lg:col-span-4" />
       )}
 
-      {/* Row 2 – Comments bar chart */}
-      {hasDaily && (
-        <MiniBarChart
-          title="Kommentare"
-          data={daily}
-          valueKey="comments"
-          className="col-span-12 lg:col-span-4"
-        />
-      )}
-
-      {/* Row 2 – More stats */}
       <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
         <StatBlock label="Views (30d)" value={fmt(current.views_30d)} />
         <div className="h-px bg-border-light" />
@@ -429,6 +391,138 @@ function PlatformContent({
       </div>
     </div>
   );
+}
+
+// ─── Instagram Content ────────────────────────────────────────────────────────
+
+function InstagramContent({
+  current,
+  daily,
+}: {
+  current: MetricsCurrent;
+  daily: MetricsDaily[];
+}) {
+  const hasDaily = daily.length >= 2;
+  const raw = (current.raw ?? {}) as {
+    reach30d?: number;
+    profileViews30d?: number;
+    mediaCount?: number;
+    websiteClicks7d?: number;
+    websiteClicks30d?: number;
+    storyViews?: number;
+    reelReach30d?: number;
+    feedPosts30d?: number;
+  };
+
+  return (
+    <div className="flex-1 min-h-0 grid grid-cols-12 grid-rows-[auto_1fr] gap-4">
+      {/* Row 1 – Follower chart or stat */}
+      {hasDaily ? (
+        <SubscriberChart
+          data={daily}
+          title="Follower"
+          color="var(--color-primary)"
+          gradientId="igFollowerGrad"
+          className="col-span-12 lg:col-span-4"
+        />
+      ) : (
+        <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
+          <StatBlock
+            label="Follower"
+            value={fmt(current.audience)}
+            sub={
+              current.audience_growth_7d !== 0
+                ? `${current.audience_growth_7d >= 0 ? "+" : ""}${fmt(current.audience_growth_7d)} diese Woche`
+                : undefined
+            }
+          />
+        </div>
+      )}
+
+      {/* Row 1 – Views */}
+      {hasDaily ? (
+        <MiniBarChart title="Views" data={daily} valueKey="views" className="col-span-12 lg:col-span-4" />
+      ) : (
+        <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
+          <StatBlock label="Views (30d)" value={fmt(current.views_30d)} />
+        </div>
+      )}
+
+      {/* Row 1 – Reach + Profilbesuche */}
+      <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
+        <StatBlock label="Reach (30d)" value={fmt(raw.reach30d ?? 0)} />
+        <div className="h-px bg-border-light" />
+        <StatBlock label="Profilbesuche (30d)" value={fmt(raw.profileViews30d ?? 0)} />
+      </div>
+
+      {/* Row 2 – Story Views */}
+      <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
+        <StatBlock
+          label="Story Views (live)"
+          value={fmt(raw.storyViews ?? 0)}
+          sub="Aktuell laufende Stories"
+        />
+        <div className="h-px bg-border-light" />
+        <StatBlock
+          label="Reel Reichweite (30d)"
+          value={fmt(raw.reelReach30d ?? 0)}
+        />
+      </div>
+
+      {/* Row 2 – Link Clicks */}
+      <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
+        <StatBlock
+          label="Linkklicks (7d)"
+          value={fmt(raw.websiteClicks7d ?? 0)}
+          sub={`${fmt(raw.websiteClicks30d ?? 0)} in 30d`}
+        />
+        <div className="h-px bg-border-light" />
+        <StatBlock
+          label="Feed Posts (30d)"
+          value={fmt(raw.feedPosts30d ?? 0)}
+          sub={`${fmt(raw.mediaCount ?? 0)} Beiträge gesamt`}
+        />
+      </div>
+
+      {/* Row 3 – Follower Growth */}
+      <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
+        <StatBlock
+          label="Follower-Wachstum (7d)"
+          value={`${current.audience_growth_7d >= 0 ? "+" : ""}${fmt(current.audience_growth_7d)}`}
+          sub={`${current.audience_growth_30d >= 0 ? "+" : ""}${fmt(current.audience_growth_30d)} (30d)`}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── Platform Content (dispatcher) ────────────────────────────────────────────
+
+function PlatformContent({
+  account,
+  current,
+  daily,
+}: {
+  account: CreatorAccount;
+  current: MetricsCurrent | null;
+  daily: MetricsDaily[];
+}) {
+  if (!current) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3 text-muted-foreground">
+        <TrendingUp className="w-10 h-10 opacity-20" />
+        <p className="text-sm">
+          Noch keine Daten — starte den ersten Sync im Creator-Profil.
+        </p>
+      </div>
+    );
+  }
+
+  if (account.platform === "instagram") {
+    return <InstagramContent current={current} daily={daily} />;
+  }
+
+  return <YouTubeContent current={current} daily={daily} />;
 }
 
 // ─── Disconnected Platform Tab Content ───────────────────────────────────────
