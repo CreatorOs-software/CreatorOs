@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface StatusBarProps {
@@ -15,12 +16,23 @@ export function StatusBar({
   variant = "light",
   className,
 }: StatusBarProps) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+
   return (
     <div className={cn("flex flex-col gap-1", className)}>
       <span className="text-sm text-muted-foreground">{label}</span>
       <div
+        onClick={handleCopy}
+        title="Kopieren"
         className={cn(
-          "rounded-lg px-4 py-2 text-sm font-medium min-w-[60px]",
+          "rounded-lg px-4 py-2 text-sm font-medium min-w-[60px] cursor-pointer select-none transition-opacity active:opacity-70",
           variant === "dark" && "bg-secondary text-secondary-foreground",
           variant === "yellow" && "bg-primary text-primary-foreground",
           variant === "striped" &&
@@ -30,9 +42,9 @@ export function StatusBar({
         )}
       >
         {variant === "striped" ? (
-          <div className="relative z-10">{value}</div>
+          <div className="relative z-10">{copied ? "Kopiert!" : value}</div>
         ) : (
-          value
+          copied ? "Kopiert!" : value
         )}
         {variant === "striped" && (
           <div className="absolute inset-0 flex">

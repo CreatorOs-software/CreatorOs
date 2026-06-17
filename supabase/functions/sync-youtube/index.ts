@@ -1,11 +1,15 @@
 // sync-youtube – Supabase Edge Function
-// Pulls YouTube channel stats + recent video metrics into creator_social_accounts / creator_social_snapshots.
-// Triggered by: cron (all connected accounts) or POST { account_id } (single).
+// Pulls YouTube channel stats into creator_account_metrics_current.
+// Triggered by: pg_cron (all active YouTube accounts) or POST { account_id } (single).
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const TOKEN_URL = "https://oauth2.googleapis.com/token";
+const YT_CLIENT_ID = Deno.env.get("YOUTUBE_CLIENT_ID")!;
+const YT_CLIENT_SECRET = Deno.env.get("YOUTUBE_CLIENT_SECRET")!;
+const GOOGLE_TOKEN = "https://oauth2.googleapis.com/token";
+const YT_API = "https://www.googleapis.com/youtube/v3";
+const YT_ANALYTICS = "https://youtubeanalytics.googleapis.com/v2";
 
 const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
@@ -14,149 +18,178 @@ const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 type AccountRow = {
   id: string;
   agency_id: string;
-  access_token: string | null;
-  refresh_token: string | null;
-  token_expires_at: string | null;
+  external_id: string;
+  sync_priority: number;
+  connection: {
+    access_token: string;
+    refresh_token: string | null;
+    token_expires_at: string | null;
+  };
 };
 
-// ---- OAuth helpers ----------------------------------------
+// ---- Helpers ----------------------------------------
 
-async function getOAuthApp(agency_id: string) {
-  const { data, error } = await db
-    .from("agency_oauth_apps")
-    .select("client_id, client_secret")
-    .eq("agency_id", agency_id)
-    .eq("provider", "google")
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Google OAuth app credentials missing");
-  return data as { client_id: string; client_secret: string };
+function nextSyncAt(priority: number): string {
+  const hours = priority === 1 ? 6 : priority === 2 ? 24 : 7 * 24;
+  return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
 }
 
-async function refreshToken(account: AccountRow): Promise<string> {
-  if (!account.refresh_token) throw new Error("No refresh token – reconnect required");
-  const app = await getOAuthApp(account.agency_id);
-  const res = await fetch(TOKEN_URL, {
+function today() {
+  return new Date().toISOString().split("T")[0];
+}
+
+function daysAgo(n: number) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().split("T")[0];
+}
+
+// ---- Token management ----------------------------------------
+
+async function refreshAccessToken(account: AccountRow): Promise<string> {
+  if (!account.connection.refresh_token) {
+    throw new Error("No refresh token – reconnect required");
+  }
+
+  console.log(`[refresh] using client_id prefix: ${YT_CLIENT_ID?.slice(0, 20)}...`);
+
+  const res = await fetch(GOOGLE_TOKEN, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id: app.client_id,
-      client_secret: app.client_secret,
-      refresh_token: account.refresh_token,
+      client_id: YT_CLIENT_ID,
+      client_secret: YT_CLIENT_SECRET,
+      refresh_token: account.connection.refresh_token,
       grant_type: "refresh_token",
     }),
   });
-  const json = await res.json() as Record<string, string>;
-  if (!res.ok) throw new Error(`Token refresh failed: ${json.error_description ?? json.error}`);
-  await db.from("creator_social_accounts").update({
-    access_token: json.access_token,
-    token_expires_at: new Date(Date.now() + (Number(json.expires_in) - 60) * 1000).toISOString(),
-  }).eq("id", account.id);
+
+  const json = (await res.json()) as Record<string, string>;
+  if (!res.ok) {
+    throw new Error(
+      `Token refresh failed: ${json.error_description ?? json.error}`,
+    );
+  }
+
+  const expiresAt = new Date(
+    Date.now() + (Number(json.expires_in) - 60) * 1000,
+  ).toISOString();
+
+  await db
+    .from("platform_connections")
+    .update({ access_token: json.access_token, token_expires_at: expiresAt })
+    .eq("creator_account_id", account.id)
+    .eq("status", "active");
+
   return json.access_token;
 }
 
-async function getToken(account: AccountRow): Promise<string> {
-  const exp = account.token_expires_at ? +new Date(account.token_expires_at) : 0;
-  if (account.access_token && exp > Date.now() + 30_000) return account.access_token;
-  return refreshToken(account);
+async function getAccessToken(account: AccountRow): Promise<string> {
+  const exp = account.connection.token_expires_at
+    ? +new Date(account.connection.token_expires_at)
+    : 0;
+  if (account.connection.access_token && exp > Date.now() + 30_000) {
+    return account.connection.access_token;
+  }
+  return refreshAccessToken(account);
 }
 
-async function ytFetch(account: AccountRow, url: string): Promise<unknown> {
-  let token = await getToken(account);
-  const doFetch = (t: string) => fetch(url, { headers: { Authorization: `Bearer ${t}` } });
-  let res = await doFetch(token);
-  if (res.status === 401) { token = await refreshToken(account); res = await doFetch(token); }
-  const json = await res.json();
+async function ytFetch(
+  token: string,
+  url: string,
+): Promise<Record<string, unknown>> {
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const json = (await res.json()) as Record<string, unknown>;
   if (!res.ok) {
-    throw new Error(
-      `YouTube API ${res.status}: ${(json as Record<string, any>).error?.message ?? JSON.stringify(json)}`,
-    );
+    const msg =
+      (json.error as Record<string, unknown>)?.message ?? JSON.stringify(json);
+    throw new Error(`YouTube API ${res.status}: ${msg}`);
   }
   return json;
 }
 
-// ---- Stats pull ----------------------------------------
+// ---- Sync logic ----------------------------------------
 
-async function pullChannelStats(
-  account: AccountRow,
-): Promise<{ followers: number; totalViews: number; recentPostCount: number }> {
-  const chRes = await ytFetch(
-    account,
-    "https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,contentDetails&mine=true",
-  ) as Record<string, any>;
+async function syncAccount(account: AccountRow): Promise<void> {
+  console.log(`[sync-youtube] start account=${account.id} channel=${account.external_id}`);
 
-  const ch = chRes.items?.[0];
-  if (!ch) throw new Error("No YouTube channel found for this account");
+  const token = await getAccessToken(account);
+  console.log(`[sync-youtube] token ok`);
 
-  const followers = Number(ch.statistics?.subscriberCount ?? 0);
-  const totalViews = Number(ch.statistics?.viewCount ?? 0);
-  const uploadsPlaylist: string | undefined = ch.contentDetails?.relatedPlaylists?.uploads;
-  let recentPosts: Record<string, unknown>[] = [];
-  let er: number | null = null;
+  const analyticsBase =
+    `${YT_ANALYTICS}/reports?ids=channel%3D%3D${account.external_id}` +
+    `&startDate=${daysAgo(90)}&endDate=${today()}`;
 
-  if (uploadsPlaylist) {
-    const plRes = await ytFetch(
-      account,
-      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&maxResults=5&playlistId=${uploadsPlaylist}`,
-    ) as Record<string, any>;
+  const [channelRes, totalsRes] = await Promise.all([
+    ytFetch(token, `${YT_API}/channels?part=statistics&id=${account.external_id}`),
+    ytFetch(
+      token,
+      analyticsBase +
+        `&metrics=views,estimatedMinutesWatched,likes,comments,subscribersGained,subscribersLost,averageViewDuration`,
+    ),
+  ]);
 
-    const videoIds: string[] = (plRes.items ?? [])
-      .map((it: Record<string, any>) => it.contentDetails?.videoId)
-      .filter(Boolean);
+  console.log(`[sync-youtube] api calls ok — channel items: ${(channelRes.items as unknown[])?.length ?? 0}, analytics rows: ${(totalsRes.rows as unknown[])?.length ?? 0}`);
 
-    if (videoIds.length) {
-      const vRes = await ytFetch(
-        account,
-        `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoIds.join(",")}`,
-      ) as Record<string, any>;
+  const stats =
+    (((channelRes.items as unknown[])?.[0] as Record<string, unknown>)
+      ?.statistics as Record<string, string>) ?? {};
 
-      recentPosts = (vRes.items ?? []).map((v: Record<string, any>) => ({
-        id: v.id,
-        title: v.snippet?.title ?? "",
-        published_at: v.snippet?.publishedAt ?? null,
-        thumbnail: v.snippet?.thumbnails?.medium?.url ?? v.snippet?.thumbnails?.default?.url ?? null,
-        views: Number(v.statistics?.viewCount ?? 0),
-        likes: Number(v.statistics?.likeCount ?? 0),
-        comments: Number(v.statistics?.commentCount ?? 0),
-        url: `https://www.youtube.com/watch?v=${v.id}`,
-      }));
+  const row = (totalsRes.rows as number[][])?.[0] ?? [];
 
-      const sumViews = recentPosts.reduce((s, p) => s + (p.views as number), 0);
-      const sumEng = recentPosts.reduce((s, p) => s + (p.likes as number) + (p.comments as number), 0);
-      er = sumViews > 0 ? +((sumEng / sumViews) * 100).toFixed(2) : null;
-    }
-  }
+  const subscribers       = parseInt(stats.subscriberCount ?? "0", 10);
+  const totalViews        = parseInt(stats.viewCount ?? "0", 10);
+  const views30d          = row[0] ?? 0;
+  const watchTimeMinutes  = row[1] ?? 0;
+  const likes             = row[2] ?? 0;
+  const comments          = row[3] ?? 0;
+  const subscribersGained = row[4] ?? 0;
+  const subscribersLost   = row[5] ?? 0;
+  const avgViewDuration   = row[6] ?? 0;
 
-  const handleStr = ch.snippet?.customUrl
-    ? (ch.snippet.customUrl.startsWith("@") ? ch.snippet.customUrl : `@${ch.snippet.customUrl}`)
-    : ch.snippet?.title ?? "channel";
+  const engagementRate =
+    views30d > 0
+      ? Math.round(((likes + comments) / views30d) * 10000) / 100
+      : 0;
 
-  await db.from("creator_social_accounts").update({
-    handle: handleStr,
-    external_id: ch.id,
-    followers,
-    engagement_rate: er,
-    total_views: totalViews,
-    recent_posts: recentPosts,
-    meta: {
-      title: ch.snippet?.title,
-      description: ch.snippet?.description,
-      thumbnail: ch.snippet?.thumbnails?.default?.url,
-      country: ch.snippet?.country,
+  console.log(`[sync-youtube] metrics — subscribers=${subscribers} views30d=${views30d} gained=${subscribersGained} lost=${subscribersLost} avgDuration=${avgViewDuration}s er=${engagementRate}%`);
+
+  const { error: upsertErr } = await db.from("creator_account_metrics_current").upsert({
+    creator_account_id:  account.id,
+    agency_id:           account.agency_id,
+    audience:            subscribers,
+    engagement_rate:     engagementRate,
+    views_30d:           views30d,
+    audience_growth_7d:  0,
+    audience_growth_30d: 0,
+    monthly_revenue:     null,
+    raw: {
+      totalViews,
+      subscribersGained30d: subscribersGained,
+      subscribersLost30d:   subscribersLost,
+      avgViewDurationSecs:  avgViewDuration,
+      watchTimeHours30d:    Math.round((watchTimeMinutes / 60) * 100) / 100,
     },
-    last_synced_at: new Date().toISOString(),
-    last_sync_error: null,
-    status: "connected",
-  }).eq("id", account.id);
-
-  await db.from("creator_social_snapshots").insert({
-    agency_id: account.agency_id,
-    account_id: account.id,
-    followers,
-    engagement_rate: er,
+    synced_at: new Date().toISOString(),
   });
 
-  return { followers, totalViews, recentPostCount: recentPosts.length };
+  if (upsertErr) throw new Error(`metrics upsert failed: ${upsertErr.message}`);
+  console.log(`[sync-youtube] metrics upserted ok`);
+
+  const { error: updateErr } = await db
+    .from("creator_accounts")
+    .update({
+      sync_status:     "active",
+      last_sync_at:    new Date().toISOString(),
+      last_sync_error: null,
+      next_sync_at:    nextSyncAt(account.sync_priority),
+    })
+    .eq("id", account.id);
+
+  if (updateErr) throw new Error(`account update failed: ${updateErr.message}`);
+  console.log(`[sync-youtube] done account=${account.id}`);
 }
 
 // ---- Entry point ----------------------------------------
@@ -171,38 +204,58 @@ Deno.serve(async (req) => {
     });
   }
 
-  const auth = req.headers.get("authorization") ?? "";
-  if (!auth.startsWith("Bearer ") || auth.slice(7) !== SERVICE_ROLE_KEY) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
-  }
-
-  const body = await req.json().catch(() => ({})) as Record<string, string>;
+  const body = (await req.json().catch(() => ({}))) as Record<string, string>;
   const accountId = body.account_id ?? null;
 
-  let query = db
-    .from("creator_social_accounts")
-    .select("id, agency_id, access_token, refresh_token, token_expires_at")
+  // Load accounts joined with their active connection (tokens)
+  // deno-lint-ignore no-explicit-any
+  let query = (db as any)
+    .from("creator_accounts")
+    .select(
+      "id, agency_id, external_id, sync_priority, platform_connections!inner(access_token, refresh_token, token_expires_at)",
+    )
     .eq("platform", "youtube")
-    .eq("status", "connected")
-    .not("refresh_token", "is", null);
+    .neq("sync_status", "disconnected")
+    .eq("platform_connections.status", "active");
 
-  if (accountId) query = (query as ReturnType<typeof query.eq>).eq("id", accountId);
+  if (accountId) query = query.eq("id", accountId);
 
   const { data: rows, error } = await query;
-  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+    });
+  }
 
   const results: Record<string, unknown>[] = [];
-  for (const row of (rows ?? []) as AccountRow[]) {
+
+  for (const row of (rows ?? []) as Record<string, unknown>[]) {
+    const conns = row.platform_connections as Record<string, unknown>[];
+    const conn = Array.isArray(conns) ? conns[0] : conns;
+
+    const account: AccountRow = {
+      id: row.id as string,
+      agency_id: row.agency_id as string,
+      external_id: row.external_id as string,
+      sync_priority: row.sync_priority as number,
+      connection: conn as AccountRow["connection"],
+    };
+
     try {
-      const stats = await pullChannelStats(row);
-      results.push({ id: row.id, ...stats });
+      await syncAccount(account);
+      results.push({ id: account.id, ok: true });
     } catch (e) {
       const msg = String(e instanceof Error ? e.message : e).slice(0, 500);
       await db
-        .from("creator_social_accounts")
-        .update({ last_sync_error: msg, status: "error" })
-        .eq("id", row.id);
-      results.push({ id: row.id, error: msg });
+        .from("creator_accounts")
+        .update({
+          sync_status: "error",
+          last_sync_error: msg,
+          last_sync_at: new Date().toISOString(),
+          next_sync_at: nextSyncAt(account.sync_priority),
+        })
+        .eq("id", account.id);
+      results.push({ id: account.id, error: msg });
     }
   }
 

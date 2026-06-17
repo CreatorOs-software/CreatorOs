@@ -2,9 +2,9 @@
 
 import { useAuth } from "@/components/auth/use-auth";
 import { Avatar } from "@base-ui/react";
-import { Settings, Bell, Menu, X, LogOut, PuzzleIcon } from "lucide-react";
+import { Settings, Bell, LogOut, PuzzleIcon } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 interface User {
   id: string;
@@ -15,18 +15,11 @@ interface User {
 }
 
 interface HeaderProps {
-  onMobileMenuToggle?: () => void;
-  isMobileMenuOpen?: boolean;
   user?: User | null;
 }
 
-export function Header({
-  onMobileMenuToggle,
-  isMobileMenuOpen,
-  user,
-}: HeaderProps) {
+export function Header({ user }: HeaderProps) {
   const { signOut } = useAuth();
-  const pathName = usePathname();
 
   const initials =
     user?.name
@@ -37,13 +30,8 @@ export function Header({
       .join("") ?? "";
 
   return (
-    <header className="flex items-center justify-between px-6 py-4">
-      {/* Logo */}
-      <div className="flex items-center gap-4">
-        <div className="rounded-lg border border-foreground/20 px-4 py-2">
-          <span className="text-lg font-semibold text-foreground">Crextio</span>
-        </div>
-      </div>
+    <header className="flex items-center justify-between px-4 py-3 shrink-0">
+      <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
 
       {/* Actions */}
       <div className="flex items-center gap-3">
@@ -54,11 +42,6 @@ export function Header({
           <PuzzleIcon className="w-4 h-4" />
           <span className="hidden sm:inline">Integration</span>
         </Link>
-
-        <button className="flex items-center gap-2 bg-card rounded-full px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">
-          <Settings className="w-4 h-4" />
-          <span className="hidden sm:inline">Setting</span>
-        </button>
 
         <button className="p-2.5 rounded-full bg-card hover:bg-muted transition-colors">
           <Bell className="w-5 h-5" />
@@ -87,18 +70,6 @@ export function Header({
           title="Logout"
         >
           <LogOut className="w-5 h-5" />
-        </button>
-
-        {/* Mobile Menu Button */}
-        <button
-          className="lg:hidden p-2.5 rounded-full bg-card shadow-sm hover:bg-muted transition-colors border border-border-light"
-          onClick={onMobileMenuToggle}
-        >
-          {isMobileMenuOpen ? (
-            <X className="w-5 h-5" />
-          ) : (
-            <Menu className="w-5 h-5" />
-          )}
         </button>
       </div>
     </header>
