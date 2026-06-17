@@ -42,16 +42,14 @@ export type IntegrationInvite = {
 export type MetricsCurrent = {
   creator_account_id: string;
   agency_id: string;
+  // Cross-platform normalized fields
   audience: number;
   engagement_rate: number;
   views_30d: number;
   audience_growth_7d: number;
   audience_growth_30d: number;
   monthly_revenue: number | null;
-  subscribers_gained_30d: number;
-  subscribers_lost_30d: number;
-  avg_view_duration_secs: number;
-  watch_time_hours_30d: number;
+  // Platform-specific extras (keyed by platform convention)
   raw: Record<string, unknown>;
   synced_at: string;
 };

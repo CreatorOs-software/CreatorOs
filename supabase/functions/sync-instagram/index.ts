@@ -131,18 +131,27 @@ async function syncAccount(account: AccountRow): Promise<void> {
   const until = today();
   const uid = account.external_id;
 
-  // ---- Phase 1: profile + day-period account insights ----
-  const insightsParams = new URLSearchParams({
-    metric: "views,reach,profile_views,follower_count,website_clicks",
+  // ---- Phase 1: profile + core day-period account insights ----
+  const coreInsightsParams = new URLSearchParams({
+    metric: "views,reach,profile_views,follower_count",
     period: "day",
     since,
     until,
     access_token: token,
   });
 
-  const [profileData, insightsData] = await Promise.all([
+  const clicksInsightsParams = new URLSearchParams({
+    metric: "website_clicks",
+    period: "day",
+    since,
+    until,
+    access_token: token,
+  });
+
+  const [profileData, insightsData, clicksData] = await Promise.all([
     igFetch(`${IG_API}/${uid}?fields=followers_count,media_count&access_token=${token}`),
-    igFetch(`${IG_API}/${uid}/insights?${insightsParams}`),
+    igFetch(`${IG_API}/${uid}/insights?${coreInsightsParams}`),
+    igFetch(`${IG_API}/${uid}/insights?${clicksInsightsParams}`).catch(() => null),
   ]);
 
   console.log(`[sync-instagram] phase1 ok`);
@@ -168,10 +177,6 @@ async function syncAccount(account: AccountRow): Promise<void> {
     if (metric.name === "views") views30d = sum;
     if (metric.name === "reach") reach30d = sum;
     if (metric.name === "profile_views") profileViews30d = sum;
-    if (metric.name === "website_clicks") {
-      websiteClicks30d = sum;
-      websiteClicks7d = values.slice(-7).reduce((a, b) => a + b, 0);
-    }
     if (metric.name === "follower_count") {
       audienceDelta30d = values.length >= 2
         ? (values[values.length - 1] ?? 0) - (values[0] ?? 0)
@@ -179,6 +184,16 @@ async function syncAccount(account: AccountRow): Promise<void> {
       audienceDelta7d = values.length >= 8
         ? (values[values.length - 1] ?? 0) - (values[values.length - 8] ?? 0)
         : audienceDelta30d;
+    }
+  }
+
+  // website_clicks comes from a separate optional call (not all account types support it)
+  const clicksMetrics: InsightMetric[] = (clicksData?.data as InsightMetric[]) ?? [];
+  for (const metric of clicksMetrics) {
+    if (metric.name === "website_clicks") {
+      const values = metric.values.map((v) => v.value);
+      websiteClicks30d = values.reduce((a, b) => a + b, 0);
+      websiteClicks7d = values.slice(-7).reduce((a, b) => a + b, 0);
     }
   }
 
@@ -267,10 +282,6 @@ async function syncAccount(account: AccountRow): Promise<void> {
       audience_growth_7d: audienceDelta7d,
       audience_growth_30d: audienceDelta30d,
       monthly_revenue: null,
-      subscribers_gained_30d: 0,
-      subscribers_lost_30d: 0,
-      avg_view_duration_secs: 0,
-      watch_time_hours_30d: 0,
       raw: {
         reach30d,
         profileViews30d,

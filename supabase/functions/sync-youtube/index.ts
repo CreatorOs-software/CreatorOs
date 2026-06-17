@@ -157,19 +157,21 @@ async function syncAccount(account: AccountRow): Promise<void> {
   console.log(`[sync-youtube] metrics — subscribers=${subscribers} views30d=${views30d} gained=${subscribersGained} lost=${subscribersLost} avgDuration=${avgViewDuration}s er=${engagementRate}%`);
 
   const { error: upsertErr } = await db.from("creator_account_metrics_current").upsert({
-    creator_account_id:     account.id,
-    agency_id:              account.agency_id,
-    audience:               subscribers,
-    engagement_rate:        engagementRate,
-    views_30d:              views30d,
-    audience_growth_7d:     0,
-    audience_growth_30d:    0,
-    monthly_revenue:        null,
-    subscribers_gained_30d: subscribersGained,
-    subscribers_lost_30d:   subscribersLost,
-    avg_view_duration_secs: avgViewDuration,
-    watch_time_hours_30d:   Math.round((watchTimeMinutes / 60) * 100) / 100,
-    raw: { totalViews },
+    creator_account_id:  account.id,
+    agency_id:           account.agency_id,
+    audience:            subscribers,
+    engagement_rate:     engagementRate,
+    views_30d:           views30d,
+    audience_growth_7d:  0,
+    audience_growth_30d: 0,
+    monthly_revenue:     null,
+    raw: {
+      totalViews,
+      subscribersGained30d: subscribersGained,
+      subscribersLost30d:   subscribersLost,
+      avgViewDurationSecs:  avgViewDuration,
+      watchTimeHours30d:    Math.round((watchTimeMinutes / 60) * 100) / 100,
+    },
     synced_at: new Date().toISOString(),
   });
 

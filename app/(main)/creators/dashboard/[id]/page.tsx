@@ -336,6 +336,13 @@ function YouTubeContent({
   daily: MetricsDaily[];
 }) {
   const hasDaily = daily.length >= 2;
+  const ytRaw = (current.raw ?? {}) as {
+    avgViewDurationSecs?: number;
+    watchTimeHours30d?: number;
+    subscribersGained30d?: number;
+    subscribersLost30d?: number;
+    totalViews?: number;
+  };
 
   return (
     <div className="flex-1 min-h-0 grid grid-cols-12 grid-rows-[auto_1fr] gap-4">
@@ -358,16 +365,16 @@ function YouTubeContent({
       <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
         <StatBlock
           label="Avg. View-Zeit"
-          value={fmtDuration(current.avg_view_duration_secs)}
-          sub={`${current.watch_time_hours_30d.toFixed(0)}h Watch Time (30d)`}
+          value={fmtDuration(ytRaw.avgViewDurationSecs ?? 0)}
+          sub={`${(ytRaw.watchTimeHours30d ?? 0).toFixed(0)}h Watch Time (30d)`}
         />
         <div className="h-px bg-border-light" />
         <StatBlock
           label="Abo-Gewinn (30d)"
-          value={`+${fmt(current.subscribers_gained_30d)}`}
+          value={`+${fmt(ytRaw.subscribersGained30d ?? 0)}`}
           sub={
-            current.subscribers_lost_30d > 0
-              ? `−${fmt(current.subscribers_lost_30d)} verloren`
+            (ytRaw.subscribersLost30d ?? 0) > 0
+              ? `−${fmt(ytRaw.subscribersLost30d ?? 0)} verloren`
               : undefined
           }
         />
