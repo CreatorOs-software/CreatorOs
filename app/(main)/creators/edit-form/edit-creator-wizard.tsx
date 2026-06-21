@@ -56,7 +56,7 @@ export function EditCreatorWizard({ creator }: EditCreatorWizardProps) {
   const [contractFile, setContractFile] = useState<File | null>(null);
   const [stepErrors, setStepErrors] = useState<StepErrors>({});
 
-  const form = useForm<CreatorFormValues>({
+  const form = useForm({
     defaultValues: toFormValues(creator),
     onSubmit: async () => {
       await mutation.mutateAsync(form.state.values);
