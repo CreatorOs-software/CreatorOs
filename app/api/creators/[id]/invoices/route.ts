@@ -9,19 +9,15 @@ export async function GET(
     const { id: creatorId } = await params;
     const { supabase } = await getAuthContext();
 
-    const { data: deals, error } = await supabase
-      .from("deals")
-      .select(`
-        id, title, budget, status, priority, deadline,
-        campaign_type, deliverables, description, created_at,
-        brands(company_name, color, short_code, contact_name, contact_email)
-      `)
+    const { data: invoices, error } = await supabase
+      .from("invoices")
+      .select("id, number, amount, status, issued_at, due_date, paid_at, brands(company_name, color, short_code)")
       .eq("creator_id", creatorId)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
 
-    return Response.json({ deals: deals ?? [] });
+    return Response.json({ invoices: invoices ?? [] });
   } catch (e) {
     return toErrorResponse(e);
   }

@@ -15,7 +15,13 @@ export function useCreateCreator() {
         body: JSON.stringify({
           full_name: name,
           handle: values.handle.trim() || null,
+          email: values.email.trim() || null,
+          street: values.street.trim() || null,
+          postal_code: values.postal_code.trim() || null,
+          city: values.city.trim() || null,
+          country: values.country.trim() || null,
           niche: values.niche || null,
+          bio: values.bio.trim() || null,
           followers: values.followers.trim() || null,
           monthly_revenue: Number(values.monthly_revenue) || 0,
           status: values.status,

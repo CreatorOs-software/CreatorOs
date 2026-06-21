@@ -4,6 +4,12 @@ export type Creator = {
   full_name: string;
   handle: string | null;
   niche: string | null;
+  bio: string | null;
+  email: string | null;
+  street: string | null;
+  postal_code: string | null;
+  city: string | null;
+  country: string | null;
   followers: string | null;
   monthly_revenue: number;
   status: "active" | "on-break" | "inactive";
