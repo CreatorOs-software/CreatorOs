@@ -1,4 +1,4 @@
-"use client";
+x ^ "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -30,7 +30,7 @@ export function CreateCreatorWizard() {
   const [contractFile, setContractFile] = useState<File | null>(null);
   const [stepErrors, setStepErrors] = useState<StepErrors>({});
 
-  const form = useForm<CreatorFormValues>({
+  const form = useForm({
     defaultValues: INITIAL_VALUES,
     onSubmit: async ({ value }) => {
       const result = await mutation.mutateAsync(value);
