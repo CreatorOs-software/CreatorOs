@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { Suspense, useState, useTransition } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { register } from "@/domains/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function JoinPage() {
+function JoinForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token") ?? "";
@@ -38,7 +38,6 @@ export default function JoinPage() {
         setError(result.error);
         return;
       }
-      // After signup, accept the invitation
       const res = await fetch("/api/auth/accept-invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -83,5 +82,13 @@ export default function JoinPage() {
         </Button>
       </form>
     </div>
+  );
+}
+
+export default function JoinPage() {
+  return (
+    <Suspense>
+      <JoinForm />
+    </Suspense>
   );
 }
