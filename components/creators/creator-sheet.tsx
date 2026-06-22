@@ -16,11 +16,11 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { Check, Copy, ExternalLink, Loader2, Pencil, RefreshCw, Trash2 } from "lucide-react";
+import { Check, Copy, ExternalLink, Link2Off, Loader2, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CreatorAccount } from "@/domains/social-accounts/types";
+import type { CreatorAccount, MetricsCurrent } from "@/domains/social-accounts/types";
 import {
   SiInstagram,
   SiOnlyfans,
@@ -112,12 +112,22 @@ const PLATFORM_KEY: Record<string, string> = {
   X: "x",
 };
 
+const PLATFORM_DISPLAY: Record<string, string> = Object.fromEntries(
+  Object.entries(PLATFORM_KEY).map(([display, key]) => [key, display]),
+);
+
 const OAUTH_SUPPORTED = new Set(["youtube", "instagram"]);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatMoney(n: number) {
   return `$${(n / 1000).toFixed(1)}k`;
+}
+
+function fmtNum(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
+  return String(n);
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -227,6 +237,32 @@ export function CreatorSheet({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["creator-accounts", creator?.id] });
     },
+  });
+
+  const [disconnectConfirmId, setDisconnectConfirmId] = useState<string | null>(null);
+
+  const disconnectMutation = useMutation({
+    mutationFn: (accountId: string) =>
+      fetch(`/api/integrations/${accountId}`, { method: "DELETE" }).then((r) => {
+        if (!r.ok) throw new Error("Trennen fehlgeschlagen");
+        return r.json();
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["creator-accounts", creator?.id] });
+      queryClient.invalidateQueries({ queryKey: ["creator-metrics-sheet", creator?.id] });
+      setDisconnectConfirmId(null);
+    },
+  });
+
+  const { data: metricsData } = useQuery<{
+    accounts: CreatorAccount[];
+    metrics: Record<string, { current: MetricsCurrent | null; daily: unknown[] }>;
+  }>({
+    queryKey: ["creator-metrics-sheet", creator?.id],
+    queryFn: () =>
+      fetch(`/api/creators/${creator!.id}/metrics`).then((r) => r.json()),
+    enabled: open && !!creator,
+    staleTime: 5 * 60_000,
   });
 
   const connectedByKey = new Set<string>(
@@ -377,39 +413,74 @@ export function CreatorSheet({
                         )}
                       </div>
                       {isConnected ? (
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className={cn(
-                            "flex items-center gap-1.5 text-xs",
-                            account?.sync_status === "error"
-                              ? "text-destructive"
-                              : "text-success",
-                          )}>
+                        disconnectConfirmId === account!.id ? (
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-xs text-muted-foreground">Wirklich trennen?</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                              disabled={disconnectMutation.isPending}
+                              onClick={() => disconnectMutation.mutate(account!.id)}
+                            >
+                              {disconnectMutation.isPending
+                                ? <Loader2 className="w-3 h-3 animate-spin" />
+                                : "Ja"}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                              disabled={disconnectMutation.isPending}
+                              onClick={() => setDisconnectConfirmId(null)}
+                            >
+                              Nein
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 shrink-0">
                             <span className={cn(
-                              "w-1.5 h-1.5 rounded-full",
+                              "flex items-center gap-1.5 text-xs",
                               account?.sync_status === "error"
-                                ? "bg-destructive"
-                                : "bg-success",
-                            )} />
-                            {account?.sync_status === "error" ? "Sync-Fehler" : "Verbunden"}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0"
-                            disabled={syncMutation.isPending && syncMutation.variables?.accountId === account!.id}
-                            onClick={() => syncMutation.mutate({ accountId: account!.id, platform: key })}
-                            title="Jetzt synchronisieren"
-                          >
-                            <RefreshCw
-                              className={cn(
-                                "w-3.5 h-3.5",
-                                syncMutation.isPending &&
-                                  syncMutation.variables?.accountId === account!.id &&
-                                  "animate-spin",
-                              )}
-                            />
-                          </Button>
-                        </div>
+                                ? "text-destructive"
+                                : "text-success",
+                            )}>
+                              <span className={cn(
+                                "w-1.5 h-1.5 rounded-full",
+                                account?.sync_status === "error"
+                                  ? "bg-destructive"
+                                  : "bg-success",
+                              )} />
+                              {account?.sync_status === "error" ? "Sync-Fehler" : "Verbunden"}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0"
+                              disabled={syncMutation.isPending && syncMutation.variables?.accountId === account!.id}
+                              onClick={() => syncMutation.mutate({ accountId: account!.id, platform: key })}
+                              title="Jetzt synchronisieren"
+                            >
+                              <RefreshCw
+                                className={cn(
+                                  "w-3.5 h-3.5",
+                                  syncMutation.isPending &&
+                                    syncMutation.variables?.accountId === account!.id &&
+                                    "animate-spin",
+                                )}
+                              />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-muted-foreground/40 hover:text-destructive"
+                              onClick={() => setDisconnectConfirmId(account!.id)}
+                              title="Verbindung trennen"
+                            >
+                              <Link2Off className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        )
                       ) : OAUTH_SUPPORTED.has(key) ? (
                         <Button
                           variant="outline"
@@ -434,6 +505,126 @@ export function CreatorSheet({
                 })}
               </div>
             )}
+
+            {/* ── Insights ── */}
+            {(metricsData?.accounts ?? []).some(
+              (a) => metricsData?.metrics[a.id]?.current,
+            ) && (
+              <>
+                <div className="border-t border-border-light my-5" />
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  Insights
+                </h3>
+                <div className="flex flex-col gap-2">
+                  {metricsData!.accounts.map((acc) => {
+                    const m = metricsData!.metrics[acc.id]?.current;
+                    if (!m) return null;
+                    const displayName =
+                      PLATFORM_DISPLAY[acc.platform as string] ?? acc.platform;
+                    return (
+                      <div
+                        key={acc.id}
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border-light bg-muted/30"
+                      >
+                        <span className="text-lg text-muted-foreground shrink-0">
+                          {PLATFORM_ICONS[displayName] ?? (
+                            <span className="text-xs font-medium">
+                              {String(displayName)[0]}
+                            </span>
+                          )}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-sm font-medium">{displayName}</span>
+                          {acc.username && (
+                            <span className="text-[10px] text-muted-foreground">
+                              {" "}
+                              · @{acc.username}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-4 shrink-0 text-right">
+                          <div>
+                            <div className="text-[10px] text-muted-foreground">
+                              Follower
+                            </div>
+                            <div className="text-sm font-semibold tabular-nums">
+                              {fmtNum(m.audience)}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-[10px] text-muted-foreground">
+                              Views/30d
+                            </div>
+                            <div className="text-sm font-semibold tabular-nums">
+                              {fmtNum(m.views_30d)}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-[10px] text-muted-foreground">
+                              ER
+                            </div>
+                            <div className="text-sm font-semibold tabular-nums">
+                              {m.engagement_rate.toFixed(1)}%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* ── Übersicht ── */}
+            {creatorDeals.length > 0 && (() => {
+              const totalBudget = creatorDeals.reduce(
+                (s, d) => s + (d.budget ?? 0),
+                0,
+              );
+              const upcoming = creatorDeals
+                .filter((d) => d.deadline && new Date(d.deadline) >= new Date())
+                .sort(
+                  (a, b) =>
+                    new Date(a.deadline!).getTime() -
+                    new Date(b.deadline!).getTime(),
+                );
+              const nextDl = upcoming[0]?.deadline
+                ? new Date(upcoming[0].deadline).toLocaleDateString("de-DE", {
+                    day: "2-digit",
+                    month: "2-digit",
+                  })
+                : "—";
+              return (
+                <>
+                  <div className="border-t border-border-light my-5" />
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Übersicht
+                  </h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { label: "Deals", value: String(creatorDeals.length) },
+                      {
+                        label: "Budget gesamt",
+                        value: `€${(totalBudget / 1000).toFixed(1)}k`,
+                      },
+                      { label: "Nächste Deadline", value: nextDl },
+                    ].map((s) => (
+                      <div
+                        key={s.label}
+                        className="px-3 py-2.5 rounded-xl border border-border-light bg-muted/30"
+                      >
+                        <div className="text-[10px] text-muted-foreground">
+                          {s.label}
+                        </div>
+                        <div className="text-sm font-semibold tabular-nums mt-0.5">
+                          {s.value}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </SheetContent>
       </Sheet>

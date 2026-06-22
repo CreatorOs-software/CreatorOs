@@ -4,7 +4,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
-  ArrowLeft,
   Check,
   Clock,
   Copy,
@@ -15,7 +14,8 @@ import {
   TrendingUp,
   User,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePageHeader } from "@/components/layout/page-header-context";
 import {
   SiInstagram,
   SiOnlyfans,
@@ -237,17 +237,6 @@ function CopyButton({ value }: { value: string }) {
         <Copy className="w-3.5 h-3.5" />
       )}
     </button>
-  );
-}
-
-function Avatar({ c }: { c: Creator }) {
-  return (
-    <span
-      className="w-10 h-10 rounded-xl inline-flex items-center justify-center font-bold text-white text-sm shrink-0"
-      style={{ background: c.color }}
-    >
-      {c.initials}
-    </span>
   );
 }
 
@@ -1321,6 +1310,7 @@ function UebersichtTab({
 export default function CreatorDashboardPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { setConfig } = usePageHeader();
 
   const { data: creatorData } = useQuery<{ creator: Creator }>({
     queryKey: ["creator", id],
@@ -1378,37 +1368,57 @@ export default function CreatorDashboardPage() {
       ? disTabValue(disconnectedDisplayNames[0])
       : undefined);
 
+  const STATUS_BADGE = {
+    active: { label: "Aktiv", bg: "bg-green-500/15", text: "text-green-700" },
+    "on-break": {
+      label: "Pause",
+      bg: "bg-yellow-400/15",
+      text: "text-yellow-700",
+    },
+    inactive: {
+      label: "Inaktiv",
+      bg: "bg-muted",
+      text: "text-muted-foreground",
+    },
+  } as const;
+
+  useEffect(() => {
+    if (!creator) return;
+    const badge =
+      STATUS_BADGE[creator.status as keyof typeof STATUS_BADGE] ??
+      STATUS_BADGE.inactive;
+    setConfig({
+      onBack: () => router.back(),
+      title: (
+        <div className="flex items-center gap-2">
+          <span
+            className="w-8 h-8 rounded-xl inline-flex items-center justify-center font-bold text-white text-xs shrink-0"
+            style={{ background: creator.color }}
+          >
+            {creator.initials}
+          </span>
+          <span className="text-sm font-semibold">
+            {creator.handle ?? creator.full_name}
+          </span>
+        </div>
+      ),
+    });
+    return () => setConfig(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [creator]);
+
   return (
     <div className="h-full flex flex-col">
-      {/* Nav */}
-      <div className="shrink-0 flex items-center gap-2 mb-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-          className="text-muted-foreground"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </Button>
-        {creator && (
-          <div className="flex items-center gap-2">
-            <Avatar c={creator} />
-            <span className="text-sm text-muted-foreground">
-              {creator.handle ?? creator.full_name}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Top-level tabs */}
+      {/* ── Tabs ────────────────────────────────────────────────────────── */}
       <Tabs
         defaultValue="uebersicht"
         className="flex-1 min-h-0 flex flex-col gap-0"
       >
-        <div className="shrink-0 flex items-end justify-between mb-6">
+        <div className="shrink-0 -mx-6 px-6 py-2 mb-4 flex items-end justify-between bg-card border-b border-border">
           <TabsList variant="underline">
             <TabsTrigger value="uebersicht">Übersicht</TabsTrigger>
             <TabsTrigger value="insights">Insights</TabsTrigger>
+            <TabsTrigger value="vertraege">Verträge</TabsTrigger>
           </TabsList>
           <Button
             variant="default"
@@ -1528,6 +1538,85 @@ export default function CreatorDashboardPage() {
                 })}
               </Tabs>
             )}
+          </TabsContent>
+
+          {/* ── Verträge ──────────────────────────────────────────────────── */}
+          <TabsContent value="vertraege">
+            <div className="bg-card rounded-2xl p-5 pb-6">
+              <h3 className="text-sm font-semibold mb-4">Rechnungen</h3>
+              {invoices.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-8">
+                  Keine Rechnungen vorhanden
+                </p>
+              ) : (
+                <div className="flex flex-col divide-y divide-border-light">
+                  {invoices.map((inv) => {
+                    const style =
+                      INVOICE_STATUS[inv.status] ?? INVOICE_STATUS.draft;
+                    const isOverdue =
+                      (inv.status === "sent" || inv.status === "overdue") &&
+                      inv.due_date &&
+                      new Date(inv.due_date).getTime() < NOW;
+                    return (
+                      <div
+                        key={inv.id}
+                        className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+                      >
+                        {inv.brands && <BrandAvatar brand={inv.brands} />}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">
+                            {inv.number}
+                          </p>
+                          {inv.brands && (
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              {inv.brands.company_name}
+                            </p>
+                          )}
+                        </div>
+                        {(inv.due_date || inv.paid_at) && (
+                          <span
+                            className={cn(
+                              "text-[10px] shrink-0",
+                              isOverdue
+                                ? "text-red-500"
+                                : "text-muted-foreground",
+                            )}
+                          >
+                            {inv.paid_at
+                              ? fmtDate(inv.paid_at)
+                              : inv.due_date
+                                ? fmtDate(inv.due_date)
+                                : ""}
+                          </span>
+                        )}
+                        <span
+                          className={cn(
+                            "shrink-0 text-[9px] font-medium px-1.5 py-0.5 rounded-full",
+                            inv.status === "paid"
+                              ? "bg-green-500/10 text-green-700"
+                              : inv.status === "overdue" || isOverdue
+                                ? "bg-red-500/10 text-red-500"
+                                : inv.status === "sent"
+                                  ? "bg-blue-500/10 text-blue-600"
+                                  : "bg-muted text-muted-foreground",
+                          )}
+                        >
+                          {style.label}
+                        </span>
+                        <span
+                          className={cn(
+                            "shrink-0 text-xs tabular-nums font-medium",
+                            style.color,
+                          )}
+                        >
+                          {fmtMoney(Number(inv.amount))}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </TabsContent>
         </div>
       </Tabs>

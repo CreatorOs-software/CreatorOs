@@ -1,8 +1,9 @@
 "use client";
 
 import { useAuth } from "@/components/auth/use-auth";
+import { usePageHeader } from "./page-header-context";
 import { Avatar } from "@base-ui/react";
-import { Settings, Bell, LogOut, PuzzleIcon } from "lucide-react";
+import { ArrowLeft, Bell, LogOut, PuzzleIcon } from "lucide-react";
 import Link from "next/link";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
@@ -20,6 +21,7 @@ interface HeaderProps {
 
 export function Header({ user }: HeaderProps) {
   const { signOut } = useAuth();
+  const { config } = usePageHeader();
 
   const initials =
     user?.name
@@ -30,8 +32,31 @@ export function Header({ user }: HeaderProps) {
       .join("") ?? "";
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 shrink-0">
-      <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+    <header className="flex items-center justify-between px-4 py-3 shrink-0 bg-card border-b border-border">
+      {config ? (
+        <div className="flex items-center gap-2 min-w-0">
+          {config.onBack && (
+            <button
+              onClick={config.onBack}
+              className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          )}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap leading-tight">
+              {config.title}
+            </div>
+            {config.subtitle && (
+              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                {config.subtitle}
+              </p>
+            )}
+          </div>
+        </div>
+      ) : (
+        <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+      )}
 
       {/* Actions */}
       <div className="flex items-center gap-3">

@@ -2,6 +2,7 @@
 
 import { Header } from "./header";
 import { AppSidebar } from "./sidebar";
+import { PageHeaderProvider } from "./page-header-context";
 import { PermissionProvider } from "@/components/context/permission-provider";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import type { Role, PermissionMap } from "@/domains/auth/types";
@@ -25,6 +26,7 @@ export function AppLayout({
 
   return (
     <PermissionProvider role={role} permissions={defaultPermissions}>
+      <PageHeaderProvider>
       <SidebarProvider
         style={{ "--sidebar-width-icon": "4rem" } as React.CSSProperties}
       >
@@ -42,6 +44,7 @@ export function AppLayout({
           </main>
         </SidebarInset>
       </SidebarProvider>
+      </PageHeaderProvider>
     </PermissionProvider>
   );
 }
