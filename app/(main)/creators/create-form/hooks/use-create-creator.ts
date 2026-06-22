@@ -20,7 +20,7 @@ export function useCreateCreator() {
           postal_code: values.postal_code.trim() || null,
           city: values.city.trim() || null,
           country: values.country.trim() || null,
-          niche: values.niche || null,
+          niche: values.niche,
           bio: values.bio.trim() || null,
           followers: values.followers.trim() || null,
           monthly_revenue: Number(values.monthly_revenue) || 0,

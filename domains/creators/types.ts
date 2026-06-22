@@ -9,7 +9,7 @@ export type Creator = {
   agency_id: string;
   full_name: string;
   handle: string | null;
-  niche: string | null;
+  niche: string[];
   bio: string | null;
   email: string | null;
   street: string | null;

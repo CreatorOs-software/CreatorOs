@@ -66,7 +66,7 @@ export default function CreatorsPage() {
       !search ||
       c.full_name.toLowerCase().includes(search.toLowerCase()) ||
       c.handle?.toLowerCase().includes(search.toLowerCase()) ||
-      c.niche?.toLowerCase().includes(search.toLowerCase()),
+      c.niche.some((n) => n.toLowerCase().includes(search.toLowerCase())),
   );
 
   const activePerCreator = (id: string) =>

@@ -129,7 +129,7 @@ export default function CreatorDashboardPage() {
         </div>
       ),
       subtitle: [
-        creator.niche,
+        ...creator.niche,
         creator.followers ? `${creator.followers} Follower` : null,
       ]
         .filter(Boolean)

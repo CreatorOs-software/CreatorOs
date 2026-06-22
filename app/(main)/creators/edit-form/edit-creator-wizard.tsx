@@ -37,7 +37,7 @@ function toFormValues(creator: Creator): CreatorFormValues {
     postal_code: creator.postal_code ?? "",
     city: creator.city ?? "",
     country: creator.country ?? "",
-    niche: creator.niche ?? "",
+    niche: creator.niche ?? [],
     bio: creator.bio ?? "",
     status: creator.status,
     platforms: creator.platforms ?? [],

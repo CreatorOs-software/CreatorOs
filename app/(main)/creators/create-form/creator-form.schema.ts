@@ -13,7 +13,7 @@ export const creatorFormSchema = z.object({
   postal_code: z.string(),
   city: z.string(),
   country: z.string(),
-  niche: z.string(),
+  niche: z.array(z.string()),
   bio: z.string(),
   status: z.enum(["active", "on-break", "inactive"]),
   platforms: z.array(z.string()),
@@ -53,7 +53,7 @@ export const STEP_SCHEMAS = {
     country: z.string(),
   }),
   2: z.object({
-    niche: z.string(),
+    niche: z.array(z.string()),
     bio: z.string(),
     status: z.enum(["active", "on-break", "inactive"]),
   }),

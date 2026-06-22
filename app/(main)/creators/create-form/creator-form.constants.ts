@@ -53,7 +53,7 @@ export const INITIAL_VALUES: CreatorFormValues = {
   postal_code: "",
   city: "",
   country: "",
-  niche: "",
+  niche: [],
   bio: "",
   status: "active",
   platforms: [],

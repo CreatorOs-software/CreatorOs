@@ -38,7 +38,7 @@ export type Creator = {
   handle: string | null;
   initials: string;
   color: string;
-  niche: string | null;
+  niche: string[];
   status: "active" | "on-break" | "inactive";
   platforms: string[];
   followers: string | null;
@@ -332,7 +332,7 @@ export function CreatorSheet({
                   {creator.full_name}
                 </SheetTitle>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  {creator.handle ?? "—"} · {creator.niche ?? "—"}
+                  {creator.handle ?? "—"}{creator.niche.length > 0 ? ` · ${creator.niche.join(", ")}` : ""}
                 </p>
                 <span
                   className={cn(

@@ -26,7 +26,7 @@ export function Step4({ form, saving, error, onPrev, onSubmit, submitLabel }: St
     ["Name", name || "–"],
     ["Handle", v.handle || "–"],
     ["E-Mail", v.email || "–"],
-    ["Nische", v.niche || "–"],
+    ["Nische", v.niche.join(", ") || "–"],
     ["Status", STATUS_LABEL[v.status as keyof typeof STATUS_LABEL] ?? v.status],
     ["Plattformen", v.platforms.join(", ") || "–"],
     ["Reichweite", v.followers || "–"],

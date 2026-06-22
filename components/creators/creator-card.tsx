@@ -139,13 +139,13 @@ export function CreatorCard({
         )}
       </div>
 
-      {(c.niche || c.platforms.length > 0) && (
+      {(c.niche.length > 0 || c.platforms.length > 0) && (
         <div className="flex gap-1 flex-wrap">
-          {c.niche && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-accent text-accent-foreground">
-              {c.niche}
+          {c.niche.map((n) => (
+            <span key={n} className="text-[10px] px-1.5 py-0.5 rounded-md bg-accent text-accent-foreground">
+              {n}
             </span>
-          )}
+          ))}
           {c.platforms.map((p) => (
             <PlatformIcon key={p} p={p} />
           ))}
