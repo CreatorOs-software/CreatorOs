@@ -18,6 +18,7 @@ export type DealFull = {
   budget: number;
   status: string;
   priority: string;
+  platform: string | null;
   deadline: string | null;
   campaign_type: string | null;
   deliverables: string[];

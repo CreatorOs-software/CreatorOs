@@ -31,6 +31,7 @@ import {
   InsightsEmptyState,
 } from "@/components/creators/dashboard/insights-tab";
 import { VertraegeTab } from "@/components/creators/dashboard/vertraege-tab";
+import { DealsTab } from "@/components/creators/dashboard/deals-tab";
 
 export default function CreatorDashboardPage() {
   const { id } = useParams<{ id: string }>();
@@ -151,6 +152,7 @@ export default function CreatorDashboardPage() {
         <div className="shrink-0 -mx-6 px-6 mb-4 flex items-end justify-between bg-card border-b border-border">
           <TabsList variant="underline">
             <TabsTrigger value="uebersicht">Übersicht</TabsTrigger>
+            <TabsTrigger value="deals">Deals</TabsTrigger>
             <TabsTrigger value="insights">Insights</TabsTrigger>
             <TabsTrigger value="vertraege">Verträge</TabsTrigger>
           </TabsList>
@@ -175,6 +177,11 @@ export default function CreatorDashboardPage() {
               invoices={invoices}
               isPending={dealsPending}
             />
+          </TabsContent>
+
+          {/* Deals */}
+          <TabsContent value="deals">
+            <DealsTab deals={deals} creator={creator} />
           </TabsContent>
 
           {/* Insights */}

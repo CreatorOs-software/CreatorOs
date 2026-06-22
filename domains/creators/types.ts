@@ -1,3 +1,9 @@
+export type CreatorRate = {
+  label: string;
+  amount: number;
+  bundle?: boolean;
+};
+
 export type Creator = {
   id: string;
   agency_id: string;
@@ -16,6 +22,10 @@ export type Creator = {
   platforms: string[];
   color: string;
   initials: string;
+  rates: CreatorRate[];
+  dream_brands: string[];
+  wish_themes: string[];
+  no_go: string[];
 };
 
 export type CreatorInsert = Omit<Creator, "id">;

@@ -47,6 +47,10 @@ export async function POST(req: Request) {
       platforms: platforms || [],
       color,
       initials,
+      rates: [],
+      dream_brands: [],
+      wish_themes: [],
+      no_go: [],
     });
 
     return Response.json({ creator }, { status: 201 });

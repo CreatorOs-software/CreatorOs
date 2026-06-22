@@ -12,7 +12,7 @@ export async function GET(
     const { data: deals, error } = await supabase
       .from("deals")
       .select(`
-        id, title, budget, status, priority, deadline,
+        id, title, budget, status, priority, platform, deadline,
         campaign_type, deliverables, description, created_at,
         brands(company_name, color, short_code, contact_name, contact_email)
       `)
