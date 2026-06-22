@@ -6,6 +6,7 @@ import { Avatar } from "@base-ui/react";
 import { ArrowLeft, Bell, LogOut, PuzzleIcon } from "lucide-react";
 import Link from "next/link";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Button } from "../ui/button";
 
 interface User {
   id: string;
@@ -68,9 +69,9 @@ export function Header({ user }: HeaderProps) {
           <span className="hidden sm:inline">Integration</span>
         </Link>
 
-        <button className="p-2.5 rounded-full bg-card hover:bg-muted transition-colors">
+        <Button className="p-2.5 rounded-full bg-card hover:bg-muted transition-colors">
           <Bell className="w-5 h-5" />
-        </button>
+        </Button>
 
         {/* User Menu */}
         {user && (
@@ -85,17 +86,16 @@ export function Header({ user }: HeaderProps) {
                 {initials}
               </Avatar.Fallback>
             </Avatar.Root>
-            <span className="text-sm font-medium">{user.name}</span>
           </div>
         )}
 
-        <button
+        <Button
           onClick={signOut}
           className="p-2.5 rounded-full bg-card hover:bg-destructive/10 hover:text-destructive transition-colors"
           title="Logout"
         >
           <LogOut className="w-5 h-5" />
-        </button>
+        </Button>
       </div>
     </header>
   );
