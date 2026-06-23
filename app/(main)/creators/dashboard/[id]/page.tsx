@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Pencil } from "lucide-react";
+import { ChevronDown, Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBar, StatusBarGroup } from "@/components/dashboard/status-bar";
@@ -32,6 +32,13 @@ import {
 } from "@/components/creators/dashboard/insights-tab";
 import { VertraegeTab } from "@/components/creators/dashboard/vertraege-tab";
 import { DealsTab } from "@/components/creators/dashboard/deals-tab";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function CreatorDashboardPage() {
   const { id } = useParams<{ id: string }>();
@@ -40,12 +47,13 @@ export default function CreatorDashboardPage() {
 
   // ── Queries ──────────────────────────────────────────────────────────────────
 
-  const { data: creatorData, isPending: creatorPending } =
-    useQuery<{ creator: Creator }>({
-      queryKey: ["creator", id],
-      queryFn: () => fetch(`/api/creators/${id}`).then((r) => r.json()),
-      staleTime: 5 * 60_000,
-    });
+  const { data: creatorData, isPending: creatorPending } = useQuery<{
+    creator: Creator;
+  }>({
+    queryKey: ["creator", id],
+    queryFn: () => fetch(`/api/creators/${id}`).then((r) => r.json()),
+    staleTime: 5 * 60_000,
+  });
 
   const { data: metricsData, isPending: metricsPending } =
     useQuery<MetricsResponse>({
@@ -76,10 +84,16 @@ export default function CreatorDashboardPage() {
   const deals = dealsData?.deals ?? [];
   const invoices = invoicesData?.invoices ?? [];
 
-  const activeAccounts = accounts.filter((a) => a.sync_status !== "disconnected");
+  const activeAccounts = accounts.filter(
+    (a) => a.sync_status !== "disconnected",
+  );
   const firstAccount = activeAccounts[0];
-  const firstCurrent = firstAccount ? (metrics[firstAccount.id]?.current ?? null) : null;
-  const connectedKeys = new Set(activeAccounts.map((a) => a.platform as string));
+  const firstCurrent = firstAccount
+    ? (metrics[firstAccount.id]?.current ?? null)
+    : null;
+  const connectedKeys = new Set(
+    activeAccounts.map((a) => a.platform as string),
+  );
   const disconnectedDisplayNames = (creator?.platforms ?? []).filter(
     (p) => !connectedKeys.has(PLATFORM_KEY[p] ?? p.toLowerCase()),
   );
@@ -88,14 +102,24 @@ export default function CreatorDashboardPage() {
     `dis-${PLATFORM_KEY[displayName] ?? displayName.toLowerCase()}`;
   const defaultInsightsTab =
     firstAccount?.id ??
-    (disconnectedDisplayNames[0] ? disTabValue(disconnectedDisplayNames[0]) : undefined);
+    (disconnectedDisplayNames[0]
+      ? disTabValue(disconnectedDisplayNames[0])
+      : undefined);
 
   // ── Page header ───────────────────────────────────────────────────────────────
 
   const STATUS_BADGE = {
     active: { label: "Aktiv", bg: "bg-green-500/15", text: "text-green-700" },
-    "on-break": { label: "Pause", bg: "bg-yellow-400/15", text: "text-yellow-700" },
-    inactive: { label: "Inaktiv", bg: "bg-muted", text: "text-muted-foreground" },
+    "on-break": {
+      label: "Pause",
+      bg: "bg-yellow-400/15",
+      text: "text-yellow-700",
+    },
+    inactive: {
+      label: "Inaktiv",
+      bg: "bg-muted",
+      text: "text-muted-foreground",
+    },
   } as const;
 
   useEffect(() => {
@@ -147,7 +171,10 @@ export default function CreatorDashboardPage() {
 
   return (
     <div className="h-full flex flex-col">
-      <Tabs defaultValue="uebersicht" className="flex-1 min-h-0 flex flex-col gap-0">
+      <Tabs
+        defaultValue="uebersicht"
+        className="flex-1 min-h-0 flex flex-col gap-0"
+      >
         {/* Tab bar */}
         <div className="shrink-0 -mx-6 px-6 mb-4 flex items-end justify-between bg-card border-b border-border">
           <TabsList variant="underline">
@@ -156,15 +183,37 @@ export default function CreatorDashboardPage() {
             <TabsTrigger value="insights">Insights</TabsTrigger>
             <TabsTrigger value="vertraege">Verträge</TabsTrigger>
           </TabsList>
-          <Button
-            variant="default"
-            size="sm"
-            className="gap-1.5 mb-0.5"
-            onClick={() => router.push(`/creators/edit-form/${id}`)}
-          >
-            <Pencil className="w-3.5 h-3.5" />
-            Bearbeiten
-          </Button>
+
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Button variant={"outline"} size={"sm"}>
+                  Weitere Aktionen
+                  <ChevronDown />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className={"w-52"}>
+                <DropdownMenuItem
+                  onClick={() =>
+                    router.push(`/creators/deals/create-deal/${id}`)
+                  }
+                >
+                  Deal anlegen
+                </DropdownMenuItem>
+                <DropdownMenuItem>Pipeline anlegen</DropdownMenuItem>
+                <DropdownMenuItem></DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button
+              variant="default"
+              size="sm"
+              className="gap-1.5 mb-0.5"
+              onClick={() => router.push(`/creators/edit-form/${id}`)}
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              Bearbeiten
+            </Button>
+          </div>
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto">
