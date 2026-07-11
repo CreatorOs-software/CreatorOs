@@ -22,8 +22,16 @@ import { BrandAvatar } from "./shared";
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 const STAGE_ORDER = [
-  "incoming", "evaluating", "negotiation", "confirmed",
-  "production", "approval", "scheduled", "posted", "invoiced", "paid",
+  "incoming",
+  "evaluating",
+  "negotiation",
+  "confirmed",
+  "production",
+  "approval",
+  "scheduled",
+  "posted",
+  "invoiced",
+  "paid",
 ];
 
 function dealProgress(status: string): number {
@@ -37,7 +45,10 @@ function sinceLabel(deals: DealFull[]): string | null {
     .map((d) => new Date(d.created_at).getTime())
     .sort((a, b) => a - b);
   if (!paid.length) return null;
-  return new Date(paid[0]).toLocaleDateString("de-DE", { month: "short", year: "numeric" });
+  return new Date(paid[0]).toLocaleDateString("de-DE", {
+    month: "short",
+    year: "numeric",
+  });
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
@@ -69,7 +80,7 @@ function LaufendRow({ deal }: { deal: DealFull }) {
   const platformKey = deal.platform
     ? deal.platform
     : deal.deliverables[0]
-      ? PLATFORM_KEY[deal.deliverables[0]] ?? null
+      ? (PLATFORM_KEY[deal.deliverables[0]] ?? null)
       : null;
 
   return (
@@ -87,7 +98,9 @@ function LaufendRow({ deal }: { deal: DealFull }) {
           />
         )}
         <div className="min-w-0">
-          <p className="text-xs font-medium truncate leading-tight">{deal.title}</p>
+          <p className="text-xs font-medium truncate leading-tight">
+            {deal.title}
+          </p>
           {deal.brands && (
             <p className="text-[10px] text-muted-foreground truncate">
               {deal.brands.company_name}
@@ -190,7 +203,9 @@ function PipelineCard({ deals }: { deals: DealFull[] }) {
                     {deal.brands?.company_name ?? deal.title}
                   </p>
                   {style && (
-                    <p className="text-[10px] text-muted-foreground">{style.label}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {style.label}
+                    </p>
                   )}
                 </div>
                 <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
@@ -204,167 +219,6 @@ function PipelineCard({ deals }: { deals: DealFull[] }) {
     </div>
   );
 }
-
-function AlteDealsCard({ deals }: { deals: DealFull[] }) {
-  return (
-    <div className="bg-card rounded-2xl p-5">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold">Alte Deals</h3>
-        {deals.length > 0 && (
-          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-muted text-muted-foreground text-[9px] font-medium">
-            {deals.length}
-          </span>
-        )}
-      </div>
-      {deals.length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-6">
-          Keine abgeschlossenen Deals
-        </p>
-      ) : (
-        <div className="flex flex-col divide-y divide-border-light">
-          {deals.map((deal) => (
-            <div
-              key={deal.id}
-              className="flex items-center gap-2.5 py-2.5 first:pt-0 last:pb-0"
-            >
-              {deal.brands ? (
-                <BrandAvatar brand={deal.brands} size="sm" />
-              ) : (
-                <span className="w-5 h-5 rounded shrink-0 bg-muted opacity-50" />
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground truncate">
-                  {deal.brands?.company_name ?? deal.title}
-                </p>
-                {deal.deadline && (
-                  <p className="text-[10px] text-muted-foreground/60">
-                    {new Date(deal.deadline).toLocaleDateString("de-DE", {
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </p>
-                )}
-              </div>
-              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                {fmtMoney(Number(deal.budget))}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function KonditionenCard({ creator }: { creator: Creator }) {
-  const rates = creator.rates ?? [];
-  const dreamBrands = creator.dream_brands ?? [];
-  const wishThemes = creator.wish_themes ?? [];
-  const noGo = creator.no_go ?? [];
-  const hasTags = dreamBrands.length > 0 || wishThemes.length > 0 || noGo.length > 0;
-
-  return (
-    <div className="bg-card rounded-2xl p-5">
-      <div className="flex items-center justify-between mb-5">
-        <h3 className="text-sm font-semibold">Konditionen</h3>
-        <Button variant="ghost" size="sm" className="text-xs h-7">
-          Bearbeiten
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Left: Standardpreise */}
-        <div className="flex flex-col gap-3">
-          <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">
-            Standardpreise
-          </p>
-          {rates.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Keine Preise hinterlegt</p>
-          ) : (
-            <div className="flex flex-col divide-y divide-border-light">
-              {rates.map((rate, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between py-2 first:pt-0 last:pb-0"
-                >
-                  <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                    {rate.label}
-                    {rate.bundle && (
-                      <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-600">
-                        Bundle
-                      </span>
-                    )}
-                  </span>
-                  <span className="text-xs font-medium tabular-nums">
-                    {fmtMoney(rate.amount)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Right: Tags */}
-        {hasTags && (
-          <div className="flex flex-col gap-5">
-            {creator.dream_brands.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">
-                  Traumkooperationen
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {creator.dream_brands.map((b) => (
-                    <span
-                      key={b}
-                      className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-foreground"
-                    >
-                      {b}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {creator.wish_themes.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">
-                  Wunsch-Themen
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {creator.wish_themes.map((t) => (
-                    <span
-                      key={t}
-                      className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-foreground"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {creator.no_go.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">
-                  No-Go
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {creator.no_go.map((t) => (
-                    <span
-                      key={t}
-                      className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-500"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ── Export ─────────────────────────────────────────────────────────────────────
 
 export function DealsTab({
@@ -393,7 +247,7 @@ export function DealsTab({
           sub={`${fmtMoney(activeBudget)} Volumen`}
         />
         <StatCard
-          label="Pipeline-Wert"
+          label="Ausstehende Zahlung"
           value={fmtMoney(pipelineBudget)}
           sub={
             verhandlung > 0
@@ -431,13 +285,9 @@ export function DealsTab({
       </div>
 
       {/* Pipeline + Alte Deals */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="gap-4">
         <PipelineCard deals={pipeline} />
-        <AlteDealsCard deals={alt} />
       </div>
-
-      {/* Konditionen */}
-      {creator && <KonditionenCard creator={creator} />}
     </div>
   );
 }
