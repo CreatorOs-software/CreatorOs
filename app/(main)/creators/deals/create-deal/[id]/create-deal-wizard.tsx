@@ -59,7 +59,7 @@ export function CreateDealWizard({ creator }: CreateDealWizardProps) {
     return (
       <div className="h-full flex flex-col">
         <div className="bg-card rounded-2xl flex-1 flex flex-col items-center justify-center gap-6 p-8">
-          <div className="w-14 h-14 rounded-full bg-yellow-400 flex items-center justify-center">
+          <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center">
             <Check className="w-7 h-7 text-black" />
           </div>
           <div className="text-center">
@@ -73,7 +73,7 @@ export function CreateDealWizard({ creator }: CreateDealWizardProps) {
               Zur Übersicht
             </Button>
             <Button
-              className="bg-yellow-400 text-black hover:bg-yellow-300"
+              className="bg-primary text-primary-foreground hover:bg-primary/80"
               onClick={() => router.push(`/creators/dashboard/${creator.id}`)}
             >
               Zum Dashboard

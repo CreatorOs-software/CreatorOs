@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { Avatar } from "@base-ui/react";
 import {
   LayoutDashboard,
   File,
@@ -15,10 +16,17 @@ import {
   Inbox,
   Users,
   Settings2,
+  LogOut,
 } from "lucide-react";
-import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
+import {
+  Sidebar,
+  SidebarBody,
+  SidebarLink,
+  useSidebar,
+} from "@/components/ui/sidebar";
 import { QueryKeys } from "@/lib/query-keys";
 import { usePermissions } from "@/components/context/permission-provider";
+import { useAuth } from "@/components/auth/use-auth";
 import { cn } from "@/lib/utils";
 
 const Logo = () => (
@@ -26,7 +34,7 @@ const Logo = () => (
     href="/dashboard"
     className="font-normal flex items-center gap-2 text-sm py-1 relative z-20"
   >
-    <div className="h-5 w-6 bg-foreground rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm shrink-0" />
+    <div className="h-5 w-6 bg-sidebar-accent rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm shrink-0" />
     <motion.span
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -39,9 +47,56 @@ const Logo = () => (
 
 const LogoIcon = () => (
   <Link href="/dashboard" className="flex py-1 relative z-20">
-    <div className="h-5 w-6 bg-foreground rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm shrink-0" />
+    <div className="h-5 w-6 bg-sidebar-accent rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm shrink-0" />
   </Link>
 );
+
+function ProfileSection() {
+  const { user, signOut } = useAuth();
+  const { open, animate } = useSidebar();
+
+  const name =
+    (user?.user_metadata?.full_name as string | undefined) ?? user?.email ?? "";
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+
+  return (
+    <div className="flex items-center gap-2 px-2 py-2 rounded-md">
+      <Avatar.Root className="w-7 h-7 rounded-full overflow-hidden shrink-0">
+        <Avatar.Image
+          src={user?.user_metadata?.avatar_url as string | undefined}
+          alt={name}
+          className="w-full h-full object-cover"
+        />
+        <Avatar.Fallback className="w-full h-full rounded-full bg-yellow-400 flex items-center justify-center text-xs font-bold text-black">
+          {initials}
+        </Avatar.Fallback>
+      </Avatar.Root>
+      <motion.div
+        animate={{
+          display: animate ? (open ? "flex" : "none") : "flex",
+          opacity: animate ? (open ? 1 : 0) : 1,
+        }}
+        className="flex items-center justify-between flex-1 min-w-0"
+      >
+        <p className="text-sm font-medium text-sidebar-foreground truncate min-w-0">
+          {name}
+        </p>
+        <button
+          onClick={signOut}
+          className="ml-2 p-1 rounded-md hover:bg-sidebar-accent transition-colors shrink-0"
+          title="Abmelden"
+        >
+          <LogOut className="w-4 h-4 text-current" />
+        </button>
+      </motion.div>
+    </div>
+  );
+}
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -63,16 +118,16 @@ export function AppSidebar() {
     {
       label: "Dashboard",
       href: "/dashboard",
-      icon: <LayoutDashboard className="h-5 w-5 shrink-0 text-sidebar-foreground" />,
+      icon: <LayoutDashboard className="h-5 w-5 shrink-0 text-current" />,
     },
     {
       label: "Inbox",
       href: "/inbox",
       icon: (
         <div className="relative">
-          <Inbox className="h-5 w-5 shrink-0 text-sidebar-foreground" />
+          <Inbox className="h-5 w-5 shrink-0 text-current" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-400" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500" />
           )}
         </div>
       ),
@@ -80,27 +135,27 @@ export function AppSidebar() {
     {
       label: "Deals",
       href: "/deals",
-      icon: <File className="h-5 w-5 shrink-0 text-sidebar-foreground" />,
+      icon: <File className="h-5 w-5 shrink-0 text-current" />,
     },
     {
       label: "Creator",
       href: "/creators",
-      icon: <User className="h-5 w-5 shrink-0 text-sidebar-foreground" />,
+      icon: <User className="h-5 w-5 shrink-0 text-current" />,
     },
     {
       label: "Events",
       href: "/events",
-      icon: <Calendar className="h-5 w-5 shrink-0 text-sidebar-foreground" />,
+      icon: <Calendar className="h-5 w-5 shrink-0 text-current" />,
     },
     {
       label: "Invoice",
       href: "/salary",
-      icon: <Wallet className="h-5 w-5 shrink-0 text-sidebar-foreground" />,
+      icon: <Wallet className="h-5 w-5 shrink-0 text-current" />,
     },
     {
       label: "Reviews",
       href: "/reviews",
-      icon: <Star className="h-5 w-5 shrink-0 text-sidebar-foreground" />,
+      icon: <Star className="h-5 w-5 shrink-0 text-current" />,
     },
   ];
 
@@ -108,12 +163,12 @@ export function AppSidebar() {
     {
       label: "Members",
       href: "/admin/members",
-      icon: <Users className="h-5 w-5 shrink-0 text-sidebar-foreground" />,
+      icon: <Users className="h-5 w-5 shrink-0 text-current" />,
     },
     {
       label: "Settings",
       href: "/admin/settings",
-      icon: <Settings2 className="h-5 w-5 shrink-0 text-sidebar-foreground" />,
+      icon: <Settings2 className="h-5 w-5 shrink-0 text-current" />,
     },
   ];
 
@@ -132,8 +187,8 @@ export function AppSidebar() {
                   link={item}
                   className={cn(
                     isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "hover:bg-sidebar-accent/50",
+                      ? "bg-sidebar-accent text-white"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent/50",
                   )}
                 />
               );
@@ -170,6 +225,8 @@ export function AppSidebar() {
             </div>
           )}
         </div>
+
+        <ProfileSection />
       </SidebarBody>
     </Sidebar>
   );

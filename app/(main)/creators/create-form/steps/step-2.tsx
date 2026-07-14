@@ -127,7 +127,7 @@ export function Step2({ form, onNext, onPrev }: Step2Props) {
                                   {value.map((item) => (
                                     <Combobox.Chip
                                       key={item}
-                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-700 text-xs font-medium"
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/20 text-primary text-xs font-medium"
                                       aria-label={item}
                                     >
                                       {item}

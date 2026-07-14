@@ -60,7 +60,7 @@ export function Step3({ form, errors, onNext, onPrev }: Step3Props) {
                           className={cn(
                             "text-xs px-3 py-1.5 rounded-xl border transition-colors",
                             field.state.value.includes(p)
-                              ? "bg-yellow-400 text-black border-yellow-400"
+                              ? "bg-primary text-primary-foreground border-primary"
                               : "border-border-light bg-input text-muted-foreground hover:text-foreground hover:border-foreground/30",
                           )}
                         >
@@ -92,7 +92,7 @@ export function Step3({ form, errors, onNext, onPrev }: Step3Props) {
                                   className={cn(
                                     "h-1.5 w-1.5 rounded-full",
                                     platformKey
-                                      ? "bg-yellow-400"
+                                      ? "bg-primary"
                                       : "bg-muted-foreground/40",
                                   )}
                                 />

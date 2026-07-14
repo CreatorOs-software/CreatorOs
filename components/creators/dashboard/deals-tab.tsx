@@ -100,7 +100,9 @@ function BrandCell({ deal }: { deal: DealFull }) {
         <span className="w-6 h-6 rounded-md shrink-0 bg-muted" />
       )}
       <div className="min-w-0">
-        <p className="text-xs font-medium truncate leading-tight">{deal.title}</p>
+        <p className="text-xs font-medium truncate leading-tight">
+          {deal.title}
+        </p>
         {deal.brands && (
           <p className="text-[10px] text-muted-foreground truncate">
             {deal.brands.company_name}
@@ -121,13 +123,13 @@ function PlatformCell({ deal }: { deal: DealFull }) {
   if (!key) return <span className="text-muted-foreground/40 text-xs">—</span>;
 
   const label =
-    key === "youtube"
-      ? "YouTube"
-      : key.charAt(0).toUpperCase() + key.slice(1);
+    key === "youtube" ? "YouTube" : key.charAt(0).toUpperCase() + key.slice(1);
 
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-sm leading-none opacity-50">{PLATFORM_ICONS[key] ?? null}</span>
+      <span className="text-sm leading-none opacity-50">
+        {PLATFORM_ICONS[key] ?? null}
+      </span>
       <span className="text-xs text-muted-foreground">{label}</span>
     </div>
   );
@@ -137,7 +139,13 @@ function StatusBadge({ status }: { status: string }) {
   const style = STATUS_STYLE[status];
   if (!style) return null;
   return (
-    <span className={cn("text-[9px] font-medium px-2 py-0.5 rounded-full", style.bg, style.text)}>
+    <span
+      className={cn(
+        "text-[9px] font-medium px-2 py-0.5 rounded-full",
+        style.bg,
+        style.text,
+      )}
+    >
       {style.label}
     </span>
   );
@@ -170,7 +178,10 @@ const laufendColumns: ColumnDef<DealFull>[] = [
       const pct = dealProgress(row.original.status);
       return (
         <div className="h-1.5 w-full max-w-32 rounded-full bg-muted overflow-hidden">
-          <div className="h-full rounded-full bg-amber-400" style={{ width: `${pct}%` }} />
+          <div
+            className="h-full rounded-full bg-accent"
+            style={{ width: `${pct}%` }}
+          />
         </div>
       );
     },
@@ -201,7 +212,8 @@ const laufendColumns: ColumnDef<DealFull>[] = [
     accessorKey: "deadline",
     cell: ({ row }) => {
       const { deadline } = row.original;
-      if (!deadline) return <span className="text-muted-foreground/40 text-xs">—</span>;
+      if (!deadline)
+        return <span className="text-muted-foreground/40 text-xs">—</span>;
       const days = daysUntil(deadline);
       return (
         <span
@@ -253,7 +265,9 @@ const pipelineColumns: ColumnDef<DealFull>[] = [
     header: "Deal",
     accessorKey: "title",
     cell: ({ row }) => (
-      <p className="text-xs text-muted-foreground truncate">{row.original.title}</p>
+      <p className="text-xs text-muted-foreground truncate">
+        {row.original.title}
+      </p>
     ),
     size: 180,
   },
@@ -326,7 +340,9 @@ function DealsTable({
       </div>
 
       {data.length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-8">{emptyText}</p>
+        <p className="text-xs text-muted-foreground text-center py-8">
+          {emptyText}
+        </p>
       ) : (
         <div className="overflow-hidden rounded-xl border border-border">
           <Table className="table-fixed">
@@ -344,14 +360,22 @@ function DealsTable({
                           className="flex items-center gap-1 cursor-pointer select-none"
                           onClick={header.column.getToggleSortingHandler()}
                         >
-                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
                           {{
                             asc: <ChevronUp className="w-3 h-3 opacity-60" />,
-                            desc: <ChevronDown className="w-3 h-3 opacity-60" />,
+                            desc: (
+                              <ChevronDown className="w-3 h-3 opacity-60" />
+                            ),
                           }[header.column.getIsSorted() as string] ?? null}
                         </div>
                       ) : (
-                        flexRender(header.column.columnDef.header, header.getContext())
+                        flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )
                       )}
                     </TableHead>
                   ))}
@@ -363,7 +387,10 @@ function DealsTable({
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-2.5">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -426,7 +453,7 @@ export function DealsTab({
         title="Laufende Deals"
         emptyText="Keine laufenden Deals"
         action={
-          <Button size="sm" variant="default" className="gap-1.5 h-7 text-xs">
+          <Button variant="default" className="gap-1.5 h-7 text-xs">
             <Plus className="w-3 h-3" />
             Neuer Deal
           </Button>

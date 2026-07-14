@@ -1,6 +1,5 @@
 "use client";
 
-import { Header } from "./header";
 import { AppSidebar } from "./sidebar";
 import { PageHeaderProvider } from "./page-header-context";
 import { PermissionProvider } from "@/components/context/permission-provider";
@@ -18,7 +17,6 @@ interface AppLayoutProps {
 export function AppLayout({
   children,
   fullHeight = false,
-  user,
   role = "member",
   permissions,
 }: AppLayoutProps) {
@@ -27,23 +25,24 @@ export function AppLayout({
   return (
     <PermissionProvider role={role} permissions={defaultPermissions}>
       <PageHeaderProvider>
-        <div className="flex flex-col md:flex-row h-svh w-full overflow-hidden">
+        <div className="flex flex-col md:flex-row h-svh w-full overflow-hidden bg-background">
           <AppSidebar />
-          <div
-            className={cn(
-              "flex flex-col flex-1 overflow-hidden",
-              fullHeight && "h-svh",
-            )}
-          >
-            <Header user={user} />
-            <main
+          <div className="flex-1 overflow-hidden p-1.5">
+            <div
               className={cn(
-                "px-6 pb-4",
-                fullHeight && "flex-1 min-h-0 overflow-hidden",
+                "h-full rounded-2xl bg-white overflow-hidden",
+                fullHeight && "flex flex-col",
               )}
             >
-              {children}
-            </main>
+              <main
+                className={cn(
+                  "px-6 pt-6 pb-4",
+                  fullHeight && "flex-1 min-h-0 overflow-hidden",
+                )}
+              >
+                {children}
+              </main>
+            </div>
           </div>
         </div>
       </PageHeaderProvider>
