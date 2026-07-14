@@ -4,7 +4,7 @@ import { Header } from "./header";
 import { AppSidebar } from "./sidebar";
 import { PageHeaderProvider } from "./page-header-context";
 import { PermissionProvider } from "@/components/context/permission-provider";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 import type { Role, PermissionMap } from "@/domains/auth/types";
 
 interface AppLayoutProps {
@@ -27,23 +27,25 @@ export function AppLayout({
   return (
     <PermissionProvider role={role} permissions={defaultPermissions}>
       <PageHeaderProvider>
-      <SidebarProvider
-        style={{ "--sidebar-width-icon": "4rem" } as React.CSSProperties}
-      >
-        <AppSidebar />
-        <SidebarInset
-          className={
-            fullHeight ? "h-svh overflow-hidden flex flex-col" : "min-h-svh"
-          }
-        >
-          <Header user={user} />
-          <main
-            className={`${fullHeight ? "flex-1 min-h-0 overflow-hidden" : ""} px-6 pb-4`}
+        <div className="flex flex-col md:flex-row h-svh w-full overflow-hidden">
+          <AppSidebar />
+          <div
+            className={cn(
+              "flex flex-col flex-1 overflow-hidden",
+              fullHeight && "h-svh",
+            )}
           >
-            {children}
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
+            <Header user={user} />
+            <main
+              className={cn(
+                "px-6 pb-4",
+                fullHeight && "flex-1 min-h-0 overflow-hidden",
+              )}
+            >
+              {children}
+            </main>
+          </div>
+        </div>
       </PageHeaderProvider>
     </PermissionProvider>
   );

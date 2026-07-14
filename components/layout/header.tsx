@@ -5,7 +5,6 @@ import { usePageHeader } from "./page-header-context";
 import { Avatar } from "@base-ui/react";
 import { ArrowLeft, Bell, LogOut, PuzzleIcon } from "lucide-react";
 import Link from "next/link";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "../ui/button";
 
 interface User {
@@ -56,7 +55,7 @@ export function Header({ user }: HeaderProps) {
           </div>
         </div>
       ) : (
-        <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+        <div />
       )}
 
       {/* Actions */}

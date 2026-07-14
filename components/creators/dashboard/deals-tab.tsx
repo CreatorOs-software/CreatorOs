@@ -1,21 +1,37 @@
 "use client";
 
-import { Clock, Plus } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, ChevronUp, Clock, Plus } from "lucide-react";
+import {
+  ColumnDef,
+  SortingState,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { Creator } from "@/domains/creators/types";
 import type { DealFull } from "./types";
 import {
+  ALT,
   LAUFEND,
   PIPELINE,
-  ALT,
   PLATFORM_ICONS,
   PLATFORM_KEY,
-  PRIORITY_DOT,
   STATUS_STYLE,
-  fmtMoney,
-  fmtDate,
   daysUntil,
+  fmtDate,
+  fmtMoney,
 } from "./constants";
 import { BrandAvatar } from "./shared";
 
@@ -40,18 +56,18 @@ function dealProgress(status: string): number {
 }
 
 function sinceLabel(deals: DealFull[]): string | null {
-  const paid = deals
+  const timestamps = deals
     .filter((d) => ALT.has(d.status))
     .map((d) => new Date(d.created_at).getTime())
     .sort((a, b) => a - b);
-  if (!paid.length) return null;
-  return new Date(paid[0]).toLocaleDateString("de-DE", {
+  if (!timestamps.length) return null;
+  return new Date(timestamps[0]).toLocaleDateString("de-DE", {
     month: "short",
     year: "numeric",
   });
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────────
+// ── Stat Card ──────────────────────────────────────────────────────────────────
 
 function StatCard({
   label,
@@ -73,152 +89,293 @@ function StatCard({
   );
 }
 
-function LaufendRow({ deal }: { deal: DealFull }) {
-  const days = deal.deadline ? daysUntil(deal.deadline) : null;
-  const pct = dealProgress(deal.status);
-  const style = STATUS_STYLE[deal.status];
-  const platformKey = deal.platform
+// ── Shared cell components ─────────────────────────────────────────────────────
+
+function BrandCell({ deal }: { deal: DealFull }) {
+  return (
+    <div className="flex items-center gap-2.5 min-w-0">
+      {deal.brands ? (
+        <BrandAvatar brand={deal.brands} />
+      ) : (
+        <span className="w-6 h-6 rounded-md shrink-0 bg-muted" />
+      )}
+      <div className="min-w-0">
+        <p className="text-xs font-medium truncate leading-tight">{deal.title}</p>
+        {deal.brands && (
+          <p className="text-[10px] text-muted-foreground truncate">
+            {deal.brands.company_name}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PlatformCell({ deal }: { deal: DealFull }) {
+  const key = deal.platform
     ? deal.platform
     : deal.deliverables[0]
       ? (PLATFORM_KEY[deal.deliverables[0]] ?? null)
       : null;
 
+  if (!key) return <span className="text-muted-foreground/40 text-xs">—</span>;
+
+  const label =
+    key === "youtube"
+      ? "YouTube"
+      : key.charAt(0).toUpperCase() + key.slice(1);
+
   return (
-    <div className="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0">
-      {/* Brand */}
-      <div className="flex items-center gap-2.5 w-52 shrink-0">
-        {deal.brands ? (
-          <BrandAvatar brand={deal.brands} />
-        ) : (
-          <span
-            className={cn(
-              "w-1.5 h-1.5 rounded-full shrink-0",
-              PRIORITY_DOT[deal.priority] ?? PRIORITY_DOT.low,
-            )}
-          />
-        )}
-        <div className="min-w-0">
-          <p className="text-xs font-medium truncate leading-tight">
-            {deal.title}
-          </p>
-          {deal.brands && (
-            <p className="text-[10px] text-muted-foreground truncate">
-              {deal.brands.company_name}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Platform + progress */}
-      <div className="flex-1 min-w-0 flex flex-col gap-1">
-        {platformKey ? (
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm leading-none opacity-50">
-              {PLATFORM_ICONS[platformKey] ?? null}
-            </span>
-            <span className="text-[10px] text-muted-foreground capitalize">
-              {platformKey === "youtube"
-                ? "YouTube"
-                : platformKey.charAt(0).toUpperCase() + platformKey.slice(1)}
-            </span>
-          </div>
-        ) : (
-          <span className="text-[10px] text-muted-foreground/40">—</span>
-        )}
-        <div className="h-1 w-full max-w-40 rounded-full bg-muted overflow-hidden">
-          <div
-            className="h-full rounded-full bg-amber-400"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Status + amount + deadline */}
-      <div className="flex flex-col items-end gap-1 shrink-0">
-        {style && (
-          <span
-            className={cn(
-              "text-[9px] font-medium px-2 py-0.5 rounded-full",
-              style.bg,
-              style.text,
-            )}
-          >
-            {style.label}
-          </span>
-        )}
-        <span className="text-xs font-medium tabular-nums">
-          {fmtMoney(Number(deal.budget))}
-        </span>
-        {days !== null && (
-          <span
-            className={cn(
-              "text-[9px] flex items-center gap-0.5",
-              days < 0 || days <= 3
-                ? "text-red-500"
-                : days <= 7
-                  ? "text-yellow-600"
-                  : "text-muted-foreground",
-            )}
-          >
-            <Clock className="w-2.5 h-2.5" />
-            bis {fmtDate(deal.deadline!)}
-          </span>
-        )}
-      </div>
+    <div className="flex items-center gap-1.5">
+      <span className="text-sm leading-none opacity-50">{PLATFORM_ICONS[key] ?? null}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
     </div>
   );
 }
 
-function PipelineCard({ deals }: { deals: DealFull[] }) {
+function StatusBadge({ status }: { status: string }) {
+  const style = STATUS_STYLE[status];
+  if (!style) return null;
+  return (
+    <span className={cn("text-[9px] font-medium px-2 py-0.5 rounded-full", style.bg, style.text)}>
+      {style.label}
+    </span>
+  );
+}
+
+// ── Laufende Deals columns ─────────────────────────────────────────────────────
+
+const laufendColumns: ColumnDef<DealFull>[] = [
+  {
+    id: "brand",
+    header: "Deal",
+    accessorFn: (row) => row.brands?.company_name ?? row.title,
+    cell: ({ row }) => <BrandCell deal={row.original} />,
+    size: 200,
+    enableHiding: false,
+  },
+  {
+    id: "platform",
+    header: "Plattform",
+    accessorFn: (row) => row.platform,
+    cell: ({ row }) => <PlatformCell deal={row.original} />,
+    size: 130,
+    enableSorting: false,
+  },
+  {
+    id: "progress",
+    header: "Fortschritt",
+    accessorFn: (row) => dealProgress(row.status),
+    cell: ({ row }) => {
+      const pct = dealProgress(row.original.status);
+      return (
+        <div className="h-1.5 w-full max-w-32 rounded-full bg-muted overflow-hidden">
+          <div className="h-full rounded-full bg-amber-400" style={{ width: `${pct}%` }} />
+        </div>
+      );
+    },
+    size: 140,
+    enableSorting: false,
+  },
+  {
+    id: "status",
+    header: "Status",
+    accessorKey: "status",
+    cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    size: 110,
+  },
+  {
+    id: "budget",
+    header: "Budget",
+    accessorKey: "budget",
+    cell: ({ row }) => (
+      <span className="text-xs font-medium tabular-nums">
+        {fmtMoney(Number(row.original.budget))}
+      </span>
+    ),
+    size: 90,
+  },
+  {
+    id: "deadline",
+    header: "Deadline",
+    accessorKey: "deadline",
+    cell: ({ row }) => {
+      const { deadline } = row.original;
+      if (!deadline) return <span className="text-muted-foreground/40 text-xs">—</span>;
+      const days = daysUntil(deadline);
+      return (
+        <span
+          className={cn(
+            "text-[10px] flex items-center gap-0.5",
+            days < 0 || days <= 3
+              ? "text-red-500"
+              : days <= 7
+                ? "text-yellow-600"
+                : "text-muted-foreground",
+          )}
+        >
+          <Clock className="w-2.5 h-2.5" />
+          {fmtDate(deadline)}
+        </span>
+      );
+    },
+    size: 100,
+  },
+];
+
+// ── Pipeline columns ───────────────────────────────────────────────────────────
+
+const pipelineColumns: ColumnDef<DealFull>[] = [
+  {
+    id: "brand",
+    header: "Brand",
+    accessorFn: (row) => row.brands?.company_name ?? row.title,
+    cell: ({ row }) => {
+      const deal = row.original;
+      return (
+        <div className="flex items-center gap-2.5 min-w-0">
+          {deal.brands ? (
+            <BrandAvatar brand={deal.brands} />
+          ) : (
+            <span className="w-6 h-6 rounded-md shrink-0 bg-muted" />
+          )}
+          <p className="text-xs font-medium truncate">
+            {deal.brands?.company_name ?? deal.title}
+          </p>
+        </div>
+      );
+    },
+    size: 180,
+    enableHiding: false,
+  },
+  {
+    id: "title",
+    header: "Deal",
+    accessorKey: "title",
+    cell: ({ row }) => (
+      <p className="text-xs text-muted-foreground truncate">{row.original.title}</p>
+    ),
+    size: 180,
+  },
+  {
+    id: "platform",
+    header: "Plattform",
+    accessorFn: (row) => row.platform,
+    cell: ({ row }) => <PlatformCell deal={row.original} />,
+    size: 130,
+    enableSorting: false,
+  },
+  {
+    id: "status",
+    header: "Status",
+    accessorKey: "status",
+    cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    size: 110,
+  },
+  {
+    id: "budget",
+    header: "Budget",
+    accessorKey: "budget",
+    cell: ({ row }) => (
+      <span className="text-xs tabular-nums text-muted-foreground">
+        {fmtMoney(Number(row.original.budget))}
+      </span>
+    ),
+    size: 90,
+  },
+];
+
+// ── Sortable table wrapper ─────────────────────────────────────────────────────
+
+function DealsTable({
+  data,
+  columns,
+  title,
+  action,
+  badge,
+  emptyText,
+}: {
+  data: DealFull[];
+  columns: ColumnDef<DealFull>[];
+  title: string;
+  action?: React.ReactNode;
+  badge?: React.ReactNode;
+  emptyText: string;
+}) {
+  "use no memo";
+  const [sorting, setSorting] = useState<SortingState>([]);
+
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
+    enableSortingRemoval: false,
+    state: { sorting },
+  });
+
   return (
     <div className="bg-card rounded-2xl p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold">Pipeline</h3>
-        {deals.length > 0 && (
-          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/15 text-blue-600 text-[9px] font-medium">
-            {deals.length}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold">{title}</h3>
+          {badge}
+        </div>
+        {action}
       </div>
-      {deals.length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-6">
-          Keine anstehenden Deals
-        </p>
+
+      {data.length === 0 ? (
+        <p className="text-xs text-muted-foreground text-center py-8">{emptyText}</p>
       ) : (
-        <div className="flex flex-col divide-y divide-border-light">
-          {deals.map((deal) => {
-            const style = STATUS_STYLE[deal.status];
-            return (
-              <div
-                key={deal.id}
-                className="flex items-center gap-2.5 py-2.5 first:pt-0 last:pb-0"
-              >
-                {deal.brands ? (
-                  <BrandAvatar brand={deal.brands} />
-                ) : (
-                  <span className="w-6 h-6 rounded-md shrink-0 bg-muted" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate leading-tight">
-                    {deal.brands?.company_name ?? deal.title}
-                  </p>
-                  {style && (
-                    <p className="text-[10px] text-muted-foreground">
-                      {style.label}
-                    </p>
-                  )}
-                </div>
-                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                  {fmtMoney(Number(deal.budget))}
-                </span>
-              </div>
-            );
-          })}
+        <div className="overflow-hidden rounded-xl border border-border">
+          <Table className="table-fixed">
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      style={{ width: `${header.getSize()}px` }}
+                      className="h-9 text-[10px] uppercase tracking-wider"
+                    >
+                      {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                        <div
+                          className="flex items-center gap-1 cursor-pointer select-none"
+                          onClick={header.column.getToggleSortingHandler()}
+                        >
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {{
+                            asc: <ChevronUp className="w-3 h-3 opacity-60" />,
+                            desc: <ChevronDown className="w-3 h-3 opacity-60" />,
+                          }[header.column.getIsSorted() as string] ?? null}
+                        </div>
+                      ) : (
+                        flexRender(header.column.columnDef.header, header.getContext())
+                      )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="py-2.5">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>
   );
 }
+
 // ── Export ─────────────────────────────────────────────────────────────────────
 
 export function DealsTab({
@@ -263,31 +420,33 @@ export function DealsTab({
       </div>
 
       {/* Laufende Deals */}
-      <div className="bg-card rounded-2xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold">Laufende Deals</h3>
+      <DealsTable
+        data={laufend}
+        columns={laufendColumns}
+        title="Laufende Deals"
+        emptyText="Keine laufenden Deals"
+        action={
           <Button size="sm" variant="default" className="gap-1.5 h-7 text-xs">
             <Plus className="w-3 h-3" />
             Neuer Deal
           </Button>
-        </div>
-        {laufend.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-8">
-            Keine laufenden Deals
-          </p>
-        ) : (
-          <div className="flex flex-col divide-y divide-border-light">
-            {laufend.map((deal) => (
-              <LaufendRow key={deal.id} deal={deal} />
-            ))}
-          </div>
-        )}
-      </div>
+        }
+      />
 
-      {/* Pipeline + Alte Deals */}
-      <div className="gap-4">
-        <PipelineCard deals={pipeline} />
-      </div>
+      {/* Pipeline */}
+      <DealsTable
+        data={pipeline}
+        columns={pipelineColumns}
+        title="Pipeline"
+        emptyText="Keine Deals in der Pipeline"
+        badge={
+          pipeline.length > 0 ? (
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/15 text-blue-600 text-[9px] font-medium">
+              {pipeline.length}
+            </span>
+          ) : null
+        }
+      />
     </div>
   );
 }
