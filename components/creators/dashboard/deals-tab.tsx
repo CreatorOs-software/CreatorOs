@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Clock, Plus } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   ColumnDef,
   SortingState,
@@ -80,12 +80,18 @@ function StatCard({
   sub: string | null;
 }) {
   return (
-    <Card className="px-5 py-4 gap-0.5 rounded-2xl">
-      <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">
-        {label}
-      </span>
-      <span className="text-2xl font-light leading-tight">{value}</span>
-      {sub && <span className="text-[10px] text-muted-foreground">{sub}</span>}
+    <Card className="rounded-2xl p-5 gap-0">
+      <CardHeader className="flex flex-row items-center justify-between p-0 mb-3 gap-0">
+        <CardTitle className="text-sm font-semibold text-foreground">
+          {label}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        <span className="text-3xl font-light tracking-tight">{value}</span>
+        {sub && (
+          <p className="text-xs text-muted-foreground mt-1">{sub}</p>
+        )}
+      </CardContent>
     </Card>
   );
 }

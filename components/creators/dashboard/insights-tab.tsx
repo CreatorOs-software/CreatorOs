@@ -9,6 +9,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -85,9 +86,9 @@ export function MiniBarChart({
   const total = values.reduce((s, v) => s + v, 0);
 
   return (
-    <div className={cn("bg-card rounded-2xl p-5", className)}>
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-lg font-semibold">{title}</p>
+    <Card className={cn("rounded-2xl p-5 gap-0", className)}>
+      <CardHeader className="flex flex-row items-center justify-between p-0 mb-4 gap-0">
+        <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
         <div className="flex items-center gap-1">
           {([7, 30] as const).map((d) => (
             <button
@@ -105,43 +106,44 @@ export function MiniBarChart({
           ))}
           <CopyButton value={formatter(total)} />
         </div>
-      </div>
-
-      <div className="flex items-baseline gap-2 mb-6">
-        <span className="text-4xl font-light tracking-tight">
-          {formatter(total)}
-        </span>
-        <div className="ml-1">
-          <p className="text-xs text-muted-foreground">Letzte</p>
-          <p className="text-xs text-muted-foreground">{days} Tage</p>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="flex items-baseline gap-2 mb-6">
+          <span className="text-4xl font-light tracking-tight">
+            {formatter(total)}
+          </span>
+          <div className="ml-1">
+            <p className="text-xs text-muted-foreground">Letzte</p>
+            <p className="text-xs text-muted-foreground">{days} Tage</p>
+          </div>
         </div>
-      </div>
 
-      <div className="flex items-end justify-between gap-1 h-24">
-        {slice.map((d, idx) => {
-          const val = Number(d[valueKey] ?? 0);
-          const heightPct = max > 0 ? (val / max) * 100 : 0;
-          return (
-            <div key={idx} className="flex flex-col items-center flex-1 group">
-              <div className="relative flex items-end justify-center w-full h-20">
-                <div
-                  className="rounded-full w-full bg-secondary group-hover:bg-primary transition-colors duration-150"
-                  style={{
-                    height: `${Math.max(heightPct, 6)}%`,
-                    maxWidth: days === 30 ? "4px" : "10px",
-                  }}
-                />
+        <div className="flex items-end justify-between gap-1 h-24">
+          {slice.map((d, idx) => {
+            const val = Number(d[valueKey] ?? 0);
+            const heightPct = max > 0 ? (val / max) * 100 : 0;
+            return (
+              <div key={idx} className="flex flex-col items-center flex-1 group">
+                <div className="relative flex items-end justify-center w-full h-20">
+                  <div
+                    className="rounded-full w-full bg-secondary group-hover:bg-primary transition-colors duration-150"
+                    style={{
+                      height: `${Math.max(heightPct, 6)}%`,
+                      maxWidth: days === 30 ? "4px" : "10px",
+                    }}
+                  />
+                </div>
+                {days === 7 && (
+                  <span className="text-[10px] mt-1.5 text-muted-foreground">
+                    {shortDay(d.date)}
+                  </span>
+                )}
               </div>
-              {days === 7 && (
-                <span className="text-[10px] mt-1.5 text-muted-foreground">
-                  {shortDay(d.date)}
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -165,71 +167,72 @@ export function SubscriberChart({
   const range = max - min || 1;
 
   return (
-    <div className={cn("bg-card rounded-2xl p-5", className)}>
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-lg font-semibold">{title}</p>
+    <Card className={cn("rounded-2xl p-5 gap-0", className)}>
+      <CardHeader className="flex flex-row items-center justify-between p-0 mb-4 gap-0">
+        <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
         <CopyButton value={fmt(values[values.length - 1] ?? 0)} />
-      </div>
-
-      <div className="flex items-baseline gap-2 mb-6">
-        <span className="text-4xl font-light tracking-tight">
-          {fmt(values[values.length - 1] ?? 0)}
-        </span>
-        <div className="ml-1">
-          <p className="text-xs text-muted-foreground">Aktuell</p>
-          <p className="text-xs text-muted-foreground">Gesamt</p>
-        </div>
-      </div>
-
-      <div className="h-24 w-full">
-        {values.length > 1 && (
-          <svg
-            viewBox={`0 0 ${(last7.length - 1) * 40} 80`}
-            className="w-full h-full overflow-visible"
-            preserveAspectRatio="none"
-          >
-            <defs>
-              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={color} stopOpacity="0.25" />
-                <stop offset="100%" stopColor={color} stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path
-              d={[
-                ...values.map(
-                  (v, i) =>
-                    `${i === 0 ? "M" : "L"} ${i * 40} ${80 - ((v - min) / range) * 70}`,
-                ),
-                `L ${(values.length - 1) * 40} 80`,
-                "L 0 80 Z",
-              ].join(" ")}
-              fill={`url(#${gradientId})`}
-            />
-            <path
-              d={values
-                .map(
-                  (v, i) =>
-                    `${i === 0 ? "M" : "L"} ${i * 40} ${80 - ((v - min) / range) * 70}`,
-                )
-                .join(" ")}
-              fill="none"
-              stroke={color}
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        )}
-      </div>
-
-      <div className="flex justify-between mt-1">
-        {last7.map((d, i) => (
-          <span key={i} className="text-[10px] text-muted-foreground">
-            {shortDay(d.date)}
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="flex items-baseline gap-2 mb-6">
+          <span className="text-4xl font-light tracking-tight">
+            {fmt(values[values.length - 1] ?? 0)}
           </span>
-        ))}
-      </div>
-    </div>
+          <div className="ml-1">
+            <p className="text-xs text-muted-foreground">Aktuell</p>
+            <p className="text-xs text-muted-foreground">Gesamt</p>
+          </div>
+        </div>
+
+        <div className="h-24 w-full">
+          {values.length > 1 && (
+            <svg
+              viewBox={`0 0 ${(last7.length - 1) * 40} 80`}
+              className="w-full h-full overflow-visible"
+              preserveAspectRatio="none"
+            >
+              <defs>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+                  <stop offset="100%" stopColor={color} stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <path
+                d={[
+                  ...values.map(
+                    (v, i) =>
+                      `${i === 0 ? "M" : "L"} ${i * 40} ${80 - ((v - min) / range) * 70}`,
+                  ),
+                  `L ${(values.length - 1) * 40} 80`,
+                  "L 0 80 Z",
+                ].join(" ")}
+                fill={`url(#${gradientId})`}
+              />
+              <path
+                d={values
+                  .map(
+                    (v, i) =>
+                      `${i === 0 ? "M" : "L"} ${i * 40} ${80 - ((v - min) / range) * 70}`,
+                  )
+                  .join(" ")}
+                fill="none"
+                stroke={color}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+        </div>
+
+        <div className="flex justify-between mt-1">
+          {last7.map((d, i) => (
+            <span key={i} className="text-[10px] text-muted-foreground">
+              {shortDay(d.date)}
+            </span>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -253,20 +256,20 @@ function YouTubeContent({
       {hasDaily ? (
         <MiniBarChart title="Views" data={daily} valueKey="views" className="col-span-12 lg:col-span-4" />
       ) : (
-        <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex items-center justify-center text-sm text-muted-foreground">
+        <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 flex items-center justify-center text-sm text-muted-foreground">
           Noch keine Verlaufsdaten
-        </div>
+        </Card>
       )}
 
       {hasDaily ? (
         <SubscriberChart data={daily} className="col-span-12 lg:col-span-4" />
       ) : (
-        <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex items-center justify-center text-sm text-muted-foreground">
+        <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 flex items-center justify-center text-sm text-muted-foreground">
           Noch keine Verlaufsdaten
-        </div>
+        </Card>
       )}
 
-      <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
+      <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 gap-6 flex flex-col justify-between">
         <StatBlock
           label="Avg. View-Zeit"
           value={fmtDuration(ytRaw.avgViewDurationSecs ?? 0)}
@@ -282,7 +285,7 @@ function YouTubeContent({
               : undefined
           }
         />
-      </div>
+      </Card>
 
       {hasDaily && (
         <MiniBarChart title="Likes" data={daily} valueKey="likes" className="col-span-12 lg:col-span-4" />
@@ -291,7 +294,7 @@ function YouTubeContent({
         <MiniBarChart title="Kommentare" data={daily} valueKey="comments" className="col-span-12 lg:col-span-4" />
       )}
 
-      <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
+      <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 gap-6 flex flex-col justify-between">
         <StatBlock label="Views (30d)" value={fmt(current.views_30d)} />
         <div className="h-px bg-border-light" />
         <StatBlock
@@ -299,7 +302,7 @@ function YouTubeContent({
           value={`${current.engagement_rate?.toFixed(1) ?? "0"}%`}
           sub="Likes + Kommentare / Views"
         />
-      </div>
+      </Card>
     </div>
   );
 }
@@ -334,7 +337,7 @@ function InstagramContent({
           className="col-span-12 lg:col-span-4"
         />
       ) : (
-        <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
+        <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 gap-6 flex flex-col justify-between">
           <StatBlock
             label="Follower"
             value={fmt(current.audience)}
@@ -344,30 +347,30 @@ function InstagramContent({
                 : undefined
             }
           />
-        </div>
+        </Card>
       )}
 
       {hasDaily ? (
         <MiniBarChart title="Views" data={daily} valueKey="views" className="col-span-12 lg:col-span-4" />
       ) : (
-        <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
+        <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 gap-6 flex flex-col justify-between">
           <StatBlock label="Views (30d)" value={fmt(current.views_30d)} />
-        </div>
+        </Card>
       )}
 
-      <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
+      <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 gap-6 flex flex-col justify-between">
         <StatBlock label="Reach (30d)" value={fmt(raw.reach30d ?? 0)} />
         <div className="h-px bg-border-light" />
         <StatBlock label="Profilbesuche (30d)" value={fmt(raw.profileViews30d ?? 0)} />
-      </div>
+      </Card>
 
-      <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
+      <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 gap-6 flex flex-col justify-between">
         <StatBlock label="Story Views (live)" value={fmt(raw.storyViews ?? 0)} sub="Aktuell laufende Stories" />
         <div className="h-px bg-border-light" />
         <StatBlock label="Reel Reichweite (30d)" value={fmt(raw.reelReach30d ?? 0)} />
-      </div>
+      </Card>
 
-      <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
+      <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 gap-6 flex flex-col justify-between">
         <StatBlock
           label="Linkklicks (7d)"
           value={fmt(raw.websiteClicks7d ?? 0)}
@@ -379,15 +382,15 @@ function InstagramContent({
           value={fmt(raw.feedPosts30d ?? 0)}
           sub={`${fmt(raw.mediaCount ?? 0)} Beiträge gesamt`}
         />
-      </div>
+      </Card>
 
-      <div className="col-span-12 lg:col-span-4 bg-card rounded-2xl p-5 flex flex-col justify-between gap-6">
+      <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 gap-6 flex flex-col justify-between">
         <StatBlock
           label="Follower-Wachstum (7d)"
           value={`${current.audience_growth_7d >= 0 ? "+" : ""}${fmt(current.audience_growth_7d)}`}
           sub={`${current.audience_growth_30d >= 0 ? "+" : ""}${fmt(current.audience_growth_30d)} (30d)`}
         />
-      </div>
+      </Card>
     </div>
   );
 }

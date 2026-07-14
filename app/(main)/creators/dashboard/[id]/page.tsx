@@ -211,7 +211,6 @@ export default function CreatorDashboardPage() {
           <TabsContent value="deals">
             <DealsTab deals={deals} creator={creator} />
           </TabsContent>
-
           {/* Insights */}
           <TabsContent value="insights">
             {metricsPending ? (

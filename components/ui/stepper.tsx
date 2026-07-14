@@ -70,7 +70,7 @@ export function Stepper({ steps, current }: StepperProps) {
             <span
               className={cn(
                 "mt-2 text-xs font-medium text-center leading-tight transition-colors duration-300",
-                state === "active" && "text-yellow-400",
+                state === "active" && "text-primary",
                 state === "done" && "text-foreground",
                 state === "future" && "text-muted-foreground/60",
               )}
