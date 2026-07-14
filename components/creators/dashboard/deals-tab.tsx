@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Clock, Plus } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import {
   ColumnDef,
   SortingState,
@@ -79,13 +80,13 @@ function StatCard({
   sub: string | null;
 }) {
   return (
-    <div className="bg-card rounded-2xl px-5 py-4 flex flex-col gap-0.5">
+    <Card className="px-5 py-4 gap-0.5 rounded-2xl">
       <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">
         {label}
       </span>
       <span className="text-2xl font-light leading-tight">{value}</span>
       {sub && <span className="text-[10px] text-muted-foreground">{sub}</span>}
-    </div>
+    </Card>
   );
 }
 
@@ -330,7 +331,7 @@ function DealsTable({
   });
 
   return (
-    <div className="bg-card rounded-2xl p-5">
+    <Card className="p-5 gap-0 rounded-2xl">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold">{title}</h3>
@@ -344,7 +345,7 @@ function DealsTable({
           {emptyText}
         </p>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border">
+        <div className="overflow-hidden rounded-xl  ">
           <Table className="table-fixed">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -399,7 +400,7 @@ function DealsTable({
           </Table>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 

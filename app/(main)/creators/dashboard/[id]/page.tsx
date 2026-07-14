@@ -169,7 +169,7 @@ export default function CreatorDashboardPage() {
         className="flex-1 min-h-0 flex flex-col gap-0"
       >
         {/* Tab bar */}
-        <div className="shrink-0 -mx-6 px-6 mb-4 flex items-end justify-between border-b border-border">
+        <div className="shrink-0 -mx-6 px-6 mb-4 flex items-end justify-between ">
           <TabsList variant="underline">
             <TabsTrigger value="uebersicht">Übersicht</TabsTrigger>
             <TabsTrigger value="deals">Deals</TabsTrigger>

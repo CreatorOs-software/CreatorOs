@@ -3,6 +3,7 @@
 import { AlertCircle, Clock, Loader2, RefreshCw, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CalendarCard } from "@/components/dashboard/calendar-card";
+import { Card } from "@/components/ui/card";
 import type { Creator } from "@/domains/creators/types";
 import type { DealFull, Invoice } from "./types";
 import {
@@ -23,7 +24,7 @@ function LaufendeDeals({ deals }: { deals: DealFull[] }) {
   const active = deals.filter((d) => LAUFEND.has(d.status));
 
   return (
-    <div className="bg-card rounded-2xl p-5">
+    <Card className="p-5 gap-0 rounded-2xl">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold">Laufende Deals</h3>
         {active.length > 0 && (
@@ -110,7 +111,7 @@ function LaufendeDeals({ deals }: { deals: DealFull[] }) {
           })}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -118,7 +119,7 @@ function PipelinePanel({ deals }: { deals: DealFull[] }) {
   const pipeline = deals.filter((d) => PIPELINE.has(d.status));
 
   return (
-    <div className="bg-card rounded-2xl p-5">
+    <Card className="p-5 gap-0 rounded-2xl">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold">Pipeline</h3>
         {pipeline.length > 0 && (
@@ -160,7 +161,7 @@ function PipelinePanel({ deals }: { deals: DealFull[] }) {
           ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -168,7 +169,7 @@ function AlteDealsPanel({ deals }: { deals: DealFull[] }) {
   const old = deals.filter((d) => ALT.has(d.status));
 
   return (
-    <div className="bg-card rounded-2xl p-5">
+    <Card className="p-5 gap-0 rounded-2xl">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold">Alte Deals</h3>
         {old.length > 0 && (
@@ -203,7 +204,7 @@ function AlteDealsPanel({ deals }: { deals: DealFull[] }) {
           ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -232,7 +233,7 @@ function FinanzenPanel({
   ).length;
 
   return (
-    <div className="bg-card rounded-2xl p-5 flex flex-col gap-4">
+    <Card className="p-5 rounded-2xl">
       <h3 className="text-sm font-semibold">Finanzen</h3>
 
       <div className="flex flex-col gap-3">
@@ -308,7 +309,7 @@ function FinanzenPanel({
           </div>
         </>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -326,7 +327,7 @@ function GesamtüberblickPanel({
   const paidCount = deals.filter((d) => d.status === "paid").length;
 
   return (
-    <div className="bg-card rounded-2xl p-5 flex flex-col gap-4">
+    <Card className="p-5 rounded-2xl">
       <h3 className="text-sm font-semibold">Gesamtüberblick</h3>
 
       <div className="flex flex-col gap-2">
@@ -398,7 +399,7 @@ function GesamtüberblickPanel({
             ? "Pause"
             : "Inaktiv"}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -428,7 +429,7 @@ function AufgabenPanel({ deals }: { deals: DealFull[] }) {
   });
 
   return (
-    <div className="bg-card rounded-2xl p-5">
+    <Card className="p-5 gap-0 rounded-2xl">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold">Aufgaben</h3>
         {todos.length > 0 && (
@@ -458,7 +459,7 @@ function AufgabenPanel({ deals }: { deals: DealFull[] }) {
           ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 

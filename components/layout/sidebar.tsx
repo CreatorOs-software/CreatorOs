@@ -46,7 +46,7 @@ const Logo = () => (
 );
 
 const LogoIcon = () => (
-  <Link href="/dashboard" className="flex py-1 relative z-20">
+  <Link href="/dashboard" className="flex justify-center py-1 relative z-20">
     <div className="h-5 w-6 bg-sidebar-accent rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm shrink-0" />
   </Link>
 );
@@ -65,7 +65,7 @@ function ProfileSection() {
     .join("");
 
   return (
-    <div className="flex items-center gap-2 px-2 py-2 rounded-md">
+    <div className={cn("flex items-center py-2 rounded-md", open ? "gap-2 px-2" : "justify-center")}>
       <Avatar.Root className="w-7 h-7 rounded-full overflow-hidden shrink-0">
         <Avatar.Image
           src={user?.user_metadata?.avatar_url as string | undefined}
