@@ -3,56 +3,92 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check } from "lucide-react";
+import { useForm } from "@tanstack/react-form";
 import { Button } from "@/components/ui/button";
 import { Stepper } from "@/components/ui/stepper";
-import { StepNav } from "@/app/(main)/creators/create-form/steps/step-nav";
 import type { Creator } from "@/domains/creators/types";
 
-const STEPS = [
-  { id: 1, label: "Basisdaten" },
-  { id: 2, label: "Details" },
-  { id: 3, label: "Zeitplan" },
-  { id: 4, label: "Prüfen" },
-];
+import { STEPS, getInitialValues } from "./deal-form.constants";
+import { STEP_SCHEMAS } from "./deal-form.schema";
+import type { DealFormValues } from "./deal-form.schema";
+import type { StepErrors, BrandOption, CreatorOption } from "./deal-form.types";
 
-function PlaceholderStep({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
-      <div>
-        <h2 className="font-semibold text-foreground">{title}</h2>
-        <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p>
-      </div>
-      <div className="sm:col-span-2">
-        <div className="h-40 rounded-xl border border-dashed border-border flex items-center justify-center">
-          <p className="text-sm text-muted-foreground">Platzhalter — Felder folgen</p>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { Step1 } from "./steps/step-1";
+import { Step2 } from "./steps/step-2";
+import { Step3 } from "./steps/step-3";
+import { Step4 } from "./steps/step-4";
 
 interface CreateDealWizardProps {
   creator: Creator;
+  brands: BrandOption[];
+  creators: CreatorOption[];
 }
 
-export function CreateDealWizard({ creator }: CreateDealWizardProps) {
+export function CreateDealWizard({ creator, brands, creators }: CreateDealWizardProps) {
   const router = useRouter();
+
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [done, setDone] = useState(false);
+  const [images, setImages] = useState<File[]>([]);
+  const [stepErrors, setStepErrors] = useState<StepErrors>({});
+  const [saving, setSaving] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const form = useForm({
+    defaultValues: getInitialValues(creator.id),
+    onSubmit: async () => {
+      setSaving(true);
+      setSubmitError(null);
+      try {
+        // TODO: POST to /api/creators/[id]/deals
+        setDone(true);
+      } catch (e) {
+        setSubmitError((e as Error).message ?? "Fehler beim Speichern");
+      } finally {
+        setSaving(false);
+      }
+    },
+  });
+
+  function validateStep(stepNum: 1 | 2 | 3 | 4): StepErrors {
+    const schema = STEP_SCHEMAS[stepNum];
+    const result = schema.safeParse(form.state.values);
+    if (result.success) return {};
+
+    const errors: StepErrors = {};
+    for (const issue of result.error.issues) {
+      const key = issue.path[0] as keyof DealFormValues;
+      if (key && !errors[key]) errors[key] = issue.message;
+    }
+    return errors;
+  }
 
   function handleNext() {
+    const errors = validateStep(step as 1 | 2 | 3 | 4);
+    if (Object.keys(errors).length > 0) {
+      setStepErrors(errors);
+      return;
+    }
+    setStepErrors({});
     setDirection("forward");
     setStep((s) => s + 1);
   }
 
   function handlePrev() {
+    setStepErrors({});
     setDirection("backward");
     setStep((s) => s - 1);
   }
 
-  function handleSubmit() {
-    setDone(true);
+  async function handleSubmit() {
+    await form.handleSubmit();
+  }
+
+  function handleGoToStep(s: number) {
+    setStepErrors({});
+    setDirection("backward");
+    setStep(s);
   }
 
   if (done) {
@@ -122,42 +158,45 @@ export function CreateDealWizard({ creator }: CreateDealWizardProps) {
                 : "animate-in slide-in-from-left-8 fade-in duration-300"
             }
           >
-            {step === 1 ? (
-              <>
-                <PlaceholderStep
-                  title="Basisdaten"
-                  description="Brand, Titel und Budget des Deals."
-                />
-                <StepNav onNext={handleNext} submitLabel="Deal anlegen" />
-              </>
-            ) : step === 2 ? (
-              <>
-                <PlaceholderStep
-                  title="Details"
-                  description="Plattform, Kampagnentyp und Deliverables."
-                />
-                <StepNav onPrev={handlePrev} onNext={handleNext} submitLabel="Deal anlegen" />
-              </>
-            ) : step === 3 ? (
-              <>
-                <PlaceholderStep
-                  title="Zeitplan"
-                  description="Status, Priorität und Deadline."
-                />
-                <StepNav onPrev={handlePrev} onNext={handleNext} submitLabel="Deal anlegen" />
-              </>
-            ) : (
-              <>
-                <PlaceholderStep
-                  title="Prüfen"
-                  description="Alle Angaben überprüfen und Deal anlegen."
-                />
-                <StepNav
-                  onPrev={handlePrev}
-                  onSubmit={handleSubmit}
-                  submitLabel="Deal anlegen"
-                />
-              </>
+            {step === 1 && (
+              <Step1
+                form={form}
+                errors={stepErrors}
+                brands={brands}
+                creators={creators}
+                onNext={handleNext}
+              />
+            )}
+            {step === 2 && (
+              <Step2
+                form={form}
+                errors={stepErrors}
+                images={images}
+                onImagesChange={setImages}
+                onNext={handleNext}
+                onPrev={handlePrev}
+              />
+            )}
+            {step === 3 && (
+              <Step3
+                form={form}
+                errors={stepErrors}
+                onNext={handleNext}
+                onPrev={handlePrev}
+              />
+            )}
+            {step === 4 && (
+              <Step4
+                values={form.state.values}
+                brands={brands}
+                creators={creators}
+                images={images}
+                saving={saving}
+                error={submitError}
+                onPrev={handlePrev}
+                onSubmit={handleSubmit}
+                onGoToStep={handleGoToStep}
+              />
             )}
           </div>
         </div>
