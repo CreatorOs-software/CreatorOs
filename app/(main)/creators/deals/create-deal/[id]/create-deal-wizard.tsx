@@ -37,11 +37,19 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
 
   const form = useForm({
     defaultValues: getInitialValues(creator.id),
-    onSubmit: async () => {
+    onSubmit: async ({ value }) => {
       setSaving(true);
       setSubmitError(null);
       try {
-        // TODO: POST to /api/creators/[id]/deals
+        const res = await fetch(`/api/creators/${creator.id}/deals`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(value),
+        });
+        if (!res.ok) {
+          const json = await res.json().catch(() => ({}));
+          throw new Error(json.error ?? "Fehler beim Speichern");
+        }
         setDone(true);
       } catch (e) {
         setSubmitError((e as Error).message ?? "Fehler beim Speichern");

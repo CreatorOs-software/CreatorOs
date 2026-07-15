@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Clock, Plus } from "lucide-react";
+import {
+  ArrowUpRight,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Plus,
+} from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   ColumnDef,
@@ -85,12 +91,13 @@ function StatCard({
         <CardTitle className="text-sm font-semibold text-foreground">
           {label}
         </CardTitle>
+        <Button variant="outline" size="icon-sm">
+          <ArrowUpRight />
+        </Button>
       </CardHeader>
       <CardContent className="p-0">
         <span className="text-3xl font-light tracking-tight">{value}</span>
-        {sub && (
-          <p className="text-xs text-muted-foreground mt-1">{sub}</p>
-        )}
+        {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
       </CardContent>
     </Card>
   );
@@ -429,7 +436,7 @@ export function DealsTab({
   const verhandlung = pipeline.filter((d) => d.status === "negotiation").length;
 
   return (
-    <div className="flex flex-col gap-4 pb-6">
+    <div className="flex flex-col gap-8 pb-6">
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         <StatCard
