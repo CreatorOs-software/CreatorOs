@@ -23,6 +23,7 @@ export const paymentItemSchema = z.object({
   amount: z.number().min(0),
   invoice_date: z.string(), // "" = noch nicht gestellt
   payment_term: paymentTermSchema,
+  paid_at: z.string().optional(), // ISO date string, set when marked as paid
 });
 
 export type PaymentItem = z.infer<typeof paymentItemSchema>;

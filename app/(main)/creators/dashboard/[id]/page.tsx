@@ -305,7 +305,7 @@ export default function CreatorDashboardPage() {
 
           {/* Verträge */}
           <TabsContent value="vertraege">
-            <VertraegeTab invoices={invoices} />
+            <VertraegeTab invoices={invoices} creatorId={id} />
           </TabsContent>
         </div>
       </Tabs>

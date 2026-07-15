@@ -64,14 +64,20 @@ function LaufendeDeals({ deals }: { deals: DealFull[] }) {
 
                 {deal.deliverables.length > 0 && (
                   <div className="flex flex-wrap gap-1 pl-6">
-                    {deal.deliverables.map((d, i) => (
-                      <span
-                        key={i}
-                        className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground"
-                      >
-                        {d}
-                      </span>
-                    ))}
+                    {deal.deliverables.map((d, i) => {
+                      const label =
+                        typeof d === "object" && d !== null
+                          ? `${(d as { count: number; content_type: string }).count}× ${(d as { count: number; content_type: string }).content_type}`
+                          : String(d);
+                      return (
+                        <span
+                          key={i}
+                          className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground"
+                        >
+                          {label}
+                        </span>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -208,6 +214,16 @@ function AlteDealsPanel({ deals }: { deals: DealFull[] }) {
   );
 }
 
+function countOverdueInvoices(invoices: Invoice[]): number {
+  const now = Date.now();
+  return invoices.filter(
+    (inv) =>
+      (inv.status === "sent" || inv.status === "overdue") &&
+      inv.due_date != null &&
+      new Date(inv.due_date).getTime() < now,
+  ).length;
+}
+
 function FinanzenPanel({
   deals,
   invoices,
@@ -215,7 +231,6 @@ function FinanzenPanel({
   deals: DealFull[];
   invoices: Invoice[];
 }) {
-  const now = Date.now();
   const earned = deals
     .filter((d) => d.status === "paid")
     .reduce((s, d) => s + Number(d.budget), 0);
@@ -225,12 +240,7 @@ function FinanzenPanel({
   const pipelineVal = deals
     .filter((d) => PIPELINE.has(d.status) || LAUFEND.has(d.status))
     .reduce((s, d) => s + Number(d.budget), 0);
-  const overdueCount = invoices.filter(
-    (inv) =>
-      (inv.status === "sent" || inv.status === "overdue") &&
-      inv.due_date &&
-      new Date(inv.due_date).getTime() < now,
-  ).length;
+  const overdueCount = countOverdueInvoices(invoices);
 
   return (
     <Card className="p-5 rounded-2xl">
@@ -274,10 +284,7 @@ function FinanzenPanel({
             <p className="text-xs font-medium">Rechnungen</p>
             {invoices.slice(0, 6).map((inv) => {
               const style = INVOICE_STATUS[inv.status] ?? INVOICE_STATUS.draft;
-              const isOverdue =
-                (inv.status === "sent" || inv.status === "overdue") &&
-                inv.due_date &&
-                new Date(inv.due_date).getTime() < now;
+              const isOverdue = countOverdueInvoices([inv]) > 0;
               return (
                 <div key={inv.id} className="flex items-center gap-2">
                   {inv.brands && <BrandAvatar brand={inv.brands} size="sm" />}

@@ -14,7 +14,9 @@ export async function GET(
       .from("deals")
       .select(`
         id, title, budget, status, priority, platform, deadline,
-        campaign_type, deliverables, description, created_at,
+        brand_id, creator_id,
+        campaign_type, deliverables, description, product, contact_person,
+        usage_rights, exclusivity, payment_items, blocker, created_at,
         brands(company_name, color, short_code, contact_name, contact_email)
       `)
       .eq("creator_id", creatorId)

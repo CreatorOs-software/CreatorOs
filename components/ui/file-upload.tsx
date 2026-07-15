@@ -31,6 +31,7 @@ import {
   UploadIcon,
   VideoIcon,
   X,
+  Loader2Icon,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -412,10 +413,35 @@ function ImageThumb({ file, onRemove }: { file: File; onRemove: () => void }) {
   )
 }
 
+// ---------- Document Entry (API shape) ----------
+type DocEntry = {
+  id: string
+  name: string
+  size: number
+  type: string
+  url: string
+  path: string
+}
+
+const docToUploadEntry = (d: DocEntry): UploadEntry => ({
+  id: d.id,
+  file: { name: d.name, type: d.type, size: d.size },
+  preview: d.url,
+})
+
 // ---------- Main Document Upload Component ----------
-export function DocumentUpload() {
+export function DocumentUpload({ creatorId }: { creatorId: string }) {
   const maxSize = 20 * 1024 * 1024
   const maxFiles = 20
+
+  // -- Server state --
+  const [documents, setDocuments] = React.useState<DocEntry[]>([])
+  const [loading, setLoading] = React.useState(true)
+  const [uploading, setUploading] = React.useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = React.useState<Set<string>>(new Set())
+  const [apiError, setApiError] = React.useState<string | null>(null)
+
+  // -- UI state --
   const [view, setView] = React.useState<"list" | "grid">("list")
   const [query, setQuery] = React.useState("")
   const [sortBy, setSortBy] = React.useState<"name" | "type" | "size">("name")
@@ -423,10 +449,13 @@ export function DocumentUpload() {
   const [selected, setSelected] = React.useState<Set<string>>(new Set())
   const [copied, setCopied] = React.useState<string | null>(null)
 
-  const [
-    { files, isDragging, errors },
-    { handleDragEnter, handleDragLeave, handleDragOver, handleDrop, openFileDialog, removeFile, clearFiles, getInputProps },
-  ] = useFileUpload({ multiple: true, maxFiles, maxSize })
+  // Load documents on mount
+  React.useEffect(() => {
+    fetch(`/api/creators/${creatorId}/documents`)
+      .then((r) => r.json())
+      .then((data) => { setDocuments(data.documents ?? []); setLoading(false) })
+      .catch(() => { setApiError("Fehler beim Laden der Dokumente"); setLoading(false) })
+  }, [creatorId])
 
   React.useEffect(() => {
     if (!copied) return
@@ -434,29 +463,96 @@ export function DocumentUpload() {
     return () => clearTimeout(t)
   }, [copied])
 
+  // Upload new files via API
+  const uploadFiles = React.useCallback(
+    async (newFiles: FileWithPreview[]) => {
+      setApiError(null)
+      for (const fw of newFiles) {
+        if (!(fw.file instanceof File)) continue
+        const file = fw.file
+        setUploading((prev) => new Set(prev).add(file.name))
+        try {
+          const formData = new FormData()
+          formData.append("file", file)
+          const res = await fetch(`/api/creators/${creatorId}/documents`, {
+            method: "POST",
+            body: formData,
+          })
+          const data = await res.json()
+          if (!res.ok) throw new Error(data.error ?? "Upload fehlgeschlagen")
+          setDocuments((prev) => [data.document, ...prev])
+        } catch (e) {
+          setApiError(e instanceof Error ? e.message : "Fehler beim Hochladen")
+        } finally {
+          setUploading((prev) => { const n = new Set(prev); n.delete(file.name); return n })
+        }
+      }
+    },
+    [creatorId]
+  )
+
+  // Delete a single document via API
+  const deleteDocument = React.useCallback(
+    async (doc: DocEntry) => {
+      setDeleting((prev) => new Set(prev).add(doc.id))
+      setApiError(null)
+      try {
+        const res = await fetch(`/api/creators/${creatorId}/documents`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: doc.path }),
+        })
+        if (!res.ok) {
+          const d = await res.json()
+          throw new Error(d.error ?? "Fehler beim Löschen")
+        }
+        setDocuments((prev) => prev.filter((d) => d.id !== doc.id))
+        setSelected((prev) => { const n = new Set(prev); n.delete(doc.id); return n })
+      } catch (e) {
+        setApiError(e instanceof Error ? e.message : "Fehler beim Löschen")
+      } finally {
+        setDeleting((prev) => { const n = new Set(prev); n.delete(doc.id); return n })
+      }
+    },
+    [creatorId]
+  )
+
+  // DnD/input hook — only used for drag state + validation + triggering uploadFiles
+  const [
+    { isDragging, errors },
+    { handleDragEnter, handleDragLeave, handleDragOver, handleDrop, openFileDialog, getInputProps },
+  ] = useFileUpload({ multiple: true, maxFiles, maxSize, onFilesAdded: uploadFiles })
+
+  const isUploading = uploading.size > 0
+
   const totalSize = React.useMemo(
-    () => files.reduce((acc, f) => acc + getSize(f as UploadEntry), 0),
-    [files]
+    () => documents.reduce((acc, d) => acc + d.size, 0),
+    [documents]
   )
 
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase()
     const base = q
-      ? files.filter((f: UploadEntry) => {
-          const name = getName(f).toLowerCase(), type = getType(f).toLowerCase(), ext = getExt(name)
-          return name.includes(q) || type.includes(q) || ext.includes(q)
+      ? documents.filter((d) => {
+          const ext = getExt(d.name)
+          return (
+            d.name.toLowerCase().includes(q) ||
+            d.type.toLowerCase().includes(q) ||
+            ext.includes(q)
+          )
         })
-      : files
-    return [...base].sort((a: UploadEntry, b: UploadEntry) => {
+      : documents
+
+    return [...base].sort((a, b) => {
       let cmp = 0
-      if (sortBy === "name") cmp = getName(a).localeCompare(getName(b))
-      else if (sortBy === "type") cmp = getType(a).localeCompare(getType(b))
-      else cmp = getSize(a) - getSize(b)
+      if (sortBy === "name") cmp = a.name.localeCompare(b.name)
+      else if (sortBy === "type") cmp = a.type.localeCompare(b.type)
+      else cmp = a.size - b.size
       return sortDir === "asc" ? cmp : -cmp
     })
-  }, [files, query, sortBy, sortDir])
+  }, [documents, query, sortBy, sortDir])
 
-  const allSelected = selected.size > 0 && filtered.every((f) => selected.has(f.id))
+  const allSelected = selected.size > 0 && filtered.every((d) => selected.has(d.id))
   const noneSelected = selected.size === 0
 
   const toggleOne = (id: string) =>
@@ -465,26 +561,20 @@ export function DocumentUpload() {
   const toggleAll = () =>
     setSelected((prev) => {
       if (!filtered.length) return prev
-      return filtered.every((f) => prev.has(f.id)) ? new Set() : new Set(filtered.map((f) => f.id))
+      return filtered.every((d) => prev.has(d.id)) ? new Set() : new Set(filtered.map((d) => d.id))
     })
 
-  const removeSelected = () => {
-    filtered.forEach((f) => { if (selected.has(f.id)) removeFile(f.id) })
-    setSelected(new Set())
+  const removeSelected = async () => {
+    const toDelete = filtered.filter((d) => selected.has(d.id))
+    await Promise.all(toDelete.map(deleteDocument))
   }
 
-  const downloadOne = (entry: UploadEntry) => {
-    const url = getPreviewUrl(entry)
-    if (url) window.open(url, "_blank", "noopener,noreferrer")
+  const copyLink = async (doc: DocEntry) => {
+    if (!doc.url) return
+    try { await navigator.clipboard.writeText(doc.url); setCopied(doc.id) } catch { /* noop */ }
   }
 
-  const downloadSelected = () => filtered.forEach((f) => { if (selected.has(f.id)) downloadOne(f as UploadEntry) })
-
-  const copyLink = async (entry: UploadEntry) => {
-    const url = getPreviewUrl(entry)
-    if (!url) return
-    try { await navigator.clipboard.writeText(url); setCopied(entry.id) } catch { /* noop */ }
-  }
+  const currentErrors = errors.length > 0 ? errors[0] : apiError
 
   return (
     <div className="flex flex-col gap-3">
@@ -493,15 +583,20 @@ export function DocumentUpload() {
         <div className="flex items-center gap-3">
           <h3 className="text-sm font-semibold">
             Dokumente{" "}
-            <span className="text-muted-foreground font-normal">({files.length})</span>
+            <span className="text-muted-foreground font-normal">({documents.length})</span>
           </h3>
-          {files.length > 0 && (
+          {documents.length > 0 && (
             <span className="text-muted-foreground text-xs">{formatBytes(totalSize)}</span>
+          )}
+          {isUploading && (
+            <span className="flex items-center gap-1 text-xs text-primary">
+              <Loader2Icon className="size-3 animate-spin" />
+              Wird hochgeladen…
+            </span>
           )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Search */}
           <div className="relative">
             <input
               type="text"
@@ -517,7 +612,6 @@ export function DocumentUpload() {
             />
           </div>
 
-          {/* Sort */}
           <div className="flex items-center gap-1">
             <select
               className="bg-background h-7 rounded-lg border border-border px-2 text-[13px] text-foreground"
@@ -539,37 +633,19 @@ export function DocumentUpload() {
             </Button>
           </div>
 
-          {/* View toggle */}
           <div className="flex items-center gap-1">
-            <Button
-              variant={view === "list" ? "default" : "outline"}
-              size="icon-sm"
-              onClick={() => setView("list")}
-              aria-label="Listenansicht"
-            >
+            <Button variant={view === "list" ? "default" : "outline"} size="icon-sm" onClick={() => setView("list")} aria-label="Listenansicht">
               <ListIcon className="size-3.5" />
             </Button>
-            <Button
-              variant={view === "grid" ? "default" : "outline"}
-              size="icon-sm"
-              onClick={() => setView("grid")}
-              aria-label="Rasteransicht"
-            >
+            <Button variant={view === "grid" ? "default" : "outline"} size="icon-sm" onClick={() => setView("grid")} aria-label="Rasteransicht">
               <GridIcon className="size-3.5" />
             </Button>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-1.5">
-            <Button variant="outline" size="sm" onClick={openFileDialog}>
-              <UploadCloudIcon className="size-3.5 opacity-60" aria-hidden="true" />
-              Hinzufügen
-            </Button>
-            <Button variant="outline" size="sm" onClick={clearFiles} disabled={files.length === 0}>
-              <Trash2Icon className="size-3.5 opacity-60" aria-hidden="true" />
-              Alle löschen
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" onClick={openFileDialog} disabled={isUploading}>
+            <UploadCloudIcon className="size-3.5 opacity-60" aria-hidden="true" />
+            Hinzufügen
+          </Button>
         </div>
       </div>
 
@@ -596,15 +672,22 @@ export function DocumentUpload() {
               </p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={openFileDialog}>
+          <Button variant="outline" size="sm" onClick={openFileDialog} disabled={isUploading}>
             <UploadIcon className="size-3.5 opacity-60" aria-hidden="true" />
             Dateien auswählen
           </Button>
         </div>
       </div>
 
-      {/* Files */}
-      {filtered.length > 0 ? (
+      {/* Loading skeleton */}
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
+        </div>
+      )}
+
+      {/* File list */}
+      {!loading && filtered.length > 0 && (
         <>
           {/* Bulk action bar */}
           <div className="flex items-center justify-between gap-2">
@@ -621,11 +704,15 @@ export function DocumentUpload() {
               </span>
             </label>
             <div className="flex items-center gap-1.5">
-              <Button variant="outline" size="sm" onClick={downloadSelected} disabled={noneSelected}>
+              <Button
+                variant="outline" size="sm"
+                onClick={() => { const sel = filtered.filter((d) => selected.has(d.id)); sel.forEach((d) => window.open(d.url, "_blank", "noopener,noreferrer")) }}
+                disabled={noneSelected}
+              >
                 <DownloadIcon className="size-3.5 opacity-60" aria-hidden="true" />
                 Herunterladen
               </Button>
-              <Button variant="outline" size="sm" onClick={removeSelected} disabled={noneSelected}>
+              <Button variant="outline" size="sm" onClick={removeSelected} disabled={noneSelected || deleting.size > 0}>
                 <Trash2Icon className="size-3.5 opacity-60" aria-hidden="true" />
                 Entfernen
               </Button>
@@ -645,52 +732,55 @@ export function DocumentUpload() {
                   </TableRow>
                 </TableHeader>
                 <TableBody className="text-[13px]">
-                  {filtered.map((entry: UploadEntry) => {
-                    const name = getName(entry), type = getType(entry), size = getSize(entry), url = getPreviewUrl(entry)
-                    const isSelected = selected.has(entry.id)
-                    const percentOfMax = Math.min(100, Math.round((size / maxSize) * 100))
+                  {filtered.map((doc) => {
+                    const entry = docToUploadEntry(doc)
+                    const isSelected = selected.has(doc.id)
+                    const isDeleting = deleting.has(doc.id)
+                    const percentOfMax = Math.min(100, Math.round((doc.size / maxSize) * 100))
                     return (
-                      <TableRow key={entry.id} className={isSelected ? "bg-primary/5" : ""}>
+                      <TableRow key={doc.id} className={isSelected ? "bg-primary/5" : ""}>
                         <TableCell className="py-2">
                           <input
                             type="checkbox"
                             className="accent-primary size-3.5"
                             checked={isSelected}
-                            onChange={() => toggleOne(entry.id)}
-                            aria-label={`${name} auswählen`}
+                            onChange={() => toggleOne(doc.id)}
+                            aria-label={`${doc.name} auswählen`}
                           />
                         </TableCell>
                         <TableCell className="max-w-64 py-2 font-medium">
                           <span className="flex items-center gap-2">
                             <span className="shrink-0 text-primary">{getFileIcon(entry)}</span>
-                            <span className="truncate">{name}</span>
+                            <span className="truncate">{doc.name}</span>
                           </span>
                           <div className="mt-1 h-1 w-40 overflow-hidden rounded-full bg-border">
                             <div className="h-full bg-primary/50" style={{ width: `${percentOfMax}%` }} aria-hidden="true" />
                           </div>
                         </TableCell>
-                        <TableCell className="text-muted-foreground py-2 text-xs">{niceSubtype(type)}</TableCell>
-                        <TableCell className="text-muted-foreground py-2 text-xs">{formatBytes(size)}</TableCell>
+                        <TableCell className="text-muted-foreground py-2 text-xs">{niceSubtype(doc.type)}</TableCell>
+                        <TableCell className="text-muted-foreground py-2 text-xs">{formatBytes(doc.size)}</TableCell>
                         <TableCell className="py-2 text-right whitespace-nowrap">
-                          <Button size="icon-sm" variant="ghost" aria-label={`${name} öffnen`}
-                            onClick={() => url && window.open(url, "_blank", "noopener,noreferrer")}>
+                          <Button size="icon-sm" variant="ghost" aria-label={`${doc.name} öffnen`}
+                            onClick={() => doc.url && window.open(doc.url, "_blank", "noopener,noreferrer")}>
                             <ExternalLinkIcon className="size-3.5" />
                           </Button>
-                          <Button size="icon-sm" variant="ghost" aria-label={`${name} herunterladen`}
-                            onClick={() => downloadOne(entry)}>
+                          <Button size="icon-sm" variant="ghost" aria-label={`${doc.name} herunterladen`}
+                            onClick={() => doc.url && window.open(doc.url, "_blank", "noopener,noreferrer")}>
                             <DownloadIcon className="size-3.5" />
                           </Button>
-                          <Button size="icon-sm" variant="ghost" aria-label={`Link kopieren`}
-                            onClick={() => copyLink(entry)}>
-                            {copied === entry.id
+                          <Button size="icon-sm" variant="ghost" aria-label="Link kopieren" onClick={() => copyLink(doc)}>
+                            {copied === doc.id
                               ? <CheckIcon className="size-3.5 text-primary" />
                               : <CopyIcon className="size-3.5" />}
                           </Button>
                           <Button size="icon-sm" variant="ghost"
-                            aria-label={`${name} entfernen`}
-                            onClick={() => removeFile(entry.id)}
+                            aria-label={`${doc.name} entfernen`}
+                            onClick={() => deleteDocument(doc)}
+                            disabled={isDeleting}
                             className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                            <Trash2Icon className="size-3.5" />
+                            {isDeleting
+                              ? <Loader2Icon className="size-3.5 animate-spin" />
+                              : <Trash2Icon className="size-3.5" />}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -701,12 +791,14 @@ export function DocumentUpload() {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4" role="list">
-              {filtered.map((entry: UploadEntry) => {
-                const name = getName(entry), type = getType(entry), size = getSize(entry), url = getPreviewUrl(entry)
-                const isImage = type.startsWith("image/"), isSelected = selected.has(entry.id)
+              {filtered.map((doc) => {
+                const entry = docToUploadEntry(doc)
+                const isImage = doc.type.startsWith("image/")
+                const isSelected = selected.has(doc.id)
+                const isDeleting = deleting.has(doc.id)
                 return (
                   <div
-                    key={entry.id}
+                    key={doc.id}
                     role="listitem"
                     className={`relative flex flex-col overflow-hidden rounded-xl border transition-all ${
                       isSelected ? "border-primary/50 bg-primary/5" : "border-border bg-card"
@@ -714,13 +806,13 @@ export function DocumentUpload() {
                   >
                     <label className="bg-card/80 absolute left-2 top-2 z-10 inline-flex items-center rounded-lg px-1.5 py-1">
                       <input type="checkbox" className="accent-primary size-3.5"
-                        checked={isSelected} onChange={() => toggleOne(entry.id)}
-                        aria-label={`${name} auswählen`} />
+                        checked={isSelected} onChange={() => toggleOne(doc.id)}
+                        aria-label={`${doc.name} auswählen`} />
                     </label>
                     <div className="relative h-24 w-full overflow-hidden bg-muted/30">
-                      {isImage && url ? (
+                      {isImage && doc.url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={url} alt={name} className="h-full w-full object-cover" draggable={false} />
+                        <img src={doc.url} alt={doc.name} className="h-full w-full object-cover" draggable={false} />
                       ) : (
                         <div className="flex h-full items-center justify-center text-primary">
                           {getFileIcon(entry)}
@@ -728,29 +820,31 @@ export function DocumentUpload() {
                       )}
                     </div>
                     <div className="flex flex-1 flex-col gap-1 p-2">
-                      <div className="truncate text-[13px] font-medium" title={name}>{name}</div>
+                      <div className="truncate text-[13px] font-medium" title={doc.name}>{doc.name}</div>
                       <div className="text-muted-foreground text-[11px]">
-                        {niceSubtype(type)} · {formatBytes(size)}
+                        {niceSubtype(doc.type)} · {formatBytes(doc.size)}
                       </div>
                       <div className="mt-auto flex items-center justify-end gap-0.5">
-                        <Button size="icon-sm" variant="ghost" aria-label={`${name} öffnen`}
-                          onClick={() => url && window.open(url, "_blank", "noopener,noreferrer")}>
+                        <Button size="icon-sm" variant="ghost" aria-label={`${doc.name} öffnen`}
+                          onClick={() => doc.url && window.open(doc.url, "_blank", "noopener,noreferrer")}>
                           <ExternalLinkIcon className="size-3.5" />
                         </Button>
                         <Button size="icon-sm" variant="ghost" aria-label="Herunterladen"
-                          onClick={() => downloadOne(entry)}>
+                          onClick={() => doc.url && window.open(doc.url, "_blank", "noopener,noreferrer")}>
                           <DownloadIcon className="size-3.5" />
                         </Button>
-                        <Button size="icon-sm" variant="ghost" aria-label="Link kopieren"
-                          onClick={() => copyLink(entry)}>
-                          {copied === entry.id
+                        <Button size="icon-sm" variant="ghost" aria-label="Link kopieren" onClick={() => copyLink(doc)}>
+                          {copied === doc.id
                             ? <CheckIcon className="size-3.5 text-primary" />
                             : <CopyIcon className="size-3.5" />}
                         </Button>
-                        <Button size="icon-sm" variant="ghost" aria-label={`${name} entfernen`}
-                          onClick={() => removeFile(entry.id)}
+                        <Button size="icon-sm" variant="ghost" aria-label={`${doc.name} entfernen`}
+                          onClick={() => deleteDocument(doc)}
+                          disabled={isDeleting}
                           className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                          <Trash2Icon className="size-3.5" />
+                          {isDeleting
+                            ? <Loader2Icon className="size-3.5 animate-spin" />
+                            : <Trash2Icon className="size-3.5" />}
                         </Button>
                       </div>
                     </div>
@@ -760,19 +854,22 @@ export function DocumentUpload() {
             </div>
           )}
         </>
-      ) : (
+      )}
+
+      {/* Empty state */}
+      {!loading && filtered.length === 0 && (
         <p className="text-muted-foreground text-center text-sm py-6">
-          {files.length === 0
+          {documents.length === 0
             ? "Noch keine Dokumente. Dateien hinzufügen oder hier ablegen."
             : "Keine Dateien entsprechen der Suche."}
         </p>
       )}
 
       {/* Errors */}
-      {errors.length > 0 && (
+      {currentErrors && (
         <div className="text-destructive flex items-center gap-1.5 text-xs" role="alert" aria-live="assertive">
           <AlertCircleIcon className="size-3 shrink-0" />
-          <span>{errors[0]}</span>
+          <span>{currentErrors}</span>
         </div>
       )}
     </div>

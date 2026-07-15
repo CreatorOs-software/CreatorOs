@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowUpRight,
   ChevronDown,
   ChevronUp,
   Clock,
+  Pencil,
   Plus,
+  Trash2,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
@@ -41,6 +44,15 @@ import {
   fmtMoney,
 } from "./constants";
 import { BrandAvatar } from "./shared";
+import { DealDialog } from "./deal-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -322,6 +334,9 @@ function DealsTable({
   action,
   badge,
   emptyText,
+  onRowClick,
+  onEdit,
+  onDelete,
 }: {
   data: DealFull[];
   columns: ColumnDef<DealFull>[];
@@ -329,13 +344,48 @@ function DealsTable({
   action?: React.ReactNode;
   badge?: React.ReactNode;
   emptyText: string;
+  onRowClick?: (deal: DealFull) => void;
+  onEdit?: (deal: DealFull) => void;
+  onDelete?: (deal: DealFull) => void;
 }) {
   "use no memo";
   const [sorting, setSorting] = useState<SortingState>([]);
 
+  const actionsColumn: ColumnDef<DealFull> = {
+    id: "actions",
+    header: "",
+    cell: ({ row }) => (
+      <div
+        className="flex items-center justify-end gap-1"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="text-muted-foreground hover:text-foreground"
+          onClick={() => onEdit?.(row.original)}
+        >
+          <Pencil className="w-3.5 h-3.5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="text-muted-foreground hover:text-destructive"
+          onClick={() => onDelete?.(row.original)}
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+    ),
+    size: 72,
+    enableSorting: false,
+  };
+
+  const allColumns = [...columns, actionsColumn];
+
   const table = useReactTable({
     data,
-    columns,
+    columns: allColumns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
@@ -398,7 +448,11 @@ function DealsTable({
             </TableHeader>
             <TableBody>
               {table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer"
+                  onClick={() => onRowClick?.(row.original)}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-2.5">
                       {flexRender(
@@ -426,13 +480,34 @@ export function DealsTab({
   deals: DealFull[];
   creator: Creator | null;
 }) {
-  const laufend = deals.filter((d) => LAUFEND.has(d.status));
-  const pipeline = deals.filter((d) => PIPELINE.has(d.status));
-  const alt = deals.filter((d) => ALT.has(d.status));
+  const router = useRouter();
+  const [selectedDeal, setSelectedDeal] = useState<DealFull | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DealFull | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+
+  const visibleDeals = deals.filter((d) => !deletedIds.has(d.id));
+
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      await fetch(`/api/deals/${deleteTarget.id}`, { method: "DELETE" });
+      setDeletedIds((prev) => new Set([...prev, deleteTarget.id]));
+      setDeleteTarget(null);
+      router.refresh();
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
+  const laufend = visibleDeals.filter((d) => LAUFEND.has(d.status));
+  const pipeline = visibleDeals.filter((d) => PIPELINE.has(d.status));
+  const alt = visibleDeals.filter((d) => ALT.has(d.status));
 
   const activeBudget = laufend.reduce((s, d) => s + Number(d.budget), 0);
   const pipelineBudget = pipeline.reduce((s, d) => s + Number(d.budget), 0);
-  const since = sinceLabel(deals);
+  const since = sinceLabel(visibleDeals);
   const verhandlung = pipeline.filter((d) => d.status === "negotiation").length;
 
   return (
@@ -466,6 +541,9 @@ export function DealsTab({
         columns={laufendColumns}
         title="Laufende Deals"
         emptyText="Keine laufenden Deals"
+        onRowClick={setSelectedDeal}
+        onEdit={(d) => router.push(`/creators/deals/edit/${d.id}`)}
+        onDelete={setDeleteTarget}
         action={
           <Button variant="default" className="gap-1.5 h-7 text-xs">
             <Plus className="w-3 h-3" />
@@ -480,6 +558,9 @@ export function DealsTab({
         columns={pipelineColumns}
         title="Pipeline"
         emptyText="Keine Deals in der Pipeline"
+        onRowClick={setSelectedDeal}
+        onEdit={(d) => router.push(`/creators/deals/edit/${d.id}`)}
+        onDelete={setDeleteTarget}
         badge={
           pipeline.length > 0 ? (
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/15 text-blue-600 text-[9px] font-medium">
@@ -488,6 +569,45 @@ export function DealsTab({
           ) : null
         }
       />
+
+      {/* Deal detail dialog */}
+      <DealDialog
+        deal={selectedDeal}
+        creatorName={creator?.full_name}
+        open={selectedDeal !== null}
+        onClose={() => setSelectedDeal(null)}
+      />
+
+      {/* Delete confirmation dialog */}
+      <Dialog
+        open={deleteTarget !== null}
+        onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Deal löschen?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">
+              {deleteTarget?.title}
+            </span>{" "}
+            wird unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig
+            gemacht werden.
+          </p>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>
+              Abbrechen
+            </DialogClose>
+            <Button
+              variant="destructive"
+              disabled={deleteLoading}
+              onClick={handleConfirmDelete}
+            >
+              {deleteLoading ? "Löschen…" : "Löschen"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

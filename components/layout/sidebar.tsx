@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { Avatar } from "@base-ui/react";
 import {
   LayoutDashboard,
-  File,
+  Building2,
   User,
   Calendar,
   Wallet,
@@ -133,9 +133,9 @@ export function AppSidebar() {
       ),
     },
     {
-      label: "Deals",
-      href: "/deals",
-      icon: <File className="h-5 w-5 shrink-0 text-current" />,
+      label: "Brands",
+      href: "/brands",
+      icon: <Building2 className="h-5 w-5 shrink-0 text-current" />,
     },
     {
       label: "Creator",
