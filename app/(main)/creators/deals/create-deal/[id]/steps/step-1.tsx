@@ -74,7 +74,7 @@ export function Step1({ form, errors, brands, creators, onNext }: Step1Props) {
                       </SelectTrigger>
                       <SelectContent>
                         {brands.map((b) => (
-                          <SelectItem key={b.id} value={b.id}>
+                          <SelectItem key={b.id} value={b.id} textValue={b.company_name}>
                             <span className="flex items-center gap-2">
                               <span
                                 className="w-4 h-4 rounded-sm shrink-0"
@@ -170,7 +170,7 @@ export function Step1({ form, errors, brands, creators, onNext }: Step1Props) {
                       </SelectTrigger>
                       <SelectContent>
                         {creators.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
+                          <SelectItem key={c.id} value={c.id} textValue={c.full_name}>
                             <span className="flex items-center gap-2">
                               <span
                                 className="w-4 h-4 rounded-sm shrink-0 inline-flex items-center justify-center text-[9px] font-bold text-white"

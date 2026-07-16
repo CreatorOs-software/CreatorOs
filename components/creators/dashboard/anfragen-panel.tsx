@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { AnimatedHeight } from "@/components/ui/animated-height";
 import type { Anfrage } from "./types";
 import { fmtMoney } from "./constants";
 
@@ -818,54 +819,54 @@ function AnfragenTable({
     state: { sorting },
   });
 
-  if (data.length === 0) {
-    return (
-      <p className="text-xs text-muted-foreground text-center py-8">
-        Noch keine Anfragen – klicke auf „+ Neue Anfrage"
-      </p>
-    );
-  }
-
   return (
-    <div className="overflow-hidden rounded-xl">
-      <Table className="table-fixed">
-        <TableHeader>
-          {table.getHeaderGroups().map((hg) => (
-            <TableRow key={hg.id} className="hover:bg-transparent">
-              {hg.headers.map((header) => (
-                <TableHead
-                  key={header.id}
-                  style={{ width: `${header.getSize()}px` }}
-                  className="h-9 text-[10px] uppercase tracking-wider"
+    <AnimatedHeight>
+      {data.length === 0 ? (
+        <p className="text-xs text-muted-foreground text-center py-8">
+          Noch keine Anfragen &ndash; klicke auf &bdquo;+ Neue Anfrage&ldquo;
+        </p>
+      ) : (
+        <div className="overflow-y-auto max-h-87.5 rounded-xl">
+          <Table className="table-fixed">
+            <TableHeader>
+              {table.getHeaderGroups().map((hg) => (
+                <TableRow key={hg.id} className="hover:bg-transparent">
+                  {hg.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      style={{ width: `${header.getSize()}px` }}
+                      className="sticky top-0 z-10 bg-card h-9 text-[10px] uppercase tracking-wider"
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer"
+                  onClick={() => onRowClick(row.original)}
                 >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
-                </TableHead>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="py-2.5">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
               ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.map((row) => (
-            <TableRow
-              key={row.id}
-              className="cursor-pointer"
-              onClick={() => onRowClick(row.original)}
-            >
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id} className="py-2.5">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </AnimatedHeight>
   );
 }
 

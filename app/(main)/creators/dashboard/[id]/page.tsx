@@ -32,6 +32,7 @@ import {
 } from "@/components/creators/dashboard/insights-tab";
 import { VertraegeTab } from "@/components/creators/dashboard/vertraege-tab";
 import { DealsTab } from "@/components/creators/dashboard/deals-tab";
+import { UebersichtTab } from "@/components/creators/dashboard/uebersicht-tab";
 
 export default function CreatorDashboardPage() {
   const { id } = useParams<{ id: string }>();
@@ -172,12 +173,13 @@ export default function CreatorDashboardPage() {
   return (
     <div className="h-full flex flex-col">
       <Tabs
-        defaultValue="deals"
+        defaultValue="uebersicht"
         className="flex-1 min-h-0 flex flex-col gap-0"
       >
         {/* Tab bar */}
         <div className="shrink-0 -mx-6 px-6 mb-4 flex items-end justify-between ">
           <TabsList variant="underline">
+            <TabsTrigger value="uebersicht">Übersicht</TabsTrigger>
             <TabsTrigger value="deals">Deals</TabsTrigger>
             <TabsTrigger value="insights">Insights</TabsTrigger>
             <TabsTrigger value="vertraege">Verträge</TabsTrigger>
@@ -202,6 +204,17 @@ export default function CreatorDashboardPage() {
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto">
+          {/* Übersicht */}
+          <TabsContent value="uebersicht">
+            <UebersichtTab
+              creator={creator}
+              creatorId={id}
+              deals={deals}
+              invoices={invoices}
+              isPending={creatorPending}
+            />
+          </TabsContent>
+
           {/* Deals */}
           <TabsContent value="deals">
             <DealsTab deals={deals} anfragen={anfragen} creator={creator} creatorId={id} />

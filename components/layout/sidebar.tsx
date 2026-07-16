@@ -17,6 +17,8 @@ import {
   Users,
   Settings2,
   LogOut,
+  PanelBottom,
+  PanelBottomClose,
 } from "lucide-react";
 import {
   Sidebar,
@@ -27,6 +29,7 @@ import {
 import { QueryKeys } from "@/lib/query-keys";
 import { usePermissions } from "@/components/context/permission-provider";
 import { useAuth } from "@/components/auth/use-auth";
+import { useDock } from "@/components/layout/dock-context";
 import { cn } from "@/lib/utils";
 
 const Logo = () => (
@@ -50,6 +53,37 @@ const LogoIcon = () => (
     <div className="h-5 w-6 bg-sidebar-accent rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm shrink-0" />
   </Link>
 );
+
+function DockToggleButton() {
+  const { dockVisible, toggleDock } = useDock();
+  const { open, animate } = useSidebar();
+
+  return (
+    <button
+      onClick={toggleDock}
+      title={dockVisible ? "Dock schließen" : "Dock öffnen"}
+      className={cn(
+        "flex items-center rounded-md py-2 transition-colors text-sidebar-foreground hover:bg-sidebar-accent/50",
+        open ? "gap-3 px-2 w-full" : "justify-center w-full",
+      )}
+    >
+      {dockVisible ? (
+        <PanelBottomClose className="h-5 w-5 shrink-0 text-current" />
+      ) : (
+        <PanelBottom className="h-5 w-5 shrink-0 text-current" />
+      )}
+      <motion.span
+        animate={{
+          display: animate ? (open ? "inline-block" : "none") : "inline-block",
+          opacity: animate ? (open ? 1 : 0) : 1,
+        }}
+        className="text-sm whitespace-pre"
+      >
+        {dockVisible ? "Dock schließen" : "Dock öffnen"}
+      </motion.span>
+    </button>
+  );
+}
 
 function ProfileSection() {
   const { user, signOut } = useAuth();
@@ -226,7 +260,10 @@ export function AppSidebar() {
           )}
         </div>
 
-        <ProfileSection />
+        <div className="flex flex-col gap-1">
+          <DockToggleButton />
+          <ProfileSection />
+        </div>
       </SidebarBody>
     </Sidebar>
   );

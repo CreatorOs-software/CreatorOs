@@ -9,7 +9,7 @@
   --foreground: oklch(0.2 0.02 85);
 
   /* Card System */
-  --card: oklch(98.379% 0.00274 129.911);
+  --card: oklch(100% 0.00011 271.152);
   --card-foreground: oklch(0.2 0.02 85);
   --card-glass: oklch(0.98 0.015 85 / 0.8);
   --card-dark: oklch(0.25 0.02 85);
