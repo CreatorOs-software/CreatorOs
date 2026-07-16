@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, Trash2, Clock, CheckCircle2, XCircle, Pencil, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import {
   ColumnDef,
@@ -413,7 +413,7 @@ function AnfrageDialog({
           if (!o) onClose();
         }}
       >
-        <DialogContent className="max-w-lg sm:max-w-lg p-0 gap-0 overflow-hidden">
+        <DialogContent className="max-w-lg sm:max-w-lg p-0 gap-0 overflow-hidden" showCloseButton={false}>
           {/* Header */}
           <div className="p-5 pb-4 border-b">
             <div className="flex items-start justify-between gap-3">
@@ -430,7 +430,16 @@ function AnfrageDialog({
                   )}
                 </div>
               </div>
-              <StatusBadge status={anfrage.status} />
+              <div className="flex items-center gap-2 shrink-0">
+                <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5">
+                  <Pencil className="w-3 h-3" />
+                  Bearbeiten
+                </Button>
+                <DialogClose render={<Button variant="ghost" size="icon-sm" className="-mt-0.5 -mr-1" />}>
+                  <X className="w-4 h-4" />
+                  <span className="sr-only">Schließen</span>
+                </DialogClose>
+              </div>
             </div>
 
             {/* Status stepper */}

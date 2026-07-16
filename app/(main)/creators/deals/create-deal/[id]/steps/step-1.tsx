@@ -68,13 +68,14 @@ export function Step1({ form, errors, brands, creators, onNext }: Step1Props) {
                     <Select
                       value={field.state.value}
                       onValueChange={(val) => { if (val) field.handleChange(val); }}
+                      items={brands.map((b) => ({ value: b.id, label: b.company_name }))}
                     >
                       <SelectTrigger className="mt-2 w-full">
                         <SelectValue placeholder="Brand auswählen" />
                       </SelectTrigger>
                       <SelectContent>
                         {brands.map((b) => (
-                          <SelectItem key={b.id} value={b.id} textValue={b.company_name}>
+                          <SelectItem key={b.id} value={b.id}>
                             <span className="flex items-center gap-2">
                               <span
                                 className="w-4 h-4 rounded-sm shrink-0"
@@ -164,13 +165,14 @@ export function Step1({ form, errors, brands, creators, onNext }: Step1Props) {
                     <Select
                       value={field.state.value}
                       onValueChange={(val) => { if (val) field.handleChange(val); }}
+                      items={creators.map((c) => ({ value: c.id, label: c.full_name }))}
                     >
                       <SelectTrigger className="mt-2 w-full">
                         <SelectValue placeholder="Creator auswählen" />
                       </SelectTrigger>
                       <SelectContent>
                         {creators.map((c) => (
-                          <SelectItem key={c.id} value={c.id} textValue={c.full_name}>
+                          <SelectItem key={c.id} value={c.id}>
                             <span className="flex items-center gap-2">
                               <span
                                 className="w-4 h-4 rounded-sm shrink-0 inline-flex items-center justify-center text-[9px] font-bold text-white"
