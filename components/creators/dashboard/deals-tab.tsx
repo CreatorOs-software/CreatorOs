@@ -35,7 +35,6 @@ import type { DealFull } from "./types";
 import {
   ALT,
   LAUFEND,
-  PIPELINE,
   PLATFORM_ICONS,
   PLATFORM_KEY,
   STATUS_STYLE,
@@ -45,6 +44,7 @@ import {
 } from "./constants";
 import { BrandAvatar } from "./shared";
 import { DealDialog } from "./deal-dialog";
+import { AnfragenPanel } from "./anfragen-panel";
 import {
   Dialog,
   DialogContent,
@@ -53,6 +53,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import type { Anfrage } from "./types";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -261,70 +262,6 @@ const laufendColumns: ColumnDef<DealFull>[] = [
   },
 ];
 
-// ── Pipeline columns ───────────────────────────────────────────────────────────
-
-const pipelineColumns: ColumnDef<DealFull>[] = [
-  {
-    id: "brand",
-    header: "Brand",
-    accessorFn: (row) => row.brands?.company_name ?? row.title,
-    cell: ({ row }) => {
-      const deal = row.original;
-      return (
-        <div className="flex items-center gap-2.5 min-w-0">
-          {deal.brands ? (
-            <BrandAvatar brand={deal.brands} />
-          ) : (
-            <span className="w-6 h-6 rounded-md shrink-0 bg-muted" />
-          )}
-          <p className="text-xs font-medium truncate">
-            {deal.brands?.company_name ?? deal.title}
-          </p>
-        </div>
-      );
-    },
-    size: 180,
-    enableHiding: false,
-  },
-  {
-    id: "title",
-    header: "Deal",
-    accessorKey: "title",
-    cell: ({ row }) => (
-      <p className="text-xs text-muted-foreground truncate">
-        {row.original.title}
-      </p>
-    ),
-    size: 180,
-  },
-  {
-    id: "platform",
-    header: "Plattform",
-    accessorFn: (row) => row.platform,
-    cell: ({ row }) => <PlatformCell deal={row.original} />,
-    size: 130,
-    enableSorting: false,
-  },
-  {
-    id: "status",
-    header: "Status",
-    accessorKey: "status",
-    cell: ({ row }) => <StatusBadge status={row.original.status} />,
-    size: 110,
-  },
-  {
-    id: "budget",
-    header: "Budget",
-    accessorKey: "budget",
-    cell: ({ row }) => (
-      <span className="text-xs tabular-nums text-muted-foreground">
-        {fmtMoney(Number(row.original.budget))}
-      </span>
-    ),
-    size: 90,
-  },
-];
-
 // ── Sortable table wrapper ─────────────────────────────────────────────────────
 
 function DealsTable({
@@ -475,10 +412,14 @@ function DealsTable({
 
 export function DealsTab({
   deals,
+  anfragen,
   creator,
+  creatorId,
 }: {
   deals: DealFull[];
+  anfragen: Anfrage[];
   creator: Creator | null;
+  creatorId: string;
 }) {
   const router = useRouter();
   const [selectedDeal, setSelectedDeal] = useState<DealFull | null>(null);
@@ -502,13 +443,11 @@ export function DealsTab({
   }
 
   const laufend = visibleDeals.filter((d) => LAUFEND.has(d.status));
-  const pipeline = visibleDeals.filter((d) => PIPELINE.has(d.status));
   const alt = visibleDeals.filter((d) => ALT.has(d.status));
+  const activeAnfragen = anfragen.filter((a) => a.status !== "gewonnen" && a.status !== "abgelehnt");
 
   const activeBudget = laufend.reduce((s, d) => s + Number(d.budget), 0);
-  const pipelineBudget = pipeline.reduce((s, d) => s + Number(d.budget), 0);
   const since = sinceLabel(visibleDeals);
-  const verhandlung = pipeline.filter((d) => d.status === "negotiation").length;
 
   return (
     <div className="flex flex-col gap-8 pb-6">
@@ -520,12 +459,12 @@ export function DealsTab({
           sub={`${fmtMoney(activeBudget)} Volumen`}
         />
         <StatCard
-          label="Ausstehende Zahlung"
-          value={fmtMoney(pipelineBudget)}
+          label="Offene Anfragen"
+          value={activeAnfragen.length}
           sub={
-            verhandlung > 0
-              ? `${verhandlung} Deal${verhandlung > 1 ? "s" : ""} in Verhandlung`
-              : `${pipeline.length} Deal${pipeline.length !== 1 ? "s" : ""}`
+            activeAnfragen.length > 0
+              ? `${anfragen.filter((a) => a.status === "verhandlung").length} in Verhandlung`
+              : "Keine offenen Anfragen"
           }
         />
         <StatCard
@@ -552,23 +491,8 @@ export function DealsTab({
         }
       />
 
-      {/* Pipeline */}
-      <DealsTable
-        data={pipeline}
-        columns={pipelineColumns}
-        title="Pipeline"
-        emptyText="Keine Deals in der Pipeline"
-        onRowClick={setSelectedDeal}
-        onEdit={(d) => router.push(`/creators/deals/edit/${d.id}`)}
-        onDelete={setDeleteTarget}
-        badge={
-          pipeline.length > 0 ? (
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/15 text-blue-600 text-[9px] font-medium">
-              {pipeline.length}
-            </span>
-          ) : null
-        }
-      />
+      {/* Anfragen (incoming deal inquiries) */}
+      <AnfragenPanel initialAnfragen={anfragen} creatorId={creatorId} />
 
       {/* Deal detail dialog */}
       <DealDialog

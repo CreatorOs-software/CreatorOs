@@ -22,9 +22,9 @@ import type {
   MetricsResponse,
   DealFull,
   Invoice,
+  Anfrage,
 } from "@/components/creators/dashboard/types";
 import { DashboardSkeleton } from "@/components/creators/dashboard/skeleton";
-import { UebersichtTab } from "@/components/creators/dashboard/uebersicht-tab";
 import {
   PlatformContent,
   DisconnectedPlatformTab,
@@ -55,7 +55,7 @@ export default function CreatorDashboardPage() {
       staleTime: 5 * 60_000,
     });
 
-  const { data: dealsData, isPending: dealsPending } = useQuery<{
+  const { data: dealsData } = useQuery<{
     deals: DealFull[];
   }>({
     queryKey: ["creator-deals-full", id],
@@ -69,6 +69,12 @@ export default function CreatorDashboardPage() {
     staleTime: 5 * 60_000,
   });
 
+  const { data: anfragenData } = useQuery<{ anfragen: Anfrage[] }>({
+    queryKey: ["creator-anfragen", id],
+    queryFn: () => fetch(`/api/creators/${id}/anfragen`).then((r) => r.json()),
+    staleTime: 5 * 60_000,
+  });
+
   // ── Derived state ─────────────────────────────────────────────────────────────
 
   const creator = creatorData?.creator ?? null;
@@ -76,6 +82,7 @@ export default function CreatorDashboardPage() {
   const metrics = metricsData?.metrics ?? {};
   const deals = dealsData?.deals ?? [];
   const invoices = invoicesData?.invoices ?? [];
+  const anfragen = anfragenData?.anfragen ?? [];
 
   const activeAccounts = accounts.filter(
     (a) => a.sync_status !== "disconnected",
@@ -165,13 +172,12 @@ export default function CreatorDashboardPage() {
   return (
     <div className="h-full flex flex-col">
       <Tabs
-        defaultValue="uebersicht"
+        defaultValue="deals"
         className="flex-1 min-h-0 flex flex-col gap-0"
       >
         {/* Tab bar */}
         <div className="shrink-0 -mx-6 px-6 mb-4 flex items-end justify-between ">
           <TabsList variant="underline">
-            <TabsTrigger value="uebersicht">Übersicht</TabsTrigger>
             <TabsTrigger value="deals">Deals</TabsTrigger>
             <TabsTrigger value="insights">Insights</TabsTrigger>
             <TabsTrigger value="vertraege">Verträge</TabsTrigger>
@@ -196,20 +202,9 @@ export default function CreatorDashboardPage() {
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto">
-          {/* Übersicht */}
-          <TabsContent value="uebersicht">
-            <UebersichtTab
-              creator={creator}
-              creatorId={id}
-              deals={deals}
-              invoices={invoices}
-              isPending={dealsPending}
-            />
-          </TabsContent>
-
           {/* Deals */}
           <TabsContent value="deals">
-            <DealsTab deals={deals} creator={creator} />
+            <DealsTab deals={deals} anfragen={anfragen} creator={creator} creatorId={id} />
           </TabsContent>
           {/* Insights */}
           <TabsContent value="insights">

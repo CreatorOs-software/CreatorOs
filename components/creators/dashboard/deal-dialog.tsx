@@ -1,8 +1,8 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Check, Pencil, X } from "lucide-react";
+import { AlertTriangle, Pencil, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { BrandAvatar } from "./shared";
+import { Switch } from "@/components/ui/switch";
 import type { DealFull, PaymentItem, Deliverable } from "./types";
 import { ALT, LAUFEND, PIPELINE, fmtMoney } from "./constants";
 
@@ -30,7 +31,6 @@ function stageIndex(status: string): number {
 
 function DealStepper({
   status,
-  blocker,
   loading,
   onStageClick,
 }: {
@@ -39,62 +39,46 @@ function DealStepper({
   loading: boolean;
   onStageClick: (target: string) => void;
 }) {
-  const current = stageIndex(status);
+  const currentIdx = stageIndex(status);
 
   return (
-    <div className="flex items-start">
-      {DIALOG_STAGES.map((stage, i) => (
-        <Fragment key={i}>
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => onStageClick(stage.target)}
+    <div>
+      <div className="flex items-center gap-1">
+        {DIALOG_STAGES.map((stage, i) => {
+          const isDone = i < currentIdx;
+          const isCurrent = i === currentIdx;
+          const isNext = i === currentIdx + 1;
+          return (
+            <button
+              key={i}
+              type="button"
+              disabled={!isNext || loading}
+              onClick={() => isNext && onStageClick(stage.target)}
+              className={cn(
+                "flex-1 h-1.5 rounded-full transition-colors",
+                isDone && "bg-emerald-500",
+                isCurrent && "bg-accent",
+                isNext && "bg-muted hover:bg-accent/60 cursor-pointer",
+                !isDone && !isCurrent && !isNext && "bg-muted opacity-40 cursor-default",
+              )}
+              title={stage.label}
+            />
+          );
+        })}
+      </div>
+      <div className="flex mt-1.5">
+        {DIALOG_STAGES.map((stage, i) => (
+          <span
+            key={i}
             className={cn(
-              "flex flex-col items-center gap-1.5 shrink-0 group transition-opacity",
-              loading && "opacity-50 cursor-not-allowed",
-              !loading && "cursor-pointer",
+              "text-[9px] flex-1 text-center first:text-left last:text-right",
+              i === currentIdx ? "font-semibold text-foreground" : "text-muted-foreground",
             )}
           >
-            <div
-              className={cn(
-                "w-7 h-7 rounded-full border-2 flex items-center justify-center transition-colors",
-                i < current
-                  ? "bg-primary border-primary group-hover:bg-primary/80"
-                  : i === current
-                    ? "border-primary bg-transparent group-hover:bg-primary/10"
-                    : "border-muted-foreground/25 bg-transparent group-hover:border-primary/50",
-              )}
-            >
-              {i < current && (
-                <Check className="w-3.5 h-3.5 text-primary-foreground" />
-              )}
-            </div>
-            <span
-              className={cn(
-                "text-[11px] text-center leading-tight",
-                i === current
-                  ? "font-semibold text-foreground"
-                  : "text-muted-foreground",
-              )}
-            >
-              {stage.label}
-            </span>
-            {i === current && blocker && (
-              <span className="text-[10px] text-amber-600 font-medium text-center leading-tight">
-                hängt an
-              </span>
-            )}
-          </button>
-          {i < DIALOG_STAGES.length - 1 && (
-            <div
-              className={cn(
-                "flex-1 h-0.5 mt-3.5 transition-colors",
-                i < current ? "bg-primary" : "bg-muted",
-              )}
-            />
-          )}
-        </Fragment>
-      ))}
+            {stage.label}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -202,6 +186,8 @@ export function DealDialog({
   const [statusLoading, setStatusLoading] = useState(false);
   const [localPaymentItems, setLocalPaymentItems] = useState<PaymentItem[]>([]);
   const [payLoading, setPayLoading] = useState<number | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
 
   useEffect(() => {
     if (deal?.status) setLocalStatus(deal.status);
@@ -209,12 +195,32 @@ export function DealDialog({
 
   useEffect(() => {
     setLocalPaymentItems((deal?.payment_items ?? []) as PaymentItem[]);
+    setIsDirty(false);
   }, [deal?.id]);
 
   if (!deal) return null;
 
   const delivFmt = formatDeliverables(deal.deliverables);
   const paymentItems = localPaymentItems;
+
+  async function persistPaymentItems(items: PaymentItem[]) {
+    await fetch(`/api/deals/${deal.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ payment_items: items }),
+    });
+    router.refresh();
+  }
+
+  async function savePaymentItems() {
+    setSaveLoading(true);
+    try {
+      await persistPaymentItems(localPaymentItems);
+      setIsDirty(false);
+    } finally {
+      setSaveLoading(false);
+    }
+  }
 
   async function markAsPaid(index: number) {
     if (payLoading !== null) return;
@@ -225,15 +231,27 @@ export function DealDialog({
     );
     setLocalPaymentItems(updated);
     try {
-      await fetch(`/api/deals/${deal.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payment_items: updated }),
-      });
-      router.refresh();
+      await persistPaymentItems(updated);
     } finally {
       setPayLoading(null);
     }
+  }
+
+  function handleInvoiceToggle(index: number, checked: boolean) {
+    const today = new Date().toISOString().split("T")[0];
+    const updated = localPaymentItems.map((item, i) =>
+      i === index ? { ...item, invoice_date: checked ? today : "" } : item,
+    );
+    setLocalPaymentItems(updated);
+    setIsDirty(true);
+  }
+
+  function handleInvoiceDateChange(index: number, date: string) {
+    const updated = localPaymentItems.map((item, i) =>
+      i === index ? { ...item, invoice_date: date } : item,
+    );
+    setLocalPaymentItems(updated);
+    setIsDirty(true);
   }
 
   const subtitleParts = [
@@ -458,12 +476,22 @@ export function DealDialog({
                                   <Empty />
                                 )}
                               </td>
-                              <td className="px-3 py-3 text-foreground">
-                                {item.invoice_date ? (
-                                  fmtDE(item.invoice_date)
-                                ) : (
-                                  <Empty />
-                                )}
+                              <td className="px-3 py-3">
+                                <div className="flex items-center gap-2">
+                                  <Switch
+                                    size="sm"
+                                    checked={!!item.invoice_date}
+                                    onCheckedChange={(checked) => handleInvoiceToggle(i, checked)}
+                                  />
+                                  {item.invoice_date && (
+                                    <input
+                                      type="date"
+                                      value={item.invoice_date}
+                                      onChange={(e) => handleInvoiceDateChange(i, e.target.value)}
+                                      className="h-7 rounded-lg border border-input bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                                    />
+                                  )}
+                                </div>
                               </td>
                               <td className="px-3 py-3 text-muted-foreground">
                                 {item.payment_term} Tage
@@ -549,29 +577,40 @@ export function DealDialog({
               Schließen
             </DialogClose>
 
-            {isPipeline && (
-              <Button
-                className="bg-primary text-primary-foreground hover:bg-primary/80"
-                disabled={statusLoading}
-                onClick={() => handleStatusChange("confirmed")}
-              >
-                Deal starten
-              </Button>
-            )}
-            {isLaufend && (
-              <Button
-                className="bg-primary text-primary-foreground hover:bg-primary/80"
-                disabled={statusLoading}
-                onClick={() => handleStatusChange("paid")}
-              >
-                Deal abschließen → Archiv
-              </Button>
-            )}
-            {isAbgeschlossen && (
-              <span className="text-xs text-muted-foreground">
-                Deal abgeschlossen
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {isDirty && (
+                <Button
+                  variant="outline"
+                  disabled={saveLoading}
+                  onClick={savePaymentItems}
+                >
+                  {saveLoading ? "Speichern…" : "Speichern"}
+                </Button>
+              )}
+              {isPipeline && (
+                <Button
+                  className="bg-primary text-primary-foreground hover:bg-primary/80"
+                  disabled={statusLoading}
+                  onClick={() => handleStatusChange("confirmed")}
+                >
+                  Deal starten
+                </Button>
+              )}
+              {isLaufend && (
+                <Button
+                  className="bg-primary text-primary-foreground hover:bg-primary/80"
+                  disabled={statusLoading}
+                  onClick={() => handleStatusChange("paid")}
+                >
+                  Deal abschließen → Archiv
+                </Button>
+              )}
+              {isAbgeschlossen && (
+                <span className="text-xs text-muted-foreground">
+                  Deal abgeschlossen
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>
