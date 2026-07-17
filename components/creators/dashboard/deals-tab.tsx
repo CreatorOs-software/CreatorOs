@@ -148,11 +148,13 @@ function BrandCell({ deal }: { deal: DealFull }) {
 }
 
 function PlatformCell({ deal }: { deal: DealFull }) {
-  const key = deal.platform
+  const firstDeliverable = deal.deliverables[0];
+  const platformStr = deal.platform
     ? deal.platform
-    : deal.deliverables[0]
-      ? (PLATFORM_KEY[deal.deliverables[0]] ?? null)
+    : firstDeliverable
+      ? (typeof firstDeliverable === "string" ? firstDeliverable : firstDeliverable.platform)
       : null;
+  const key = platformStr ? (PLATFORM_KEY[platformStr] ?? null) : null;
 
   if (!key) return <span className="text-muted-foreground/40 text-xs">—</span>;
 

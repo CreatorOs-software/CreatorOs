@@ -200,11 +200,12 @@ export function DealDialog({
 
   if (!deal) return null;
 
+  const dealId = deal.id;
   const delivFmt = formatDeliverables(deal.deliverables);
   const paymentItems = localPaymentItems;
 
   async function persistPaymentItems(items: PaymentItem[]) {
-    await fetch(`/api/deals/${deal.id}`, {
+    await fetch(`/api/deals/${dealId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ payment_items: items }),
@@ -269,7 +270,7 @@ export function DealDialog({
     setStatusLoading(true);
     setLocalStatus(newStatus);
     try {
-      await fetch(`/api/deals/${deal.id}`, {
+      await fetch(`/api/deals/${dealId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),

@@ -369,6 +369,7 @@ function AnfrageDialog({
   }
 
   async function handleGewonnen() {
+    if (!anfrage) return;
     setGewonnenLoading(true);
     try {
       const res = await fetch(`/api/anfragen/${anfrage.id}/gewonnen`, {
@@ -388,6 +389,7 @@ function AnfrageDialog({
   }
 
   async function handleDelete() {
+    if (!anfrage) return;
     setDeleteLoading(true);
     try {
       await fetch(`/api/anfragen/${anfrage.id}`, { method: "DELETE" });
