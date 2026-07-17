@@ -15,6 +15,7 @@ import { useCreateCreator } from "./hooks/use-create-creator";
 
 import { Step1 } from "./steps/step-1";
 import { Step2 } from "./steps/step-2";
+import { StepZiele } from "./steps/step-ziele";
 import { Step3 } from "./steps/step-3";
 import { Step4 } from "./steps/step-4";
 import { StepSuccess } from "./steps/step-success";
@@ -39,9 +40,7 @@ export function CreateCreatorWizard() {
     },
   });
 
-  // Validate only the current step's fields via its Zod schema
-  // Extra fields in form.state.values are silently stripped by Zod
-  function validateStep(stepNum: 1 | 2 | 3 | 4): StepErrors {
+  function validateStep(stepNum: 1 | 2 | 3 | 4 | 5): StepErrors {
     const schema = STEP_SCHEMAS[stepNum];
     const result = schema.safeParse(form.state.values);
     if (result.success) return {};
@@ -55,7 +54,7 @@ export function CreateCreatorWizard() {
   }
 
   function handleNext() {
-    const errors = validateStep(step as 1 | 2 | 3 | 4);
+    const errors = validateStep(step as 1 | 2 | 3 | 4 | 5);
     if (Object.keys(errors).length > 0) {
       setStepErrors(errors);
       return;
@@ -140,6 +139,13 @@ export function CreateCreatorWizard() {
                 onPrev={handlePrev}
               />
             ) : step === 3 ? (
+              <StepZiele
+                form={form}
+                errors={stepErrors}
+                onNext={handleNext}
+                onPrev={handlePrev}
+              />
+            ) : step === 4 ? (
               <Step3
                 form={form}
                 errors={stepErrors}

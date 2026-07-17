@@ -9,6 +9,18 @@ const STATUS_LABEL = {
   inactive: "Inaktiv",
 } as const;
 
+const GOAL_TYPE_LABEL: Record<string, string> = {
+  umsatz: "Umsatz (€)",
+  kooperationen: "Kooperationen",
+  post: "Posts",
+};
+
+const GOAL_PERIOD_LABEL: Record<string, string> = {
+  "30_tage": "30 Tage",
+  "3_monate": "3 Monate",
+  "1_jahr": "1 Jahr",
+};
+
 interface Step4Props {
   form: CreatorForm;
   saving: boolean;
@@ -22,12 +34,22 @@ export function Step4({ form, saving, error, onPrev, onSubmit, submitLabel }: St
   const v = form.state.values;
   const name = fullName(v.vorname, v.nachname);
 
+  const goalParts = [
+    v.goal_value,
+    v.goal_type ? GOAL_TYPE_LABEL[v.goal_type] : "",
+    v.goal_period ? GOAL_PERIOD_LABEL[v.goal_period] : "",
+  ].filter(Boolean);
+
   const rows: [string, string][] = [
     ["Name", name || "–"],
     ["Handle", v.handle || "–"],
     ["E-Mail", v.email || "–"],
     ["Nische", v.niche.join(", ") || "–"],
     ["Status", STATUS_LABEL[v.status as keyof typeof STATUS_LABEL] ?? v.status],
+    ["Ziel", goalParts.length ? goalParts.join(" · ") : "–"],
+    ["Mindestbetrag", v.min_kooperation_betrag ? `€ ${v.min_kooperation_betrag}` : "–"],
+    ["Weitere Ziele", v.weitere_ziele || "–"],
+    ["Wünsche & Anforderungen", v.wunsche_anforderungen || "–"],
     ["Plattformen", v.platforms.join(", ") || "–"],
     ["Reichweite", v.followers || "–"],
     ["Monatl. Umsatz", v.monthly_revenue ? `€ ${v.monthly_revenue}` : "–"],

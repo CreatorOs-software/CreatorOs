@@ -26,6 +26,12 @@ export type Creator = {
   dream_brands: string[];
   wish_themes: string[];
   no_go: string[];
+  goal_value: number | null;
+  goal_type: "umsatz" | "kooperationen" | "post" | null;
+  goal_period: "30_tage" | "3_monate" | "1_jahr" | null;
+  weitere_ziele: string | null;
+  min_kooperation_betrag: number | null;
+  wunsche_anforderungen: string | null;
 };
 
 export type CreatorInsert = Omit<Creator, "id">;

@@ -116,7 +116,7 @@ function StatCard({
         </Button>
       </CardHeader>
       <CardContent className="p-0">
-        <span className="text-3xl font-light tracking-tight">{value}</span>
+        <span className="text-3xl font-bold tracking-tight">{value}</span>
         {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
       </CardContent>
     </Card>
@@ -152,7 +152,9 @@ function PlatformCell({ deal }: { deal: DealFull }) {
   const platformStr = deal.platform
     ? deal.platform
     : firstDeliverable
-      ? (typeof firstDeliverable === "string" ? firstDeliverable : firstDeliverable.platform)
+      ? typeof firstDeliverable === "string"
+        ? firstDeliverable
+        : firstDeliverable.platform
       : null;
   const key = platformStr ? (PLATFORM_KEY[platformStr] ?? null) : null;
 
@@ -355,64 +357,67 @@ function DealsTable({
             {emptyText}
           </p>
         ) : (
-        <div className="overflow-y-auto max-h-87.5 rounded-xl">
-          <Table className="table-fixed">
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="hover:bg-transparent">
-                  {headerGroup.headers.map((header) => (
-                    <TableHead
-                      key={header.id}
-                      style={{ width: `${header.getSize()}px` }}
-                      className="sticky top-0 z-10 bg-card h-9 text-[10px] uppercase tracking-wider"
-                    >
-                      {header.isPlaceholder ? null : header.column.getCanSort() ? (
-                        <div
-                          className="flex items-center gap-1 cursor-pointer select-none"
-                          onClick={header.column.getToggleSortingHandler()}
-                        >
-                          {flexRender(
+          <div className="overflow-y-auto max-h-87.5 rounded-xl">
+            <Table className="table-fixed">
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow
+                    key={headerGroup.id}
+                    className="hover:bg-transparent"
+                  >
+                    {headerGroup.headers.map((header) => (
+                      <TableHead
+                        key={header.id}
+                        style={{ width: `${header.getSize()}px` }}
+                        className="sticky top-0 z-10 bg-card h-9 text-[10px] uppercase tracking-wider"
+                      >
+                        {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                          <div
+                            className="flex items-center gap-1 cursor-pointer select-none"
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                            {{
+                              asc: <ChevronUp className="w-3 h-3 opacity-60" />,
+                              desc: (
+                                <ChevronDown className="w-3 h-3 opacity-60" />
+                              ),
+                            }[header.column.getIsSorted() as string] ?? null}
+                          </div>
+                        ) : (
+                          flexRender(
                             header.column.columnDef.header,
                             header.getContext(),
-                          )}
-                          {{
-                            asc: <ChevronUp className="w-3 h-3 opacity-60" />,
-                            desc: (
-                              <ChevronDown className="w-3 h-3 opacity-60" />
-                            ),
-                          }[header.column.getIsSorted() as string] ?? null}
-                        </div>
-                      ) : (
-                        flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )
-                      )}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="cursor-pointer"
-                  onClick={() => onRowClick?.(row.original)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-2.5">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                          )
+                        )}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    className="cursor-pointer"
+                    onClick={() => onRowClick?.(row.original)}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="py-2.5">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </AnimatedHeight>
     </Card>
