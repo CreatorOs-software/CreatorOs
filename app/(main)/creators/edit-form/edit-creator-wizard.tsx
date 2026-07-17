@@ -16,6 +16,7 @@ import type { Creator } from "@/domains/creators/types";
 
 import { Step1 } from "../create-form/steps/step-1";
 import { Step2 } from "../create-form/steps/step-2";
+import { StepZiele } from "../create-form/steps/step-ziele";
 import { Step3 } from "../create-form/steps/step-3";
 import { Step4 } from "../create-form/steps/step-4";
 
@@ -40,6 +41,14 @@ function toFormValues(creator: Creator): CreatorFormValues {
     niche: creator.niche ?? [],
     bio: creator.bio ?? "",
     status: creator.status,
+    goal_value: creator.goal_value ? String(creator.goal_value) : "",
+    goal_type: (creator.goal_type ?? "") as CreatorFormValues["goal_type"],
+    goal_period: (creator.goal_period ?? "") as CreatorFormValues["goal_period"],
+    weitere_ziele: creator.weitere_ziele ?? "",
+    min_kooperation_betrag: creator.min_kooperation_betrag
+      ? String(creator.min_kooperation_betrag)
+      : "",
+    wunsche_anforderungen: creator.wunsche_anforderungen ?? "",
     platforms: creator.platforms ?? [],
     followers: creator.followers ?? "",
     monthly_revenue: creator.monthly_revenue ? String(creator.monthly_revenue) : "",
@@ -64,7 +73,7 @@ export function EditCreatorWizard({ creator }: EditCreatorWizardProps) {
     },
   });
 
-  function validateStep(stepNum: 1 | 2 | 3 | 4): StepErrors {
+  function validateStep(stepNum: 1 | 2 | 3 | 4 | 5): StepErrors {
     const schema = STEP_SCHEMAS[stepNum];
     const result = schema.safeParse(form.state.values);
     if (result.success) return {};
@@ -77,7 +86,7 @@ export function EditCreatorWizard({ creator }: EditCreatorWizardProps) {
   }
 
   function handleNext() {
-    const errors = validateStep(step as 1 | 2 | 3 | 4);
+    const errors = validateStep(step as 1 | 2 | 3 | 4 | 5);
     if (Object.keys(errors).length > 0) { setStepErrors(errors); return; }
     setStepErrors({});
     setDirection("forward");
@@ -94,7 +103,7 @@ export function EditCreatorWizard({ creator }: EditCreatorWizardProps) {
     return (
       <div className="h-full flex flex-col">
         <div className="bg-card rounded-2xl flex-1 flex flex-col items-center justify-center gap-6 p-8">
-          <div className="w-14 h-14 rounded-full bg-yellow-400 flex items-center justify-center">
+          <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center">
             <Check className="w-7 h-7 text-black" />
           </div>
           <div className="text-center">
@@ -108,7 +117,7 @@ export function EditCreatorWizard({ creator }: EditCreatorWizardProps) {
               Zur Übersicht
             </Button>
             <Button
-              className="bg-yellow-400 text-black hover:bg-yellow-300"
+              className="bg-primary text-primary-foreground hover:bg-primary/80"
               onClick={() => router.push(`/creators/dashboard/${creator.id}`)}
             >
               Zum Dashboard
@@ -173,6 +182,13 @@ export function EditCreatorWizard({ creator }: EditCreatorWizardProps) {
                 onPrev={handlePrev}
               />
             ) : step === 3 ? (
+              <StepZiele
+                form={form}
+                errors={stepErrors}
+                onNext={handleNext}
+                onPrev={handlePrev}
+              />
+            ) : step === 4 ? (
               <Step3
                 form={form}
                 errors={stepErrors}

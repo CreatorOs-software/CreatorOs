@@ -1,5 +1,10 @@
 @import "./design-system.css";
 
+@keyframes moveBackground {
+  from { background-position: 0% 0%; }
+  to   { background-position: 0% -1000%; }
+}
+
 * {
   scrollbar-width: none;
   -ms-overflow-style: none;

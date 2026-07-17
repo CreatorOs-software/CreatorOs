@@ -39,27 +39,38 @@ export function Stepper({ steps, current }: StepperProps) {
 
       {steps.map((step) => {
         const state: "done" | "active" | "future" =
-          step.id < current ? "done" : step.id === current ? "active" : "future";
+          step.id < current
+            ? "done"
+            : step.id === current
+              ? "active"
+              : "future";
 
         return (
-          <div key={step.id} className="relative z-10 flex-1 flex flex-col items-center">
+          <div
+            key={step.id}
+            className="relative z-10 flex-1 flex flex-col items-center"
+          >
             {/* Circle */}
             <div
               className={cn(
                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 transition-colors duration-500",
                 state === "done" && "bg-success text-success-foreground",
-                state === "active" && "bg-yellow-400 text-black",
+                state === "active" && "bg-primary text-black",
                 state === "future" && "bg-muted text-muted-foreground",
               )}
             >
-              {state === "done" ? <Check className="w-4 h-4" strokeWidth={2.5} /> : step.id}
+              {state === "done" ? (
+                <Check className="w-4 h-4" strokeWidth={2.5} />
+              ) : (
+                step.id
+              )}
             </div>
 
             {/* Label */}
             <span
               className={cn(
                 "mt-2 text-xs font-medium text-center leading-tight transition-colors duration-300",
-                state === "active" && "text-yellow-400",
+                state === "active" && "text-primary",
                 state === "done" && "text-foreground",
                 state === "future" && "text-muted-foreground/60",
               )}

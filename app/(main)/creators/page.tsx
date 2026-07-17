@@ -109,7 +109,7 @@ export default function CreatorsPage() {
           />
           <Button
             onClick={() => router.push("/creators/create-form")}
-            className="bg-yellow-400 text-black hover:bg-yellow-300"
+            className="bg-primary text-primary-foreground hover:bg-primary/80"
           >
             <Plus className="w-4 h-4" />
             Creator hinzufügen

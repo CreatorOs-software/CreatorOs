@@ -35,7 +35,7 @@ export function StepNav({
           onClick={onNext}
           disabled={nextDisabled}
           size={"lg"}
-          className="bg-yellow-400 text-black hover:bg-yellow-300"
+          className="bg-primary text-primary-foreground hover:bg-primary/80"
         >
           Weiter
           <ArrowRight className="w-4 h-4" />
@@ -47,7 +47,7 @@ export function StepNav({
           type="button"
           onClick={onSubmit}
           disabled={saving}
-          className="bg-yellow-400 text-black hover:bg-yellow-300"
+          className="bg-primary text-primary-foreground hover:bg-primary/80"
         >
           {saving ? "Speichern…" : submitLabel}
         </Button>

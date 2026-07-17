@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, Loader2, Pencil } from "lucide-react";
+import { Loader2, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBar, StatusBarGroup } from "@/components/dashboard/status-bar";
@@ -22,9 +22,9 @@ import type {
   MetricsResponse,
   DealFull,
   Invoice,
+  Anfrage,
 } from "@/components/creators/dashboard/types";
 import { DashboardSkeleton } from "@/components/creators/dashboard/skeleton";
-import { UebersichtTab } from "@/components/creators/dashboard/uebersicht-tab";
 import {
   PlatformContent,
   DisconnectedPlatformTab,
@@ -32,13 +32,7 @@ import {
 } from "@/components/creators/dashboard/insights-tab";
 import { VertraegeTab } from "@/components/creators/dashboard/vertraege-tab";
 import { DealsTab } from "@/components/creators/dashboard/deals-tab";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { UebersichtTab } from "@/components/creators/dashboard/uebersicht-tab";
 
 export default function CreatorDashboardPage() {
   const { id } = useParams<{ id: string }>();
@@ -62,7 +56,7 @@ export default function CreatorDashboardPage() {
       staleTime: 5 * 60_000,
     });
 
-  const { data: dealsData, isPending: dealsPending } = useQuery<{
+  const { data: dealsData } = useQuery<{
     deals: DealFull[];
   }>({
     queryKey: ["creator-deals-full", id],
@@ -76,6 +70,12 @@ export default function CreatorDashboardPage() {
     staleTime: 5 * 60_000,
   });
 
+  const { data: anfragenData } = useQuery<{ anfragen: Anfrage[] }>({
+    queryKey: ["creator-anfragen", id],
+    queryFn: () => fetch(`/api/creators/${id}/anfragen`).then((r) => r.json()),
+    staleTime: 5 * 60_000,
+  });
+
   // ── Derived state ─────────────────────────────────────────────────────────────
 
   const creator = creatorData?.creator ?? null;
@@ -83,6 +83,7 @@ export default function CreatorDashboardPage() {
   const metrics = metricsData?.metrics ?? {};
   const deals = dealsData?.deals ?? [];
   const invoices = invoicesData?.invoices ?? [];
+  const anfragen = anfragenData?.anfragen ?? [];
 
   const activeAccounts = accounts.filter(
     (a) => a.sync_status !== "disconnected",
@@ -176,7 +177,7 @@ export default function CreatorDashboardPage() {
         className="flex-1 min-h-0 flex flex-col gap-0"
       >
         {/* Tab bar */}
-        <div className="shrink-0 -mx-6 px-6 mb-4 flex items-end justify-between bg-card border-b border-border">
+        <div className="shrink-0 -mx-6 px-6 mb-4 flex items-end justify-between ">
           <TabsList variant="underline">
             <TabsTrigger value="uebersicht">Übersicht</TabsTrigger>
             <TabsTrigger value="deals">Deals</TabsTrigger>
@@ -184,34 +185,20 @@ export default function CreatorDashboardPage() {
             <TabsTrigger value="vertraege">Verträge</TabsTrigger>
           </TabsList>
 
-          <div className="flex gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger>
-                <Button variant={"outline"} size={"sm"}>
-                  Weitere Aktionen
-                  <ChevronDown />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className={"w-52"}>
-                <DropdownMenuItem
-                  onClick={() =>
-                    router.push(`/creators/deals/create-deal/${id}`)
-                  }
-                >
-                  Deal anlegen
-                </DropdownMenuItem>
-                <DropdownMenuItem>Pipeline anlegen</DropdownMenuItem>
-                <DropdownMenuItem></DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="flex gap-2 mb-0.5">
             <Button
-              variant="default"
-              size="sm"
-              className="gap-1.5 mb-0.5"
+              variant="outline"
               onClick={() => router.push(`/creators/edit-form/${id}`)}
             >
               <Pencil className="w-3.5 h-3.5" />
               Bearbeiten
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => router.push(`/creators/deals/create-deal/${id}`)}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Neuer Deal
             </Button>
           </div>
         </div>
@@ -224,15 +211,14 @@ export default function CreatorDashboardPage() {
               creatorId={id}
               deals={deals}
               invoices={invoices}
-              isPending={dealsPending}
+              isPending={creatorPending}
             />
           </TabsContent>
 
           {/* Deals */}
           <TabsContent value="deals">
-            <DealsTab deals={deals} creator={creator} />
+            <DealsTab deals={deals} anfragen={anfragen} creator={creator} creatorId={id} />
           </TabsContent>
-
           {/* Insights */}
           <TabsContent value="insights">
             {metricsPending ? (
@@ -327,7 +313,7 @@ export default function CreatorDashboardPage() {
 
           {/* Verträge */}
           <TabsContent value="vertraege">
-            <VertraegeTab invoices={invoices} />
+            <VertraegeTab invoices={invoices} creatorId={id} />
           </TabsContent>
         </div>
       </Tabs>

@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
+import { Avatar } from "@base-ui/react";
 import {
   LayoutDashboard,
-  File,
+  Building2,
   User,
   Calendar,
   Wallet,
@@ -13,45 +16,126 @@ import {
   Inbox,
   Users,
   Settings2,
+  LogOut,
+  PanelBottom,
+  PanelBottomClose,
 } from "lucide-react";
-import { QueryKeys } from "@/lib/query-keys";
-import { usePermissions } from "@/components/context/permission-provider";
 import {
   Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuBadge,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarRail,
+  SidebarBody,
+  SidebarLink,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { QueryKeys } from "@/lib/query-keys";
+import { usePermissions } from "@/components/context/permission-provider";
+import { useAuth } from "@/components/auth/use-auth";
+import { useDock } from "@/components/layout/dock-context";
+import { cn } from "@/lib/utils";
 
-const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { label: "Inbox", icon: Inbox, href: "/inbox" },
-  { label: "Deals", icon: File, href: "/deals" },
-  { label: "Creator", icon: User, href: "/creators" },
-  { label: "Events", icon: Calendar, href: "/events" },
-  { label: "Invoice", icon: Wallet, href: "/salary" },
-  { label: "Reviews", icon: Star, href: "/reviews" },
-];
+const Logo = () => (
+  <Link
+    href="/dashboard"
+    className="font-normal flex items-center gap-2 text-sm py-1 relative z-20"
+  >
+    <div className="h-5 w-6 bg-sidebar-accent rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm shrink-0" />
+    <motion.span
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="font-semibold text-foreground whitespace-pre"
+    >
+      Crextio
+    </motion.span>
+  </Link>
+);
 
-const adminItems = [
-  { label: "Members", icon: Users, href: "/admin/members" },
-  { label: "Settings", icon: Settings2, href: "/admin/settings" },
-];
+const LogoIcon = () => (
+  <Link href="/dashboard" className="flex justify-center py-1 relative z-20">
+    <div className="h-5 w-6 bg-sidebar-accent rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm shrink-0" />
+  </Link>
+);
+
+function DockToggleButton() {
+  const { dockVisible, toggleDock } = useDock();
+  const { open, animate } = useSidebar();
+
+  return (
+    <button
+      onClick={toggleDock}
+      title={dockVisible ? "Dock schließen" : "Dock öffnen"}
+      className={cn(
+        "flex items-center rounded-md py-2 transition-colors text-sidebar-foreground hover:bg-sidebar-accent/50",
+        open ? "gap-3 px-2 w-full" : "justify-center w-full",
+      )}
+    >
+      {dockVisible ? (
+        <PanelBottomClose className="h-5 w-5 shrink-0 text-current" />
+      ) : (
+        <PanelBottom className="h-5 w-5 shrink-0 text-current" />
+      )}
+      <motion.span
+        animate={{
+          display: animate ? (open ? "inline-block" : "none") : "inline-block",
+          opacity: animate ? (open ? 1 : 0) : 1,
+        }}
+        className="text-sm whitespace-pre"
+      >
+        {dockVisible ? "Dock schließen" : "Dock öffnen"}
+      </motion.span>
+    </button>
+  );
+}
+
+function ProfileSection() {
+  const { user, signOut } = useAuth();
+  const { open, animate } = useSidebar();
+
+  const name =
+    (user?.user_metadata?.full_name as string | undefined) ?? user?.email ?? "";
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+
+  return (
+    <div className={cn("flex items-center py-2 rounded-md", open ? "gap-2 px-2" : "justify-center")}>
+      <Avatar.Root className="w-7 h-7 rounded-full overflow-hidden shrink-0">
+        <Avatar.Image
+          src={user?.user_metadata?.avatar_url as string | undefined}
+          alt={name}
+          className="w-full h-full object-cover"
+        />
+        <Avatar.Fallback className="w-full h-full rounded-full bg-yellow-400 flex items-center justify-center text-xs font-bold text-black">
+          {initials}
+        </Avatar.Fallback>
+      </Avatar.Root>
+      <motion.div
+        animate={{
+          display: animate ? (open ? "flex" : "none") : "flex",
+          opacity: animate ? (open ? 1 : 0) : 1,
+        }}
+        className="flex items-center justify-between flex-1 min-w-0"
+      >
+        <p className="text-sm font-medium text-sidebar-foreground truncate min-w-0">
+          {name}
+        </p>
+        <button
+          onClick={signOut}
+          className="ml-2 p-1 rounded-md hover:bg-sidebar-accent transition-colors shrink-0"
+          title="Abmelden"
+        >
+          <LogOut className="w-4 h-4 text-current" />
+        </button>
+      </motion.div>
+    </div>
+  );
+}
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { isAdmin } = usePermissions();
-  const { state } = useSidebar();
-  const isCollapsed = state === "collapsed";
+  const [open, setOpen] = useState(false);
 
   const { data } = useQuery<{
     threads: { unread: boolean; folder: string | null }[];
@@ -64,103 +148,123 @@ export function AppSidebar() {
     (t) => t.unread && t.folder !== "sent",
   ).length;
 
-  return (
-    <Sidebar collapsible="icon">
-      {/* Logo */}
-      <SidebarHeader className="p-3">
-        <div className="flex items-center h-9">
-          {isCollapsed ? (
-            <div className="w-8 h-8 rounded-lg border border-foreground/20 flex items-center justify-center shrink-0">
-              <span className="text-xs font-bold">C</span>
-            </div>
-          ) : (
-            <div className="rounded-lg border border-foreground/20 px-3 py-1.5">
-              <span className="text-base font-semibold">Crextio</span>
-            </div>
+  const navItems = [
+    {
+      label: "Dashboard",
+      href: "/dashboard",
+      icon: <LayoutDashboard className="h-5 w-5 shrink-0 text-current" />,
+    },
+    {
+      label: "Inbox",
+      href: "/inbox",
+      icon: (
+        <div className="relative">
+          <Inbox className="h-5 w-5 shrink-0 text-current" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500" />
           )}
         </div>
-      </SidebarHeader>
+      ),
+    },
+    {
+      label: "Brands",
+      href: "/brands",
+      icon: <Building2 className="h-5 w-5 shrink-0 text-current" />,
+    },
+    {
+      label: "Creator",
+      href: "/creators",
+      icon: <User className="h-5 w-5 shrink-0 text-current" />,
+    },
+    {
+      label: "Events",
+      href: "/events",
+      icon: <Calendar className="h-5 w-5 shrink-0 text-current" />,
+    },
+    {
+      label: "Invoice",
+      href: "/salary",
+      icon: <Wallet className="h-5 w-5 shrink-0 text-current" />,
+    },
+    {
+      label: "Reviews",
+      href: "/reviews",
+      icon: <Star className="h-5 w-5 shrink-0 text-current" />,
+    },
+  ];
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navItems.map((item) => {
-                const Icon = item.icon;
+  const adminItems = [
+    {
+      label: "Members",
+      href: "/admin/members",
+      icon: <Users className="h-5 w-5 shrink-0 text-current" />,
+    },
+    {
+      label: "Settings",
+      href: "/admin/settings",
+      icon: <Settings2 className="h-5 w-5 shrink-0 text-current" />,
+    },
+  ];
+
+  return (
+    <Sidebar open={open} setOpen={setOpen}>
+      <SidebarBody className="justify-between gap-10">
+        <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+          {open ? <Logo /> : <LogoIcon />}
+          <div className="mt-8 flex flex-col gap-1">
+            {navItems.map((item) => {
+              const isActive =
+                pathname === item.href || pathname.startsWith(item.href + "/");
+              return (
+                <SidebarLink
+                  key={item.label}
+                  link={item}
+                  className={cn(
+                    isActive
+                      ? "bg-sidebar-accent text-white"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent/50",
+                  )}
+                />
+              );
+            })}
+          </div>
+
+          {isAdmin && (
+            <div className="mt-6 flex flex-col gap-1">
+              <motion.span
+                animate={{
+                  display: open ? "block" : "none",
+                  opacity: open ? 1 : 0,
+                }}
+                className="px-2 text-xs font-medium text-sidebar-foreground/50 uppercase tracking-wider mb-1"
+              >
+                Admin
+              </motion.span>
+              {adminItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
                   pathname.startsWith(item.href + "/");
-                const isInbox = item.label === "Inbox";
                 return (
-                  <SidebarMenuItem key={item.label}>
-                    <SidebarMenuButton
-                      render={<Link href={item.href} />}
-                      isActive={isActive}
-                      tooltip={item.label}
-                      className="h-10"
-                    >
-                      <div className="relative">
-                        <Icon />
-                        {isCollapsed && isInbox && unreadCount > 0 && (
-                          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-400" />
-                        )}
-                      </div>
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                    {!isCollapsed && isInbox && unreadCount > 0 && (
-                      <SidebarMenuBadge className="bg-yellow-400 text-black text-[10px] font-semibold rounded-full px-1.5">
-                        {unreadCount}
-                      </SidebarMenuBadge>
+                  <SidebarLink
+                    key={item.label}
+                    link={item}
+                    className={cn(
+                      isActive
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "hover:bg-sidebar-accent/50",
                     )}
-                  </SidebarMenuItem>
+                  />
                 );
               })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+            </div>
+          )}
+        </div>
 
-        {isAdmin && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Admin</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {adminItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive =
-                    pathname === item.href ||
-                    pathname.startsWith(item.href + "/");
-                  return (
-                    <SidebarMenuItem key={item.label}>
-                      <SidebarMenuButton
-                        render={<Link href={item.href} />}
-                        isActive={isActive}
-                        tooltip={item.label}
-                        className="h-10"
-                      >
-                        <Icon />
-                        <span>{item.label}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-      </SidebarContent>
-
-      {!isCollapsed && (
-        <SidebarFooter className="p-3">
-          <div className="bg-sidebar-accent/50 rounded-xl p-3">
-            <p className="text-xs text-sidebar-foreground/60 mb-1">
-              Need help?
-            </p>
-            <p className="text-sm font-medium">Contact Support</p>
-          </div>
-        </SidebarFooter>
-      )}
-
-      <SidebarRail />
+        <div className="flex flex-col gap-1">
+          <DockToggleButton />
+          <ProfileSection />
+        </div>
+      </SidebarBody>
     </Sidebar>
   );
 }
