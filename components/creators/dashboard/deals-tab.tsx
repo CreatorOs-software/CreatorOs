@@ -48,6 +48,7 @@ import { DealDialog } from "./deal-dialog";
 import { AnfragenPanel } from "./anfragen-panel";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { AnimatedHeight } from "@/components/ui/animated-height";
+import { TableProgress } from "@/components/ui/table-progress";
 import {
   Dialog,
   DialogContent,
@@ -214,14 +215,7 @@ const laufendColumns: ColumnDef<DealFull>[] = [
     accessorFn: (row) => dealProgress(row.status),
     cell: ({ row }) => {
       const pct = dealProgress(row.original.status);
-      return (
-        <div className="h-1.5 w-full max-w-32 rounded-full bg-muted overflow-hidden">
-          <div
-            className="h-full rounded-full bg-accent"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      );
+      return <TableProgress value={pct} segments={10} />;
     },
     size: 140,
     enableSorting: false,

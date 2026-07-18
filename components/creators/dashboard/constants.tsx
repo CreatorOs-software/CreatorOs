@@ -7,7 +7,31 @@ import {
   SiYoutube,
 } from "react-icons/si";
 
-export const OAUTH_SUPPORTED = new Set(["youtube"]);
+export {
+  fmt,
+  fmtMoney,
+  formatMoney,
+  fmtDate,
+  shortDay,
+  daysUntil,
+  fmtDuration,
+} from "@/lib/formatters";
+
+export const OAUTH_SUPPORTED = new Set(["youtube", "instagram"]);
+
+// ─── Creator status ───────────────────────────────────────────────────────────
+
+export const CREATOR_STATUS_CLASS: Record<string, string> = {
+  active: "bg-green-100 text-green-700",
+  "on-break": "bg-yellow-100 text-yellow-700",
+  inactive: "bg-muted text-muted-foreground",
+};
+
+export const CREATOR_STATUS_LABEL: Record<string, string> = {
+  active: "Aktiv",
+  "on-break": "Pause",
+  inactive: "Inaktiv",
+};
 
 export const STATUS_STYLE: Record<
   string,
@@ -75,38 +99,3 @@ export const PLATFORM_KEY: Record<string, string> = {
   X: "x",
 };
 
-// ─── Format helpers ───────────────────────────────────────────────────────────
-
-export function fmt(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return String(n);
-}
-
-export function fmtDuration(secs: number): string {
-  const m = Math.floor(secs / 60);
-  const s = Math.round(secs % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
-
-export function fmtMoney(n: number): string {
-  if (n >= 1_000_000) return `€${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `€${(n / 1_000).toFixed(1)}K`;
-  return `€${Math.round(n)}`;
-}
-
-export function fmtDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "short",
-    year: "2-digit",
-  });
-}
-
-export function shortDay(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("de-DE", { weekday: "short" });
-}
-
-export function daysUntil(dateStr: string): number {
-  return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86_400_000);
-}

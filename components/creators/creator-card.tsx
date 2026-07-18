@@ -3,35 +3,18 @@
 import { useRouter } from "next/navigation";
 import { Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  SiInstagram,
-  SiOnlyfans,
-  SiSpotify,
-  SiTiktok,
-  SiX,
-  SiYoutube,
-} from "react-icons/si";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
 import type { Creator } from "./creator-sheet";
+import {
+  CREATOR_STATUS_CLASS as STATUS_CLASS,
+  CREATOR_STATUS_LABEL as STATUS_LABEL,
+  PLATFORM_ICONS,
+  PLATFORM_KEY,
+} from "@/components/creators/dashboard/constants";
+import { formatMoney } from "@/lib/formatters";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const STATUS_CLASS: Record<string, string> = {
-  active: "bg-green-100 text-green-700",
-  "on-break": "bg-yellow-100 text-yellow-700",
-  inactive: "bg-muted text-muted-foreground",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  active: "Aktiv",
-  "on-break": "Pause",
-  inactive: "Inaktiv",
-};
-
-export function formatMoney(n: number) {
-  return `$${(n / 1000).toFixed(1)}k`;
-}
+export { formatMoney };
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
@@ -62,17 +45,8 @@ export function Avatar({
 
 // ─── Platform icon ────────────────────────────────────────────────────────────
 
-const PLATFORM_ICONS: Record<string, React.ReactNode> = {
-  Instagram: <SiInstagram />,
-  TikTok: <SiTiktok />,
-  YouTube: <SiYoutube />,
-  Spotify: <SiSpotify />,
-  OnlyFans: <SiOnlyfans />,
-  X: <SiX />,
-};
-
 function PlatformIcon({ p }: { p: string }) {
-  const icon = PLATFORM_ICONS[p];
+  const icon = PLATFORM_ICONS[PLATFORM_KEY[p] ?? p.toLowerCase()];
   return icon ? (
     <span
       className="text-muted-foreground hover:text-foreground transition-colors text-base"
