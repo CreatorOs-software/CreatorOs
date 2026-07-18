@@ -110,16 +110,45 @@ type BrandDetailResponse = {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-const LAUFEND = new Set(["confirmed", "production", "approval", "scheduled", "posted"]);
+const LAUFEND = new Set([
+  "confirmed",
+  "production",
+  "approval",
+  "scheduled",
+  "posted",
+]);
 const ALT = new Set(["invoiced", "paid"]);
 
-const ANFRAGE_STATUS: Record<string, { label: string; bg: string; text: string }> = {
+const ANFRAGE_STATUS: Record<
+  string,
+  { label: string; bg: string; text: string }
+> = {
   neu: { label: "Neu", bg: "bg-muted", text: "text-muted-foreground" },
-  pruefung: { label: "In Prüfung", bg: "bg-blue-500/15", text: "text-blue-600" },
-  angebot: { label: "Angebot", bg: "bg-violet-500/15", text: "text-violet-600" },
-  verhandlung: { label: "Verhandlung", bg: "bg-amber-400/15", text: "text-amber-700" },
-  zugesagt: { label: "Zugesagt", bg: "bg-green-500/15", text: "text-green-700" },
-  gewonnen: { label: "Gewonnen", bg: "bg-emerald-500/20", text: "text-emerald-700" },
+  pruefung: {
+    label: "In Prüfung",
+    bg: "bg-blue-500/15",
+    text: "text-blue-600",
+  },
+  angebot: {
+    label: "Angebot",
+    bg: "bg-violet-500/15",
+    text: "text-violet-600",
+  },
+  verhandlung: {
+    label: "Verhandlung",
+    bg: "bg-amber-400/15",
+    text: "text-amber-700",
+  },
+  zugesagt: {
+    label: "Zugesagt",
+    bg: "bg-green-500/15",
+    text: "text-green-700",
+  },
+  gewonnen: {
+    label: "Gewonnen",
+    bg: "bg-emerald-500/20",
+    text: "text-emerald-700",
+  },
   abgelehnt: { label: "Abgelehnt", bg: "bg-red-500/15", text: "text-red-600" },
 };
 
@@ -164,7 +193,13 @@ function DealStatusBadge({ status }: { status: string }) {
   const s = STATUS_STYLE[status];
   if (!s) return null;
   return (
-    <span className={cn("text-[9px] font-medium px-2 py-0.5 rounded-full", s.bg, s.text)}>
+    <span
+      className={cn(
+        "text-[9px] font-medium px-2 py-0.5 rounded-full",
+        s.bg,
+        s.text,
+      )}
+    >
       {s.label}
     </span>
   );
@@ -174,7 +209,13 @@ function AnfrageStatusBadge({ status }: { status: string }) {
   const s = ANFRAGE_STATUS[status];
   if (!s) return null;
   return (
-    <span className={cn("text-[9px] font-medium px-2 py-0.5 rounded-full", s.bg, s.text)}>
+    <span
+      className={cn(
+        "text-[9px] font-medium px-2 py-0.5 rounded-full",
+        s.bg,
+        s.text,
+      )}
+    >
       {s.label}
     </span>
   );
@@ -198,7 +239,12 @@ function CreatorHistoryDialog({
   const failedAnfragen = anfragen.filter((a) => a.status === "abgelehnt");
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -214,7 +260,10 @@ function CreatorHistoryDialog({
             </p>
             <div className="flex flex-col divide-y divide-border rounded-xl border border-border overflow-hidden">
               {deals.map((d) => (
-                <div key={d.id} className="flex items-center justify-between px-4 py-3 gap-3">
+                <div
+                  key={d.id}
+                  className="flex items-center justify-between px-4 py-3 gap-3"
+                >
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{d.title}</p>
                     <p className="text-[10px] text-muted-foreground">
@@ -227,8 +276,14 @@ function CreatorHistoryDialog({
                       {fmtMoney(Number(d.budget))}
                     </span>
                     <DealStatusBadge status={d.status} />
-                    <Button variant="ghost" size="icon-sm" asChild>
-                      <Link href={d.creators?.id ? `/creators/dashboard/${d.creators.id}` : "#"}>
+                    <Button variant="ghost" size="icon-sm">
+                      <Link
+                        href={
+                          d.creators?.id
+                            ? `/creators/dashboard/${d.creators.id}`
+                            : "#"
+                        }
+                      >
                         <ArrowUpRight className="w-3.5 h-3.5" />
                       </Link>
                     </Button>
@@ -246,7 +301,10 @@ function CreatorHistoryDialog({
             </p>
             <div className="flex flex-col divide-y divide-border rounded-xl border border-border overflow-hidden bg-muted/30">
               {failedAnfragen.map((a) => (
-                <div key={a.id} className="flex items-center justify-between px-4 py-3 gap-3">
+                <div
+                  key={a.id}
+                  className="flex items-center justify-between px-4 py-3 gap-3"
+                >
                   <div className="min-w-0">
                     <p className="text-xs font-medium text-muted-foreground">
                       {a.format ?? "Format unbekannt"}
@@ -282,7 +340,13 @@ function CreatorHistoryDialog({
 
 // ── Creator Section ────────────────────────────────────────────────────────────
 
-function CreatorSection({ summaries, brandName }: { summaries: CreatorSummary[]; brandName: string }) {
+function CreatorSection({
+  summaries,
+  brandName,
+}: {
+  summaries: CreatorSummary[];
+  brandName: string;
+}) {
   const [selected, setSelected] = useState<CreatorSummary | null>(null);
 
   return (
@@ -304,7 +368,9 @@ function CreatorSection({ summaries, brandName }: { summaries: CreatorSummary[];
                 <div className="flex items-center gap-3 min-w-0">
                   <CreatorAvatar creator={s.creator} />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{s.creator.full_name}</p>
+                    <p className="text-sm font-medium truncate">
+                      {s.creator.full_name}
+                    </p>
                     <p className="text-[10px] text-muted-foreground">
                       {s.only_contact
                         ? "Nur Anfragen"
@@ -397,14 +463,23 @@ function ContactDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>{editing ? "Kontakt bearbeiten" : "Ansprechpartner hinzufügen"}</DialogTitle>
+          <DialogTitle>
+            {editing ? "Kontakt bearbeiten" : "Ansprechpartner hinzufügen"}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Name *</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+              Name *
+            </label>
             <input
               autoFocus
               value={name}
@@ -414,7 +489,9 @@ function ContactDialog({
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Rolle</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+              Rolle
+            </label>
             <input
               value={role}
               onChange={(e) => setRole(e.target.value)}
@@ -424,7 +501,9 @@ function ContactDialog({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">E-Mail</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                E-Mail
+              </label>
               <input
                 type="email"
                 value={email}
@@ -434,7 +513,9 @@ function ContactDialog({
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Telefon</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                Telefon
+              </label>
               <input
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -444,7 +525,9 @@ function ContactDialog({
             </div>
           </div>
           <DialogFooter className="mt-1">
-            <DialogClose render={<Button type="button" variant="outline" />}>Abbrechen</DialogClose>
+            <DialogClose render={<Button type="button" variant="outline" />}>
+              Abbrechen
+            </DialogClose>
             <Button type="submit" disabled={loading || !name.trim()}>
               {loading ? "Speichern…" : "Speichern"}
             </Button>
@@ -482,7 +565,10 @@ function ContactsSection({
           <Button
             variant="ghost"
             size="icon-sm"
-            onClick={() => { setEditing(null); setDialogOpen(true); }}
+            onClick={() => {
+              setEditing(null);
+              setDialogOpen(true);
+            }}
           >
             <Plus className="w-3.5 h-3.5" />
           </Button>
@@ -495,14 +581,23 @@ function ContactsSection({
         ) : (
           <div className="flex flex-col gap-3">
             {contacts.map((c) => (
-              <div key={c.id} className="flex items-start justify-between gap-2 group">
+              <div
+                key={c.id}
+                className="flex items-start justify-between gap-2 group"
+              >
                 <div className="flex items-start gap-2.5 min-w-0">
                   <span className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center shrink-0 mt-0.5">
                     <User className="w-3.5 h-3.5 text-muted-foreground" />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium leading-tight">{c.name}</p>
-                    {c.role && <p className="text-[10px] text-muted-foreground">{c.role}</p>}
+                    <p className="text-sm font-medium leading-tight">
+                      {c.name}
+                    </p>
+                    {c.role && (
+                      <p className="text-[10px] text-muted-foreground">
+                        {c.role}
+                      </p>
+                    )}
                     <div className="flex flex-col gap-0.5 mt-1">
                       {c.email && (
                         <a
@@ -530,7 +625,10 @@ function ContactsSection({
                     variant="ghost"
                     size="icon-sm"
                     className="text-muted-foreground hover:text-foreground"
-                    onClick={() => { setEditing(c); setDialogOpen(true); }}
+                    onClick={() => {
+                      setEditing(c);
+                      setDialogOpen(true);
+                    }}
                   >
                     <Pencil className="w-3 h-3" />
                   </Button>
@@ -601,7 +699,9 @@ function DealHistorySection({ deals }: { deals: DealRow[] }) {
                   {d.creators ? (
                     <div className="flex items-center gap-2">
                       <CreatorAvatar creator={d.creators} />
-                      <span className="text-xs font-medium truncate">{d.creators.full_name}</span>
+                      <span className="text-xs font-medium truncate">
+                        {d.creators.full_name}
+                      </span>
                     </div>
                   ) : (
                     <span className="text-muted-foreground/40 text-xs">—</span>
@@ -610,7 +710,9 @@ function DealHistorySection({ deals }: { deals: DealRow[] }) {
                 <TableCell className="py-2.5">
                   <p className="text-xs font-medium truncate">{d.title}</p>
                   {d.campaign_type && (
-                    <p className="text-[10px] text-muted-foreground">{d.campaign_type}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {d.campaign_type}
+                    </p>
                   )}
                 </TableCell>
                 <TableCell className="py-2.5">
@@ -622,8 +724,14 @@ function DealHistorySection({ deals }: { deals: DealRow[] }) {
                   <DealStatusBadge status={d.status} />
                 </TableCell>
                 <TableCell className="py-2.5">
-                  <Button variant="ghost" size="icon-sm" asChild>
-                    <Link href={d.creators?.id ? `/creators/dashboard/${d.creators.id}` : "#"}>
+                  <Button variant="ghost" size="icon-sm">
+                    <Link
+                      href={
+                        d.creators?.id
+                          ? `/creators/dashboard/${d.creators.id}`
+                          : "#"
+                      }
+                    >
                       <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground" />
                     </Link>
                   </Button>
@@ -645,14 +753,21 @@ function RightsSection({ deals }: { deals: DealRow[] }) {
 
   return (
     <Card className="p-5 gap-0 rounded-2xl">
-      <h3 className="text-sm font-semibold mb-4">Aktive Rechte & Sperrfristen</h3>
+      <h3 className="text-sm font-semibold mb-4">
+        Aktive Rechte & Sperrfristen
+      </h3>
       <div className="flex flex-col divide-y divide-border -mx-5">
         {withRights.map((d) => (
-          <div key={d.id} className="flex items-start justify-between px-5 py-3 gap-3">
+          <div
+            key={d.id}
+            className="flex items-start justify-between px-5 py-3 gap-3"
+          >
             <div className="flex items-center gap-2.5 min-w-0">
               {d.creators && <CreatorAvatar creator={d.creators} />}
               <div className="min-w-0">
-                <p className="text-xs font-medium truncate">{d.creators?.full_name ?? "—"}</p>
+                <p className="text-xs font-medium truncate">
+                  {d.creators?.full_name ?? "—"}
+                </p>
                 {d.exclusivity && (
                   <p className="text-[10px] text-muted-foreground">
                     Exklusivität: {d.exclusivity}
@@ -665,8 +780,12 @@ function RightsSection({ deals }: { deals: DealRow[] }) {
                 )}
               </div>
             </div>
-            <Button variant="ghost" size="icon-sm" asChild>
-              <Link href={d.creators?.id ? `/creators/dashboard/${d.creators.id}` : "#"}>
+            <Button variant="ghost" size="icon-sm">
+              <Link
+                href={
+                  d.creators?.id ? `/creators/dashboard/${d.creators.id}` : "#"
+                }
+              >
                 <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground" />
               </Link>
             </Button>
@@ -679,12 +798,20 @@ function RightsSection({ deals }: { deals: DealRow[] }) {
 
 // ── Gap Section ────────────────────────────────────────────────────────────────
 
-function GapSection({ creators, brandName }: { creators: CreatorMin[]; brandName: string }) {
+function GapSection({
+  creators,
+  brandName,
+}: {
+  creators: CreatorMin[];
+  brandName: string;
+}) {
   if (creators.length === 0) return null;
 
   return (
     <Card className="p-5 gap-0 rounded-2xl">
-      <h3 className="text-sm font-semibold mb-1">Noch nicht zusammengearbeitet mit</h3>
+      <h3 className="text-sm font-semibold mb-1">
+        Noch nicht zusammengearbeitet mit
+      </h3>
       <p className="text-xs text-muted-foreground mb-4">
         Diese Creator haben noch keinen Deal mit {brandName}.
       </p>
@@ -711,7 +838,13 @@ function GapSection({ creators, brandName }: { creators: CreatorMin[]; brandName
 
 // ── Notes Section ──────────────────────────────────────────────────────────────
 
-function NotesSection({ brandId, initialNotes }: { brandId: string; initialNotes: string | null }) {
+function NotesSection({
+  brandId,
+  initialNotes,
+}: {
+  brandId: string;
+  initialNotes: string | null;
+}) {
   const [value, setValue] = useState(initialNotes ?? "");
   const [saving, setSaving] = useState(false);
   const isDirty = value !== (initialNotes ?? "");
@@ -819,9 +952,13 @@ export default function BrandDetailPage() {
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-3 mb-4">
               <div>
-                <h1 className="text-xl font-semibold leading-tight">{brand.company_name}</h1>
+                <h1 className="text-xl font-semibold leading-tight">
+                  {brand.company_name}
+                </h1>
                 {brand.industry && (
-                  <p className="text-sm text-muted-foreground mt-0.5">{brand.industry}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {brand.industry}
+                  </p>
                 )}
               </div>
             </div>
@@ -849,7 +986,10 @@ export default function BrandDetailPage() {
 
       {/* Creator + Contacts grid */}
       <div className="grid grid-cols-2 gap-6">
-        <CreatorSection summaries={creator_summaries} brandName={brand.company_name} />
+        <CreatorSection
+          summaries={creator_summaries}
+          brandName={brand.company_name}
+        />
         <ContactsSection contacts={contacts} brandId={id} onRefresh={refresh} />
       </div>
 
