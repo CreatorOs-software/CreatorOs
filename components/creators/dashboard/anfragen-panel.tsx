@@ -740,9 +740,13 @@ function AnfrageDialog({
 function AnfragenTable({
   data,
   onRowClick,
+  onEdit,
+  onDelete,
 }: {
   data: Anfrage[];
   onRowClick: (a: Anfrage) => void;
+  onEdit: (a: Anfrage) => void;
+  onDelete: (a: Anfrage) => void;
 }) {
   "use no memo";
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -817,6 +821,35 @@ function AnfragenTable({
       accessorKey: "created_at",
       cell: ({ row }) => <DaysCell isoDate={row.original.created_at} />,
       size: 90,
+    },
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => (
+        <div
+          className="flex items-center justify-end gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="text-muted-foreground hover:text-foreground"
+            onClick={() => onEdit(row.original)}
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="text-muted-foreground hover:text-destructive"
+            onClick={() => onDelete(row.original)}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      ),
+      size: 72,
+      enableSorting: false,
     },
   ];
 
@@ -897,6 +930,7 @@ export function AnfragenPanel({
   const [localUpdates, setLocalUpdates] = useState<Record<string, Anfrage>>({});
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [localCreated, setLocalCreated] = useState<Anfrage[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Anfrage | null>(null);
 
   // Derive anfragen from server data + local optimistic changes (no useEffect sync needed)
   const anfragen: Anfrage[] = [
@@ -924,6 +958,14 @@ export function AnfragenPanel({
 
   function handleCreated(a: Anfrage) {
     setLocalCreated((prev) => [a, ...prev]);
+  }
+
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
+    const targetId = deleteTarget.id;
+    setDeleteTarget(null);
+    handleDeleted(targetId);
+    fetch(`/api/anfragen/${targetId}`, { method: "DELETE" });
   }
 
   return (
@@ -971,6 +1013,8 @@ export function AnfragenPanel({
         <AnfragenTable
           data={showClosed ? closedAnfragen : activeAnfragen}
           onRowClick={setSelected}
+          onEdit={setSelected}
+          onDelete={setDeleteTarget}
         />
       </Card>
 
@@ -990,6 +1034,35 @@ export function AnfragenPanel({
         onCreated={handleCreated}
         creatorId={creatorId}
       />
+
+      <Dialog
+        open={deleteTarget !== null}
+        onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Anfrage löschen?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Die Anfrage von{" "}
+            <span className="font-medium text-foreground">
+              {deleteTarget?.brands?.company_name ?? deleteTarget?.brand_name ?? "dieser Brand"}
+            </span>{" "}
+            wird unwiderruflich gelöscht.
+          </p>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>
+              Abbrechen
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+            >
+              Löschen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

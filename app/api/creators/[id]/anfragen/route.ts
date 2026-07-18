@@ -61,7 +61,7 @@ export async function POST(
         creator_id: creatorId,
         ...parsed.data,
       })
-      .select("id, status, created_at")
+      .select("id, creator_id, brand_id, brand_name, contact_person, format, budget_requested, budget_offer, source, status, rejection_reason, notes, linked_deal_id, created_at, updated_at")
       .single();
 
     if (error) throw error;
