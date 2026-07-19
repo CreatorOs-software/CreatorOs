@@ -103,6 +103,7 @@
   --sidebar-ring: var(--ring);
 }
 
+/*Dm Sans */
 @theme inline {
   --font-sans: "Inter", "Geist", "Geist Fallback", system-ui, sans-serif;
   --font-mono: "Geist Mono", "Geist Mono Fallback", monospace;
