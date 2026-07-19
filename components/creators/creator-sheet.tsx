@@ -16,19 +16,22 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { Check, Copy, ExternalLink, Link2Off, Loader2, Pencil, RefreshCw, Trash2 } from "lucide-react";
+import { ExternalLink, Link2Off, Loader2, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CreatorAccount, MetricsCurrent } from "@/domains/social-accounts/types";
 import {
-  SiInstagram,
-  SiOnlyfans,
-  SiSpotify,
-  SiTiktok,
-  SiX,
-  SiYoutube,
-} from "react-icons/si";
+  CREATOR_STATUS_CLASS as STATUS_CLASS,
+  CREATOR_STATUS_LABEL as STATUS_LABEL,
+  PLATFORM_ICONS,
+  PLATFORM_KEY,
+  PLATFORM_LABEL,
+  OAUTH_SUPPORTED,
+} from "@/components/creators/dashboard/constants";
+import { formatMoney, fmt as fmtNum } from "@/lib/formatters";
+import { AvatarCreator } from "@/components/ui/avatar-creator";
+import { CopyButton } from "@/components/ui/copy-button";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -79,85 +82,6 @@ export type CreatorsData = {
   mailboxes: Mailbox[];
 };
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const STATUS_CLASS: Record<string, string> = {
-  active: "bg-green-100 text-green-700",
-  "on-break": "bg-yellow-100 text-yellow-700",
-  inactive: "bg-muted text-muted-foreground",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  active: "Aktiv",
-  "on-break": "Pause",
-  inactive: "Inaktiv",
-};
-
-const PLATFORM_ICONS: Record<string, React.ReactNode> = {
-  Instagram: <SiInstagram />,
-  TikTok: <SiTiktok />,
-  YouTube: <SiYoutube />,
-  Spotify: <SiSpotify />,
-  OnlyFans: <SiOnlyfans />,
-  X: <SiX />,
-};
-
-// Maps creator wizard display names → platform keys used in creator_accounts
-const PLATFORM_KEY: Record<string, string> = {
-  YouTube: "youtube",
-  Instagram: "instagram",
-  TikTok: "tiktok",
-  Spotify: "spotify",
-  OnlyFans: "onlyfans",
-  X: "x",
-};
-
-const PLATFORM_DISPLAY: Record<string, string> = Object.fromEntries(
-  Object.entries(PLATFORM_KEY).map(([display, key]) => [key, display]),
-);
-
-const OAUTH_SUPPORTED = new Set(["youtube", "instagram"]);
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatMoney(n: number) {
-  return `$${(n / 1000).toFixed(1)}k`;
-}
-
-function fmtNum(n: number) {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-  return String(n);
-}
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function Avatar({
-  c,
-  size = "md",
-}: {
-  c: Creator;
-  size?: "sm" | "md" | "lg" | "xl";
-}) {
-  const cls = {
-    sm: "w-7 h-7 text-[10px]",
-    md: "w-9 h-9 text-xs",
-    lg: "w-11 h-11 text-sm",
-    xl: "w-14 h-14 text-base",
-  }[size];
-  return (
-    <span
-      className={cn(
-        "rounded-xl inline-flex items-center justify-center font-bold text-white shrink-0",
-        cls,
-      )}
-      style={{ background: c.color }}
-    >
-      {c.initials}
-    </span>
-  );
-}
-
 // ─── Creator Sheet ────────────────────────────────────────────────────────────
 
 interface CreatorSheetProps {
@@ -181,7 +105,6 @@ export function CreatorSheet({
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteLoading, setInviteLoading] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   async function handleCreateInvite(platformKey: string) {
     if (!creator) return;
@@ -204,14 +127,6 @@ export function CreatorSheet({
     } finally {
       setInviteLoading(null);
     }
-  }
-
-  function handleCopyInvite() {
-    if (!inviteUrl) return;
-    navigator.clipboard.writeText(inviteUrl).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
   }
 
   const queryClient = useQueryClient();
@@ -326,7 +241,7 @@ export function CreatorSheet({
             </div>
 
             <div className="flex items-start gap-4">
-              <Avatar c={creator} size="xl" />
+              <AvatarCreator initials={creator.initials} color={creator.color} size="xl" />
               <div className="flex-1 min-w-0">
                 <SheetTitle className="text-xl font-semibold tracking-tight">
                   {creator.full_name}
@@ -520,14 +435,14 @@ export function CreatorSheet({
                     const m = metricsData!.metrics[acc.id]?.current;
                     if (!m) return null;
                     const displayName =
-                      PLATFORM_DISPLAY[acc.platform as string] ?? acc.platform;
+                      PLATFORM_LABEL[acc.platform as string] ?? acc.platform;
                     return (
                       <div
                         key={acc.id}
                         className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border-light bg-muted/30"
                       >
                         <span className="text-lg text-muted-foreground shrink-0">
-                          {PLATFORM_ICONS[displayName] ?? (
+                          {PLATFORM_ICONS[acc.platform as string] ?? (
                             <span className="text-xs font-medium">
                               {String(displayName)[0]}
                             </span>
@@ -643,16 +558,10 @@ export function CreatorSheet({
             <p className="flex-1 text-xs font-mono truncate text-muted-foreground">
               {inviteUrl}
             </p>
-            <button
-              onClick={handleCopyInvite}
+            <CopyButton
+              value={inviteUrl ?? ""}
               className="shrink-0 p-1 rounded hover:bg-background transition-colors"
-            >
-              {copied ? (
-                <Check className="w-4 h-4 text-green-500" />
-              ) : (
-                <Copy className="w-4 h-4 text-muted-foreground" />
-              )}
-            </button>
+            />
           </div>
           {inviteError && (
             <p className="text-xs text-destructive">{inviteError}</p>
