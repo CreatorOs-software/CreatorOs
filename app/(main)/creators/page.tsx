@@ -128,7 +128,7 @@ export default function CreatorsPage() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
+          <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
             {filtered.map((c) => (
               <CreatorCard
                 key={c.id}
