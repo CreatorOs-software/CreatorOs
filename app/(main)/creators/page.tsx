@@ -117,7 +117,7 @@ export default function CreatorsPage() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto pb-4">
+      <div className="flex-1 min-h-0 overflow-y-auto py-4">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
             <Star className="w-10 h-10 opacity-20" />
@@ -128,7 +128,7 @@ export default function CreatorsPage() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-8 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
+          <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
             {filtered.map((c) => (
               <CreatorCard
                 key={c.id}

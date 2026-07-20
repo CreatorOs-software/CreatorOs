@@ -197,7 +197,9 @@ function AnfrageDialog({
   const [notesValue, setNotesValue] = useState(initialAnfrage?.notes ?? "");
   const [notesSaving, setNotesSaving] = useState(false);
   const [offerValue, setOfferValue] = useState(
-    initialAnfrage?.budget_offer != null ? String(initialAnfrage.budget_offer) : "",
+    initialAnfrage?.budget_offer != null
+      ? String(initialAnfrage.budget_offer)
+      : "",
   );
   const [offerSaving, setOfferSaving] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -318,7 +320,10 @@ function AnfrageDialog({
           if (!o) onClose();
         }}
       >
-        <DialogContent className="max-w-lg sm:max-w-lg p-0 gap-0 overflow-hidden" showCloseButton={false}>
+        <DialogContent
+          className="max-w-lg sm:max-w-lg p-0 gap-0 overflow-hidden"
+          showCloseButton={false}
+        >
           {/* Header */}
           <div className="p-5 pb-4 border-b">
             <div className="flex items-start justify-between gap-3">
@@ -336,11 +341,23 @@ function AnfrageDialog({
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5"
+                >
                   <Pencil className="w-3 h-3" />
                   Bearbeiten
                 </Button>
-                <DialogClose render={<Button variant="ghost" size="icon-sm" className="-mt-0.5 -mr-1" />}>
+                <DialogClose
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="-mt-0.5 -mr-1"
+                    />
+                  }
+                >
                   <X className="w-4 h-4" />
                   <span className="sr-only">Schließen</span>
                 </DialogClose>
@@ -654,6 +671,7 @@ export function AnfragenPanel({
   const [localUpdates, setLocalUpdates] = useState<Record<string, Anfrage>>({});
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [localCreated, setLocalCreated] = useState<Anfrage[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Anfrage | null>(null);
 
   // Derive anfragen from server data + local optimistic changes (no useEffect sync needed)
   const anfragen: Anfrage[] = [
@@ -683,6 +701,14 @@ export function AnfragenPanel({
     setLocalCreated((prev) => [a, ...prev]);
   }
 
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
+    const targetId = deleteTarget.id;
+    setDeleteTarget(null);
+    handleDeleted(targetId);
+    fetch(`/api/anfragen/${targetId}`, { method: "DELETE" });
+  }
+
   return (
     <>
       <Card className="p-5 gap-0 rounded-2xl">
@@ -708,9 +734,17 @@ export function AnfragenPanel({
                 { value: "open", label: "Offen" },
                 {
                   value: "closed",
-                  label: closedAnfragen.length > 0
-                    ? <>{`Abgeschlossen`}<span className="ml-1 opacity-60">({closedAnfragen.length})</span></>
-                    : "Abgeschlossen",
+                  label:
+                    closedAnfragen.length > 0 ? (
+                      <>
+                        {`Abgeschlossen`}
+                        <span className="ml-1 opacity-60">
+                          ({closedAnfragen.length})
+                        </span>
+                      </>
+                    ) : (
+                      "Abgeschlossen"
+                    ),
                 },
               ]}
             />
@@ -730,6 +764,8 @@ export function AnfragenPanel({
           columns={anfrageColumns}
           emptyText="Noch keine Anfragen – klicke auf »+ Neue Anfrage«"
           onRowClick={setSelected}
+          onEdit={setSelected}
+          onDelete={setDeleteTarget}
         />
       </Card>
 
@@ -749,6 +785,36 @@ export function AnfragenPanel({
         onCreated={handleCreated}
         creatorId={creatorId}
       />
+
+      <Dialog
+        open={deleteTarget !== null}
+        onOpenChange={(o) => {
+          if (!o) setDeleteTarget(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Anfrage löschen?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Die Anfrage von{" "}
+            <span className="font-medium text-foreground">
+              {deleteTarget?.brands?.company_name ??
+                deleteTarget?.brand_name ??
+                "dieser Brand"}
+            </span>{" "}
+            wird unwiderruflich gelöscht.
+          </p>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>
+              Abbrechen
+            </DialogClose>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Löschen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
