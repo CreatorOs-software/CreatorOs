@@ -3,14 +3,6 @@
 import { useRouter } from "next/navigation";
 import { Eye, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  SiInstagram,
-  SiOnlyfans,
-  SiSpotify,
-  SiTiktok,
-  SiX,
-  SiYoutube,
-} from "react-icons/si";
 import type { Creator } from "./creator-sheet";
 import { Button } from "../ui/button";
 
@@ -47,21 +39,6 @@ export function Avatar({
       style={{ background: c.color }}
     >
       {c.initials}
-    </span>
-  );
-}
-
-// ─── Platform icons ────────────────────────────────────────────────────────────
-
-function PlatformIcon({ p }: { p: string }) {
-  const icon = PLATFORM_ICONS[PLATFORM_KEY[p] ?? p.toLowerCase()];
-  return icon ? (
-    <span className="text-muted-foreground text-sm" title={p}>
-      {icon}
-    </span>
-  ) : (
-    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground font-medium">
-      {p}
     </span>
   );
 }
