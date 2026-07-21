@@ -30,7 +30,7 @@ export function AppLayout({
         <DockProvider>
           <div className="flex flex-col md:flex-row h-svh w-full overflow-hidden bg-background">
             <AppSidebar />
-            <div className="flex-1 overflow-hidden p-1.5">
+            <div className="flex-1 overflow-hidden p-2 pl-0">
               <div
                 className={cn(
                   "h-full rounded-2xl bg-gray-50 overflow-hidden",

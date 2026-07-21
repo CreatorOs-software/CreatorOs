@@ -23,7 +23,7 @@ export function SegmentedControl<T extends string = string>({
   return (
     <div
       className={cn(
-        "flex items-center rounded-lg border border-input bg-background p-0.5 text-xs",
+        "flex items-center rounded-lg border border-input bg-accent p-0.5 text-xs",
         className,
       )}
     >
@@ -35,7 +35,7 @@ export function SegmentedControl<T extends string = string>({
           className={cn(
             "px-2.5 py-1 rounded-md transition-colors",
             value === option.value
-              ? "bg-accent text-background font-medium"
+              ? "bg-card text-foreground font-medium"
               : "text-muted-foreground hover:text-foreground",
           )}
         >

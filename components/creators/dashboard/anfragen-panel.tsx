@@ -16,6 +16,15 @@ import {
 import { cn } from "@/lib/utils";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Auflister } from "@/components/ui/auflister";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Anfrage } from "./types";
 import { fmtMoney } from "./constants";
 import {
@@ -122,42 +131,39 @@ function NeueAnfrageDialog({
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
               Brand *
             </label>
-            <input
+            <Input
               autoFocus
               value={brandName}
               onChange={(e) => setBrandName(e.target.value)}
               placeholder="Nike, L'Oréal, …"
-              className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
               Format
             </label>
-            <select
-              value={format}
-              onChange={(e) => setFormat(e.target.value)}
-              className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
-            >
-              <option value="">— optional —</option>
-              {FORMAT_OPTIONS.map((f) => (
-                <option key={f} value={f}>
-                  {f}
-                </option>
-              ))}
-            </select>
+            <Select value={format} onValueChange={(v) => setFormat(v ?? "")}>
+              <SelectTrigger>
+                <SelectValue placeholder="— optional —" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">— optional —</SelectItem>
+                {FORMAT_OPTIONS.map((f) => (
+                  <SelectItem key={f} value={f}>{f}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
               Budget angefragt (€)
             </label>
-            <input
+            <Input
               type="text"
               inputMode="decimal"
               value={budgetRaw}
               onChange={(e) => setBudgetRaw(e.target.value)}
               placeholder="5000"
-              className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <DialogFooter className="mt-1">
@@ -465,7 +471,7 @@ function AnfrageDialog({
                 Unser Angebot (€)
               </p>
               <div className="flex gap-2">
-                <input
+                <Input
                   type="text"
                   inputMode="decimal"
                   value={offerValue}
@@ -475,7 +481,7 @@ function AnfrageDialog({
                       ? String(anfrage.budget_requested)
                       : "0"
                   }
-                  className="h-8 rounded-lg border border-input bg-background px-3 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="h-8 w-36"
                 />
                 <Button
                   variant="outline"
@@ -493,12 +499,12 @@ function AnfrageDialog({
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
                 Notizen
               </p>
-              <textarea
+              <Textarea
                 value={notesValue}
                 onChange={(e) => setNotesValue(e.target.value)}
                 rows={3}
                 placeholder="Anmerkungen, nächste Schritte, …"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                className="resize-none"
               />
               {notesValue !== (anfrage.notes ?? "") && (
                 <Button
@@ -603,12 +609,12 @@ function AnfrageDialog({
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
               Grund (optional)
             </label>
-            <textarea
+            <Textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               rows={3}
               placeholder="Budget zu niedrig, falsches Format, …"
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+              className="resize-none"
             />
           </div>
           <DialogFooter>

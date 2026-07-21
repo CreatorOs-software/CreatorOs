@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UserPlus, Trash2, Copy, Check, Crown, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { PERMISSION_GROUPS, EMPTY_PERMISSIONS } from "@/domains/auth/permissions";
@@ -84,11 +85,9 @@ function InviteForm({ onSuccess }: { onSuccess: (token: string) => void }) {
                   ] as [keyof PermissionMap, string][]
                 ).map(([key, caption]) => (
                   <label key={key} className="flex items-center gap-1.5 cursor-pointer">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={permissions[key]}
-                      onChange={() => togglePermission(key)}
-                      className="accent-yellow-400 w-3.5 h-3.5"
+                      onCheckedChange={() => togglePermission(key)}
                     />
                     <span className="text-xs text-muted-foreground">{caption}</span>
                   </label>

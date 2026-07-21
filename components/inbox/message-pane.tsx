@@ -12,6 +12,7 @@ import {
 import { type Thread, formatFullDate } from "./inbox-types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 interface MessagePaneProps {
   selected: Thread | null;
@@ -134,7 +135,7 @@ export function MessagePane({
             </span>
           </div>
           <div className="p-3">
-            <textarea
+            <Textarea
               ref={replyRef}
               value={reply}
               onChange={(e) => onReplyChange(e.target.value)}
@@ -142,8 +143,8 @@ export function MessagePane({
                 if ((e.metaKey || e.ctrlKey) && e.key === "Enter") onSend();
               }}
               placeholder="Antwort schreiben… (⌘+Enter senden)"
-              rows={4}
-              className="w-full resize-none text-sm bg-transparent outline-none placeholder:text-muted-foreground"
+              className="resize-none min-h-0 rounded-none p-0"
+              style={{ backgroundColor: "transparent" }}
             />
             <div className="flex justify-end mt-2">
               <Button

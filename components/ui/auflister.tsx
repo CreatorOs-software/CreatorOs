@@ -113,14 +113,22 @@ export function Auflister<T>({
                           className="flex items-center gap-1 cursor-pointer select-none"
                           onClick={header.column.getToggleSortingHandler()}
                         >
-                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
                           {{
                             asc: <ChevronUp className="w-3 h-3 opacity-60" />,
-                            desc: <ChevronDown className="w-3 h-3 opacity-60" />,
+                            desc: (
+                              <ChevronDown className="w-3 h-3 opacity-60" />
+                            ),
                           }[header.column.getIsSorted() as string] ?? null}
                         </div>
                       ) : (
-                        flexRender(header.column.columnDef.header, header.getContext())
+                        flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )
                       )}
                     </TableHead>
                   ))}
@@ -136,7 +144,10 @@ export function Auflister<T>({
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-2.5">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
