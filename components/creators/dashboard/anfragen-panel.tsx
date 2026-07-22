@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, CheckCircle2, XCircle, Pencil, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -678,14 +679,24 @@ export function AnfragenPanel({
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [localCreated, setLocalCreated] = useState<Anfrage[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Anfrage | null>(null);
+  const [formatFilter, setFormatFilter] = useState<Set<string>>(new Set());
 
   // Derive anfragen from server data + local optimistic changes (no useEffect sync needed)
-  const anfragen: Anfrage[] = [
+  const allAnfragen: Anfrage[] = [
     ...localCreated.filter((a) => !initialAnfragen.some((b) => b.id === a.id)),
     ...initialAnfragen
       .filter((a) => !deletedIds.has(a.id))
       .map((a) => localUpdates[a.id] ?? a),
   ];
+
+  const availableFormats = [
+    ...new Set(allAnfragen.map((a) => a.format).filter(Boolean) as string[]),
+  ].sort();
+
+  const anfragen = allAnfragen.filter(
+    (a) =>
+      formatFilter.size === 0 || formatFilter.has(a.format ?? ""),
+  );
 
   const activeAnfragen = anfragen.filter((a) => !isEndState(a.status));
   const closedAnfragen = anfragen.filter((a) => isEndState(a.status));
@@ -718,21 +729,66 @@ export function AnfragenPanel({
   return (
     <>
       <Card className="p-5 gap-0 rounded-2xl">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold">Anfragen</h3>
-            {!showClosed && activeAnfragen.length > 0 && (
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/15 text-blue-600 text-[9px] font-medium">
-                {activeAnfragen.length}
-              </span>
-            )}
-            {!showClosed && lateCount > 0 && (
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500/15 text-red-500 text-[9px] font-medium">
-                {lateCount}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-sm font-semibold">Anfragen</h3>
+          {!showClosed && activeAnfragen.length > 0 && (
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/15 text-blue-600 text-[9px] font-medium">
+              {activeAnfragen.length}
+            </span>
+          )}
+          {!showClosed && lateCount > 0 && (
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500/15 text-red-500 text-[9px] font-medium">
+              {lateCount}
+            </span>
+          )}
+        </div>
+
+        <Auflister
+          data={showClosed ? closedAnfragen : activeAnfragen}
+          columns={anfrageColumns}
+          emptyText="Noch keine Anfragen – klicke auf »+ Neue Anfrage«"
+          onRowClick={setSelected}
+          onEdit={setSelected}
+          onDelete={setDeleteTarget}
+          searchPlaceholder="Anfrage suchen…"
+          filterContent={
+            availableFormats.length > 0 ? (
+              <div className="flex flex-col gap-0.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 px-1">
+                  Format
+                </p>
+                {availableFormats.map((fmt) => (
+                  <label
+                    key={fmt}
+                    className="flex items-center gap-2 cursor-pointer rounded px-1 py-1 hover:bg-muted/50 text-xs"
+                  >
+                    <Checkbox
+                      checked={formatFilter.has(fmt)}
+                      onCheckedChange={(checked) =>
+                        setFormatFilter((prev) => {
+                          const next = new Set(prev);
+                          if (checked) next.add(fmt);
+                          else next.delete(fmt);
+                          return next;
+                        })
+                      }
+                    />
+                    {fmt}
+                  </label>
+                ))}
+                {formatFilter.size > 0 && (
+                  <button
+                    className="text-[10px] text-muted-foreground hover:text-foreground mt-2 px-1 text-left"
+                    onClick={() => setFormatFilter(new Set())}
+                  >
+                    Zurücksetzen
+                  </button>
+                )}
+              </div>
+            ) : undefined
+          }
+          activeFilterCount={formatFilter.size}
+          filterLeft={
             <SegmentedControl
               value={showClosed ? "closed" : "open"}
               onChange={(v) => setShowClosed(v === "closed")}
@@ -754,6 +810,8 @@ export function AnfragenPanel({
                 },
               ]}
             />
+          }
+          filterRight={
             <Button
               variant="default"
               className="gap-1.5 h-7 text-xs"
@@ -762,16 +820,7 @@ export function AnfragenPanel({
               <Plus className="w-3 h-3" />
               Neue Anfrage
             </Button>
-          </div>
-        </div>
-
-        <Auflister
-          data={showClosed ? closedAnfragen : activeAnfragen}
-          columns={anfrageColumns}
-          emptyText="Noch keine Anfragen – klicke auf »+ Neue Anfrage«"
-          onRowClick={setSelected}
-          onEdit={setSelected}
-          onDelete={setDeleteTarget}
+          }
         />
       </Card>
 

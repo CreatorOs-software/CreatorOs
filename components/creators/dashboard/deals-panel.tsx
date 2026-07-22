@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,10 +34,26 @@ export function DealsPanel({ deals, creator }: DealsPanelProps) {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [showAlt, setShowAlt] = useState(false);
+  const [campaignTypeFilter, setCampaignTypeFilter] = useState<Set<string>>(
+    new Set(),
+  );
 
-  const visibleDeals = deals.filter((d) => !deletedIds.has(d.id));
+  const visibleDeals = deals.filter(
+    (d) =>
+      !deletedIds.has(d.id) &&
+      (campaignTypeFilter.size === 0 ||
+        campaignTypeFilter.has(d.campaign_type ?? "")),
+  );
   const laufend = visibleDeals.filter((d) => LAUFEND.has(d.status));
   const alt = visibleDeals.filter((d) => ALT.has(d.status));
+
+  const availableCampaignTypes = [
+    ...new Set(
+      deals
+        .map((d) => d.campaign_type)
+        .filter(Boolean) as string[],
+    ),
+  ].sort();
 
   async function handleConfirmDelete() {
     if (!deleteTarget) return;
@@ -54,9 +71,56 @@ export function DealsPanel({ deals, creator }: DealsPanelProps) {
   return (
     <>
       <Card className="p-5 gap-0 rounded-2xl">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold">Deals</h3>
-          <div className="flex items-center gap-2">
+        <h3 className="text-sm font-semibold mb-3">Deals</h3>
+
+        <Auflister
+          data={showAlt ? alt : laufend}
+          columns={laufendColumns}
+          emptyText={
+            showAlt ? "Keine abgeschlossenen Deals" : "Keine laufenden Deals"
+          }
+          onRowClick={setSelectedDeal}
+          onEdit={(d) => router.push(`/creators/deals/edit/${d.id}`)}
+          onDelete={setDeleteTarget}
+          searchPlaceholder="Deal suchen…"
+          filterContent={
+            availableCampaignTypes.length > 0 ? (
+              <div className="flex flex-col gap-0.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 px-1">
+                  Format
+                </p>
+                {availableCampaignTypes.map((type) => (
+                  <label
+                    key={type}
+                    className="flex items-center gap-2 cursor-pointer rounded px-1 py-1 hover:bg-muted/50 text-xs"
+                  >
+                    <Checkbox
+                      checked={campaignTypeFilter.has(type)}
+                      onCheckedChange={(checked) =>
+                        setCampaignTypeFilter((prev) => {
+                          const next = new Set(prev);
+                          if (checked) next.add(type);
+                          else next.delete(type);
+                          return next;
+                        })
+                      }
+                    />
+                    {type}
+                  </label>
+                ))}
+                {campaignTypeFilter.size > 0 && (
+                  <button
+                    className="text-[10px] text-muted-foreground hover:text-foreground mt-2 px-1 text-left"
+                    onClick={() => setCampaignTypeFilter(new Set())}
+                  >
+                    Zurücksetzen
+                  </button>
+                )}
+              </div>
+            ) : undefined
+          }
+          activeFilterCount={campaignTypeFilter.size}
+          filterLeft={
             <SegmentedControl
               value={showAlt ? "abgeschlossen" : "laufend"}
               onChange={(v) => setShowAlt(v === "abgeschlossen")}
@@ -71,22 +135,13 @@ export function DealsPanel({ deals, creator }: DealsPanelProps) {
                 },
               ]}
             />
+          }
+          filterRight={
             <Button variant="default" className="gap-1.5 h-7 text-xs">
               <Plus className="w-3 h-3" />
               Neuer Deal
             </Button>
-          </div>
-        </div>
-
-        <Auflister
-          data={showAlt ? alt : laufend}
-          columns={laufendColumns}
-          emptyText={
-            showAlt ? "Keine abgeschlossenen Deals" : "Keine laufenden Deals"
           }
-          onRowClick={setSelectedDeal}
-          onEdit={(d) => router.push(`/creators/deals/edit/${d.id}`)}
-          onDelete={setDeleteTarget}
         />
       </Card>
 

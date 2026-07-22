@@ -2,40 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  AlertTriangle,
-  ArrowUpRight,
-  ChevronDown,
-  ChevronUp,
-  Pencil,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { AlertTriangle, ArrowUpRight, Plus } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import {
-  type ColumnDef,
-  SortingState,
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import type { Creator } from "@/domains/creators/types";
-import type { DealFull, Anfrage } from "./types";
-import { ALT, LAUFEND, daysUntil, fmtMoney } from "./constants";
-import { DealDialog } from "./deal-dialog";
-import { AnfragenPanel } from "./anfragen-panel";
-import { SegmentedControl } from "@/components/ui/segmented-control";
-import { AnimatedHeight } from "@/components/ui/animated-height";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Auflister } from "@/components/ui/auflister";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +15,12 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import type { Creator } from "@/domains/creators/types";
+import type { DealFull, Anfrage } from "./types";
+import { ALT, LAUFEND, daysUntil, fmtMoney } from "./constants";
+import { DealDialog } from "./deal-dialog";
+import { AnfragenPanel } from "./anfragen-panel";
 import { laufendColumns } from "./deals-columns";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -93,157 +70,6 @@ function StatCard({
   );
 }
 
-// ── Sortable table wrapper ─────────────────────────────────────────────────────
-
-function DealsTable({
-  data,
-  columns,
-  title,
-  action,
-  badge,
-  emptyText,
-  onRowClick,
-  onEdit,
-  onDelete,
-}: {
-  data: DealFull[];
-  columns: ColumnDef<DealFull>[];
-  title: string;
-  action?: React.ReactNode;
-  badge?: React.ReactNode;
-  emptyText: string;
-  onRowClick?: (deal: DealFull) => void;
-  onEdit?: (deal: DealFull) => void;
-  onDelete?: (deal: DealFull) => void;
-}) {
-  "use no memo";
-  const [sorting, setSorting] = useState<SortingState>([]);
-
-  const actionsColumn: ColumnDef<DealFull> = {
-    id: "actions",
-    header: "",
-    cell: ({ row }) => (
-      <div
-        className="flex items-center justify-end gap-1"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="text-muted-foreground hover:text-foreground"
-          onClick={() => onEdit?.(row.original)}
-        >
-          <Pencil className="w-3.5 h-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="text-muted-foreground hover:text-destructive"
-          onClick={() => onDelete?.(row.original)}
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </Button>
-      </div>
-    ),
-    size: 72,
-    enableSorting: false,
-  };
-
-  const allColumns = [...columns, actionsColumn];
-
-  const table = useReactTable({
-    data,
-    columns: allColumns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
-    enableSortingRemoval: false,
-    state: { sorting },
-  });
-
-  return (
-    <Card className="p-5 gap-0 rounded-2xl">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold">{title}</h3>
-          {badge}
-        </div>
-        {action}
-      </div>
-
-      <AnimatedHeight>
-        {data.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-8">
-            {emptyText}
-          </p>
-        ) : (
-          <div className="overflow-y-auto max-h-87.5 rounded-xl">
-            <Table className="table-fixed">
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow
-                    key={headerGroup.id}
-                    className="hover:bg-transparent"
-                  >
-                    {headerGroup.headers.map((header) => (
-                      <TableHead
-                        key={header.id}
-                        style={{ width: `${header.getSize()}px` }}
-                        className="sticky top-0 z-10 bg-card h-9 text-[10px] uppercase tracking-wider"
-                      >
-                        {header.isPlaceholder ? null : header.column.getCanSort() ? (
-                          <div
-                            className="flex items-center gap-1 cursor-pointer select-none"
-                            onClick={header.column.getToggleSortingHandler()}
-                          >
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                            {{
-                              asc: <ChevronUp className="w-3 h-3 opacity-60" />,
-                              desc: (
-                                <ChevronDown className="w-3 h-3 opacity-60" />
-                              ),
-                            }[header.column.getIsSorted() as string] ?? null}
-                          </div>
-                        ) : (
-                          flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )
-                        )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    className="cursor-pointer"
-                    onClick={() => onRowClick?.(row.original)}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="py-2.5">
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </AnimatedHeight>
-    </Card>
-  );
-}
-
 // ── Export ─────────────────────────────────────────────────────────────────────
 
 export function DealsTab({
@@ -263,6 +89,7 @@ export function DealsTab({
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [showAlt, setShowAlt] = useState(false);
+  const [campaignTypeFilter, setCampaignTypeFilter] = useState<Set<string>>(new Set());
 
   const visibleDeals = deals.filter((d) => !deletedIds.has(d.id));
 
@@ -279,8 +106,17 @@ export function DealsTab({
     }
   }
 
-  const laufend = visibleDeals.filter((d) => LAUFEND.has(d.status));
-  const alt = visibleDeals.filter((d) => ALT.has(d.status));
+  const availableCampaignTypes = [
+    ...new Set(deals.map((d) => d.campaign_type).filter(Boolean) as string[]),
+  ].sort();
+
+  const baseDeals = visibleDeals.filter(
+    (d) =>
+      campaignTypeFilter.size === 0 || campaignTypeFilter.has(d.campaign_type ?? ""),
+  );
+
+  const laufend = baseDeals.filter((d) => LAUFEND.has(d.status));
+  const alt = baseDeals.filter((d) => ALT.has(d.status));
   const activeAnfragen = anfragen.filter(
     (a) => a.status !== "gewonnen" && a.status !== "abgelehnt",
   );
@@ -365,18 +201,54 @@ export function DealsTab({
       </div>
 
       {/* Laufende Deals */}
-      <DealsTable
-        data={showAlt ? alt : laufend}
-        columns={laufendColumns}
-        title="Deals"
-        emptyText={
-          showAlt ? "Keine abgeschlossenen Deals" : "Keine laufenden Deals"
-        }
-        onRowClick={setSelectedDeal}
-        onEdit={(d) => router.push(`/creators/deals/edit/${d.id}`)}
-        onDelete={setDeleteTarget}
-        action={
-          <div className="flex items-center gap-2">
+      <Card className="p-5 gap-0 rounded-2xl">
+        <h3 className="text-sm font-semibold mb-3">Deals</h3>
+        <Auflister
+          data={showAlt ? alt : laufend}
+          columns={laufendColumns}
+          emptyText={showAlt ? "Keine abgeschlossenen Deals" : "Keine laufenden Deals"}
+          onRowClick={setSelectedDeal}
+          onEdit={(d) => router.push(`/creators/deals/edit/${d.id}`)}
+          onDelete={setDeleteTarget}
+          searchPlaceholder="Deal suchen…"
+          filterContent={
+            availableCampaignTypes.length > 0 ? (
+              <div className="flex flex-col gap-0.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 px-1">
+                  Format
+                </p>
+                {availableCampaignTypes.map((type) => (
+                  <label
+                    key={type}
+                    className="flex items-center gap-2 cursor-pointer rounded px-1 py-1 hover:bg-muted/50 text-xs"
+                  >
+                    <Checkbox
+                      checked={campaignTypeFilter.has(type)}
+                      onCheckedChange={(checked) =>
+                        setCampaignTypeFilter((prev) => {
+                          const next = new Set(prev);
+                          if (checked) next.add(type);
+                          else next.delete(type);
+                          return next;
+                        })
+                      }
+                    />
+                    {type}
+                  </label>
+                ))}
+                {campaignTypeFilter.size > 0 && (
+                  <button
+                    className="text-[10px] text-muted-foreground hover:text-foreground mt-2 px-1 text-left"
+                    onClick={() => setCampaignTypeFilter(new Set())}
+                  >
+                    Zurücksetzen
+                  </button>
+                )}
+              </div>
+            ) : undefined
+          }
+          activeFilterCount={campaignTypeFilter.size}
+          filterLeft={
             <SegmentedControl
               value={showAlt ? "abgeschlossen" : "laufend"}
               onChange={(v) => setShowAlt(v === "abgeschlossen")}
@@ -384,20 +256,19 @@ export function DealsTab({
                 { value: "laufend", label: "Laufend" },
                 {
                   value: "abgeschlossen",
-                  label:
-                    alt.length > 0
-                      ? `Abgeschlossen (${alt.length})`
-                      : "Abgeschlossen",
+                  label: alt.length > 0 ? `Abgeschlossen (${alt.length})` : "Abgeschlossen",
                 },
               ]}
             />
+          }
+          filterRight={
             <Button variant="default" className="gap-1.5 h-7 text-xs">
               <Plus className="w-3 h-3" />
               Neuer Deal
             </Button>
-          </div>
-        }
-      />
+          }
+        />
+      </Card>
 
       {/* Anfragen (incoming deal inquiries) */}
       <AnfragenPanel initialAnfragen={anfragen} creatorId={creatorId} />

@@ -4,9 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Loader2, Plus, Search } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -351,8 +352,8 @@ const brandColumns: ColumnDef<BrandListItem>[] = [
 export default function BrandsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"active" | "all">("active");
+  const [industryFilter, setIndustryFilter] = useState<Set<string>>(new Set());
   const [neueOpen, setNeueOpen] = useState(false);
   const [localCreated, setLocalCreated] = useState<BrandListItem[]>([]);
 
@@ -369,67 +370,38 @@ export default function BrandsPage() {
     ...(data?.brands ?? []),
   ];
 
+  const availableIndustries = [
+    ...new Set(
+      allBrands.map((b) => b.industry).filter(Boolean) as string[],
+    ),
+  ].sort();
+
   const filtered = allBrands
     .filter((b) => {
       if (filter === "active" && b.deal_count === 0) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        return (
-          b.company_name.toLowerCase().includes(q) ||
-          (b.industry?.toLowerCase().includes(q) ?? false)
-        );
-      }
+      if (industryFilter.size > 0 && !industryFilter.has(b.industry ?? ""))
+        return false;
       return true;
     })
     .sort((a, b) =>
       (b.last_activity ?? "").localeCompare(a.last_activity ?? ""),
     );
 
-  const emptyText = search
-    ? "Keine Brands gefunden"
-    : filter === "active"
+  const emptyText =
+    filter === "active"
       ? "Noch keine aktiven Brand-Partnerschaften"
       : "Noch keine Brands angelegt";
 
   return (
     <div className="flex flex-col gap-6 pb-8">
       {/* Page header */}
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Brands</h1>
-          {!isPending && (
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {allBrands.length} Brand{allBrands.length !== 1 ? "s" : ""}
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Brand suchen…"
-              className="h-8 pl-8 pr-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring w-52"
-            />
-          </div>
-          <SegmentedControl
-            value={filter}
-            onChange={(v) => setFilter(v as "active" | "all")}
-            options={[
-              { value: "active", label: "Aktive Partner" },
-              { value: "all", label: "Alle" },
-            ]}
-          />
-          <Button
-            variant="default"
-            className="gap-1.5 h-8 text-xs"
-            onClick={() => setNeueOpen(true)}
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Neue Brand
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-2xl font-semibold">Brands</h1>
+        {!isPending && (
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {allBrands.length} Brand{allBrands.length !== 1 ? "s" : ""}
+          </p>
+        )}
       </div>
 
       {/* Table */}
@@ -444,6 +416,65 @@ export default function BrandsPage() {
             columns={brandColumns}
             emptyText={emptyText}
             onRowClick={(brand) => router.push(`/brands/${brand.id}`)}
+            searchPlaceholder="Brand suchen…"
+            filterContent={
+              availableIndustries.length > 0 ? (
+                <div className="flex flex-col gap-0.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 px-1">
+                    Branche
+                  </p>
+                  {availableIndustries.map((industry) => (
+                    <label
+                      key={industry}
+                      className="flex items-center gap-2 cursor-pointer rounded px-1 py-1 hover:bg-muted/50 text-xs"
+                    >
+                      <Checkbox
+                        checked={industryFilter.has(industry)}
+                        onCheckedChange={(checked) =>
+                          setIndustryFilter((prev) => {
+                            const next = new Set(prev);
+                            if (checked) next.add(industry);
+                            else next.delete(industry);
+                            return next;
+                          })
+                        }
+                      />
+                      {industry}
+                    </label>
+                  ))}
+                  {industryFilter.size > 0 && (
+                    <button
+                      className="text-[10px] text-muted-foreground hover:text-foreground mt-2 px-1 text-left"
+                      onClick={() => setIndustryFilter(new Set())}
+                    >
+                      Zurücksetzen
+                    </button>
+                  )}
+                </div>
+              ) : undefined
+            }
+            activeFilterCount={industryFilter.size}
+            filterLeft={
+              <SegmentedControl
+                value={filter}
+                onChange={(v) => setFilter(v as "active" | "all")}
+                options={[
+                  { value: "active", label: "Aktive Partner" },
+                  { value: "all", label: "Alle" },
+                ]}
+              />
+            }
+            filterRight={
+              <Button
+                variant="default"
+                className="gap-1.5 h-8 text-xs"
+                onClick={() => setNeueOpen(true)}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Neue Brand
+              </Button>
+            }
+            pagination
           />
         )}
       </Card>

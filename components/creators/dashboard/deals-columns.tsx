@@ -140,38 +140,32 @@ export const laufendColumns: ColumnDef<DealFull>[] = [
     id: "budget",
     header: "Budget",
     accessorKey: "budget",
-    cell: ({ row }) => (
-      <span className="text-xs font-medium tabular-nums">
-        {fmtMoney(Number(row.original.budget))}
-      </span>
-    ),
-    size: 90,
-  },
-  {
-    id: "deadline",
-    header: "Deadline",
-    accessorKey: "deadline",
     cell: ({ row }) => {
-      const { deadline } = row.original;
-      if (!deadline)
-        return <span className="text-muted-foreground/40 text-xs">—</span>;
-      const days = daysUntil(deadline);
+      const { budget, deadline } = row.original;
+      const days = deadline ? daysUntil(deadline) : null;
       return (
-        <span
-          className={cn(
-            "text-[10px] flex items-center gap-0.5",
-            days < 0 || days <= 3
-              ? "text-red-500"
-              : days <= 7
-                ? "text-yellow-600"
-                : "text-muted-foreground",
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs font-medium tabular-nums">
+            {fmtMoney(Number(budget))}
+          </span>
+          {deadline && (
+            <span
+              className={cn(
+                "text-[10px] flex items-center gap-0.5",
+                days! < 0 || days! <= 3
+                  ? "text-red-500"
+                  : days! <= 7
+                    ? "text-yellow-600"
+                    : "text-muted-foreground",
+              )}
+            >
+              <Clock className="w-2.5 h-2.5" />
+              {fmtDate(deadline)}
+            </span>
           )}
-        >
-          <Clock className="w-2.5 h-2.5" />
-          {fmtDate(deadline)}
-        </span>
+        </div>
       );
     },
-    size: 100,
+    size: 110,
   },
 ];

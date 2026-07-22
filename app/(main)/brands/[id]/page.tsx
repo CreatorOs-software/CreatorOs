@@ -27,6 +27,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { usePageHeader } from "@/components/layout/page-header-context";
 import {
@@ -758,37 +759,87 @@ const dealHistoryColumns: ColumnDef<DealRow>[] = [
 
 function DealHistorySection({ deals }: { deals: DealRow[] }) {
   const [showAlt, setShowAlt] = useState(false);
+  const [creatorFilter, setCreatorFilter] = useState<Set<string>>(new Set());
 
-  const alt = deals.filter((d) => ALT.has(d.status));
-  const laufend = deals.filter((d) => !ALT.has(d.status));
+  const availableCreators = [
+    ...new Set(
+      deals.map((d) => d.creators?.full_name).filter(Boolean) as string[],
+    ),
+  ].sort();
+
+  const filteredDeals = deals.filter(
+    (d) =>
+      creatorFilter.size === 0 ||
+      creatorFilter.has(d.creators?.full_name ?? ""),
+  );
+  const alt = filteredDeals.filter((d) => ALT.has(d.status));
+  const laufend = filteredDeals.filter((d) => !ALT.has(d.status));
   const visible = showAlt ? alt : laufend;
 
   if (deals.length === 0) return null;
 
   return (
     <Card className="p-5 gap-0 rounded-2xl">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold">Deal-Historie</h3>
-        <SegmentedControl
-          value={showAlt ? "abgeschlossen" : "laufend"}
-          onChange={(v) => setShowAlt(v === "abgeschlossen")}
-          options={[
-            { value: "laufend", label: "Laufend" },
-            {
-              value: "abgeschlossen",
-              label:
-                alt.length > 0
-                  ? `Abgeschlossen (${alt.length})`
-                  : "Abgeschlossen",
-            },
-          ]}
-        />
-      </div>
+      <h3 className="text-sm font-semibold mb-3">Deal-Historie</h3>
       <Auflister
         data={visible}
         columns={dealHistoryColumns}
         emptyText={
           showAlt ? "Keine abgeschlossenen Deals" : "Keine laufenden Deals"
+        }
+        searchPlaceholder="Deal suchen…"
+        filterContent={
+          availableCreators.length > 1 ? (
+            <div className="flex flex-col gap-0.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 px-1">
+                Creator
+              </p>
+              {availableCreators.map((name) => (
+                <label
+                  key={name}
+                  className="flex items-center gap-2 cursor-pointer rounded px-1 py-1 hover:bg-muted/50 text-xs"
+                >
+                  <Checkbox
+                    checked={creatorFilter.has(name)}
+                    onCheckedChange={(checked) =>
+                      setCreatorFilter((prev) => {
+                        const next = new Set(prev);
+                        if (checked) next.add(name);
+                        else next.delete(name);
+                        return next;
+                      })
+                    }
+                  />
+                  {name}
+                </label>
+              ))}
+              {creatorFilter.size > 0 && (
+                <button
+                  className="text-[10px] text-muted-foreground hover:text-foreground mt-2 px-1 text-left"
+                  onClick={() => setCreatorFilter(new Set())}
+                >
+                  Zurücksetzen
+                </button>
+              )}
+            </div>
+          ) : undefined
+        }
+        activeFilterCount={creatorFilter.size}
+        filterLeft={
+          <SegmentedControl
+            value={showAlt ? "abgeschlossen" : "laufend"}
+            onChange={(v) => setShowAlt(v === "abgeschlossen")}
+            options={[
+              { value: "laufend", label: "Laufend" },
+              {
+                value: "abgeschlossen",
+                label:
+                  alt.length > 0
+                    ? `Abgeschlossen (${alt.length})`
+                    : "Abgeschlossen",
+              },
+            ]}
+          />
         }
       />
     </Card>

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Pencil, Plus } from "lucide-react";
+import { ChevronLeft, Loader2, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBar, StatusBarGroup } from "@/components/dashboard/status-bar";
@@ -172,6 +172,25 @@ export default function CreatorDashboardPage() {
 
   return (
     <div className="h-full flex flex-col">
+      {creator && (
+        <div className="flex items-center gap-3 mb-4 shrink-0">
+          <Button variant="ghost" size="icon-sm" onClick={() => router.back()}>
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <span
+            className="w-10 h-10 rounded-xl shrink-0 inline-flex items-center justify-center font-bold text-white text-sm"
+            style={{ background: creator.color }}
+          >
+            {creator.initials}
+          </span>
+          <div>
+            <h2 className="text-lg font-semibold leading-tight">{creator.full_name}</h2>
+            {creator.handle && (
+              <p className="text-xs text-muted-foreground">@{creator.handle}</p>
+            )}
+          </div>
+        </div>
+      )}
       <Tabs
         defaultValue="uebersicht"
         className="flex-1 min-h-0 flex flex-col gap-0"
@@ -194,6 +213,13 @@ export default function CreatorDashboardPage() {
               Bearbeiten
             </Button>
             <Button
+              variant="outline"
+              onClick={() => router.push(`/creators/${id}/events/create`)}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Neues Event
+            </Button>
+            <Button
               variant="default"
               onClick={() => router.push(`/creators/deals/create-deal/${id}`)}
             >
@@ -207,7 +233,6 @@ export default function CreatorDashboardPage() {
           {/* Übersicht */}
           <TabsContent value="uebersicht">
             <UebersichtTab
-              creator={creator}
               creatorId={id}
               deals={deals}
               invoices={invoices}
