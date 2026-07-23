@@ -45,7 +45,7 @@ function MailboxRow({
         <div className="text-xs text-muted-foreground">{sub}</div>
       </div>
       {badge != null && badge > 0 && (
-        <span className="text-[10px] font-semibold bg-yellow-400 text-black rounded-full px-1.5 py-0.5 leading-none shrink-0">
+        <span className="text-[10px] font-semibold bg-blue-100 text-blue-700 rounded-full px-1.5 py-0.5 leading-none shrink-0">
           {badge}
         </span>
       )}
@@ -145,7 +145,7 @@ export function MailboxOverview({
                 </div>
               </div>
               {unread > 0 && (
-                <span className="text-[10px] font-semibold bg-yellow-400 text-black rounded-full px-1.5 py-0.5 leading-none shrink-0">
+                <span className="text-[10px] font-semibold bg-blue-100 text-blue-700 rounded-full px-1.5 py-0.5 leading-none shrink-0">
                   {unread}
                 </span>
               )}
