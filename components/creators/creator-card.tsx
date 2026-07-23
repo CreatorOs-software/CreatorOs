@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Eye, Pencil } from "lucide-react";
+import { Eye, Puzzle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Creator } from "./creator-sheet";
 import { Button } from "../ui/button";
@@ -49,10 +49,12 @@ export function CreatorCard({
   c,
   activeDeals,
   onOpenSheet,
+  onOpenPlatformSheet,
 }: {
   c: Creator;
   activeDeals: number;
   onOpenSheet: () => void;
+  onOpenPlatformSheet: () => void;
 }) {
   const router = useRouter();
   const dot = STATUS_DOT[c.status];
@@ -141,13 +143,13 @@ export function CreatorCard({
         <Button
           onClick={(e) => {
             e.stopPropagation();
-            router.push(`/creators/edit-form/${c.id}`);
+            onOpenPlatformSheet();
           }}
           className="flex-1"
-          aria-label="Creator bearbeiten"
+          aria-label="Schnittstellen verwalten"
           variant={"outline"}
         >
-          <Pencil className="mx-auto h-4 w-4" />
+          <Puzzle className="mx-auto h-4 w-4" />
         </Button>
         <Button
           onClick={(e) => {
