@@ -63,6 +63,7 @@ export function EditCreatorWizard({ creator }: EditCreatorWizardProps) {
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [done, setDone] = useState(false);
   const [contractFile, setContractFile] = useState<File | null>(null);
+  const [profileImage, setProfileImage] = useState<File | null>(null);
   const [stepErrors, setStepErrors] = useState<StepErrors>({});
 
   const form = useForm({
@@ -172,6 +173,8 @@ export function EditCreatorWizard({ creator }: EditCreatorWizardProps) {
                 errors={stepErrors}
                 contractFile={contractFile}
                 onContractFileChange={setContractFile}
+                profileImage={profileImage}
+                onProfileImageChange={setProfileImage}
                 onNext={handleNext}
               />
             ) : step === 2 ? (
