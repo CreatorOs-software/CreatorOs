@@ -30,9 +30,8 @@ import {
   PLATFORM_LABEL,
   OAUTH_SUPPORTED,
 } from "@/components/creators/dashboard/constants";
-import { fmt as fmtNum } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
-import type { CreatorAccount, MetricsCurrent } from "@/domains/social-accounts/types";
+import type { CreatorAccount } from "@/domains/social-accounts/types";
 import type { Creator } from "./creator-sheet";
 
 interface PlatformSheetProps {
@@ -41,11 +40,17 @@ interface PlatformSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function PlatformSheet({ creator, open, onOpenChange }: PlatformSheetProps) {
+export function PlatformSheet({
+  creator,
+  open,
+  onOpenChange,
+}: PlatformSheetProps) {
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteLoading, setInviteLoading] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
-  const [disconnectConfirmId, setDisconnectConfirmId] = useState<string | null>(null);
+  const [disconnectConfirmId, setDisconnectConfirmId] = useState<string | null>(
+    null,
+  );
 
   const queryClient = useQueryClient();
 
@@ -57,19 +62,14 @@ export function PlatformSheet({ creator, open, onOpenChange }: PlatformSheetProp
     staleTime: 60_000,
   });
 
-  const { data: metricsData } = useQuery<{
-    accounts: CreatorAccount[];
-    metrics: Record<string, { current: MetricsCurrent | null; daily: unknown[] }>;
-  }>({
-    queryKey: ["creator-metrics-sheet", creator?.id],
-    queryFn: () =>
-      fetch(`/api/creators/${creator!.id}/metrics`).then((r) => r.json()),
-    enabled: open && !!creator,
-    staleTime: 5 * 60_000,
-  });
-
   const syncMutation = useMutation({
-    mutationFn: ({ accountId, platform }: { accountId: string; platform: string }) =>
+    mutationFn: ({
+      accountId,
+      platform,
+    }: {
+      accountId: string;
+      platform: string;
+    }) =>
       fetch("/api/integrations/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -79,19 +79,27 @@ export function PlatformSheet({ creator, open, onOpenChange }: PlatformSheetProp
         return r.json();
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["creator-accounts", creator?.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["creator-accounts", creator?.id],
+      });
     },
   });
 
   const disconnectMutation = useMutation({
     mutationFn: (accountId: string) =>
-      fetch(`/api/integrations/${accountId}`, { method: "DELETE" }).then((r) => {
-        if (!r.ok) throw new Error("Trennen fehlgeschlagen");
-        return r.json();
-      }),
+      fetch(`/api/integrations/${accountId}`, { method: "DELETE" }).then(
+        (r) => {
+          if (!r.ok) throw new Error("Trennen fehlgeschlagen");
+          return r.json();
+        },
+      ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["creator-accounts", creator?.id] });
-      queryClient.invalidateQueries({ queryKey: ["creator-metrics-sheet", creator?.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["creator-accounts", creator?.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["creator-metrics-sheet", creator?.id],
+      });
       setDisconnectConfirmId(null);
     },
   });
@@ -125,8 +133,11 @@ export function PlatformSheet({ creator, open, onOpenChange }: PlatformSheetProp
       .map((a) => a.platform as string),
   );
 
-  const hasInsights = (metricsData?.accounts ?? []).some(
-    (a) => metricsData?.metrics[a.id]?.current,
+  const creatorPlatformKeys = new Set(
+    creator?.platforms.map((p) => PLATFORM_KEY[p] ?? p.toLowerCase()) ?? [],
+  );
+  const furtherPlatforms = Object.keys(PLATFORM_LABEL).filter(
+    (key) => !connectedByKey.has(key) && !creatorPlatformKeys.has(key),
   );
 
   if (!creator) return null;
@@ -141,7 +152,11 @@ export function PlatformSheet({ creator, open, onOpenChange }: PlatformSheetProp
         >
           <SheetHeader className="border-b border-border pb-4">
             <div className="flex items-center gap-3">
-              <AvatarCreator initials={creator.initials} color={creator.color} size="md" />
+              <AvatarCreator
+                initials={creator.initials}
+                color={creator.color}
+                size="md"
+              />
               <div>
                 <SheetTitle>{creator.full_name}</SheetTitle>
                 {creator.handle && (
@@ -175,11 +190,8 @@ export function PlatformSheet({ creator, open, onOpenChange }: PlatformSheetProp
                     return (
                       <Card
                         key={p}
-                        className="flex-row items-center gap-3 px-4 py-3 bg-muted/30 shadow-none border border-border-light"
+                        className="flex-row items-center gap-3 px-4 py-3 border border-border rounded-sm"
                       >
-                        <span className="text-lg text-muted-foreground shrink-0">
-                          {icon ?? <span className="text-xs font-medium">{p[0]}</span>}
-                        </span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium">{p}</p>
                           {account?.username && (
@@ -190,29 +202,38 @@ export function PlatformSheet({ creator, open, onOpenChange }: PlatformSheetProp
                           {account?.last_sync_at && (
                             <p className="text-[10px] text-muted-foreground/60 mt-0.5">
                               Sync:{" "}
-                              {new Date(account.last_sync_at).toLocaleString("de-DE", {
-                                day: "2-digit",
-                                month: "2-digit",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              {new Date(account.last_sync_at).toLocaleString(
+                                "de-DE",
+                                {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              )}
                             </p>
                           )}
                         </div>
                         {isConnected ? (
                           disconnectConfirmId === account!.id ? (
                             <div className="flex items-center gap-1.5 shrink-0">
-                              <span className="text-xs text-muted-foreground">Wirklich trennen?</span>
+                              <span className="text-xs text-muted-foreground">
+                                Wirklich trennen?
+                              </span>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
                                 disabled={disconnectMutation.isPending}
-                                onClick={() => disconnectMutation.mutate(account!.id)}
+                                onClick={() =>
+                                  disconnectMutation.mutate(account!.id)
+                                }
                               >
-                                {disconnectMutation.isPending
-                                  ? <Loader2 className="w-3 h-3 animate-spin" />
-                                  : "Ja"}
+                                {disconnectMutation.isPending ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  "Ja"
+                                )}
                               </Button>
                               <Button
                                 variant="ghost"
@@ -226,36 +247,60 @@ export function PlatformSheet({ creator, open, onOpenChange }: PlatformSheetProp
                             </div>
                           ) : (
                             <div className="flex items-center gap-2 shrink-0">
-                              <span className={cn(
-                                "flex items-center gap-1.5 text-xs",
-                                account?.sync_status === "error" ? "text-destructive" : "text-success",
-                              )}>
-                                <span className={cn(
-                                  "w-1.5 h-1.5 rounded-full",
-                                  account?.sync_status === "error" ? "bg-destructive" : "bg-success",
-                                )} />
-                                {account?.sync_status === "error" ? "Sync-Fehler" : "Verbunden"}
+                              <span
+                                className={cn(
+                                  "flex items-center gap-1.5 text-xs",
+                                  account?.sync_status === "error"
+                                    ? "text-destructive"
+                                    : "text-success",
+                                )}
+                              >
+                                <span
+                                  className={cn(
+                                    "w-1.5 h-1.5 rounded-full",
+                                    account?.sync_status === "error"
+                                      ? "bg-destructive"
+                                      : "bg-success",
+                                  )}
+                                />
+                                {account?.sync_status === "error"
+                                  ? "Sync-Fehler"
+                                  : "Verbunden"}
                               </span>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 className="h-7 w-7 p-0"
-                                disabled={syncMutation.isPending && syncMutation.variables?.accountId === account!.id}
-                                onClick={() => syncMutation.mutate({ accountId: account!.id, platform: key })}
+                                disabled={
+                                  syncMutation.isPending &&
+                                  syncMutation.variables?.accountId ===
+                                    account!.id
+                                }
+                                onClick={() =>
+                                  syncMutation.mutate({
+                                    accountId: account!.id,
+                                    platform: key,
+                                  })
+                                }
                                 title="Jetzt synchronisieren"
                               >
-                                <RefreshCw className={cn(
-                                  "w-3.5 h-3.5",
-                                  syncMutation.isPending &&
-                                    syncMutation.variables?.accountId === account!.id &&
-                                    "animate-spin",
-                                )} />
+                                <RefreshCw
+                                  className={cn(
+                                    "w-3.5 h-3.5",
+                                    syncMutation.isPending &&
+                                      syncMutation.variables?.accountId ===
+                                        account!.id &&
+                                      "animate-spin",
+                                  )}
+                                />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 className="h-7 w-7 p-0 text-muted-foreground/40 hover:text-destructive"
-                                onClick={() => setDisconnectConfirmId(account!.id)}
+                                onClick={() =>
+                                  setDisconnectConfirmId(account!.id)
+                                }
                                 title="Verbindung trennen"
                               >
                                 <Link2Off className="w-3.5 h-3.5" />
@@ -270,7 +315,9 @@ export function PlatformSheet({ creator, open, onOpenChange }: PlatformSheetProp
                             disabled={inviteLoading === key}
                             onClick={() => handleCreateInvite(key)}
                           >
-                            {inviteLoading === key ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                            {inviteLoading === key ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : null}
                             Verbinden
                           </Button>
                         ) : (
@@ -286,50 +333,44 @@ export function PlatformSheet({ creator, open, onOpenChange }: PlatformSheetProp
               )}
             </div>
 
-            {/* Insights */}
-            {hasInsights && (
+            {/* Weitere Plattformen verbinden */}
+            {furtherPlatforms.length > 0 && (
               <div>
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                  Insights
+                  Weitere Plattformen verbinden
                 </h3>
                 <div className="flex flex-col gap-2">
-                  {metricsData!.accounts.map((acc) => {
-                    const m = metricsData!.metrics[acc.id]?.current;
-                    if (!m) return null;
-                    const displayName = PLATFORM_LABEL[acc.platform as string] ?? acc.platform;
-                    return (
-                      <Card
-                        key={acc.id}
-                        className="flex-row items-center gap-3 px-4 py-3 bg-muted/30 shadow-none border border-border-light"
-                      >
-                        <span className="text-lg text-muted-foreground shrink-0">
-                          {PLATFORM_ICONS[acc.platform as string] ?? (
-                            <span className="text-xs font-medium">{String(displayName)[0]}</span>
-                          )}
+                  {furtherPlatforms.map((key) => (
+                    <Card
+                      key={key}
+                      className="flex-row items-center gap-3 px-4 py-3 border border-border rounded-sm"
+                    >
+                      <span className="text-lg text-muted-foreground shrink-0">
+                        {PLATFORM_ICONS[key]}
+                      </span>
+                      <p className="text-sm font-medium flex-1">
+                        {PLATFORM_LABEL[key]}
+                      </p>
+                      {OAUTH_SUPPORTED.has(key) ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0 h-7 text-xs gap-1"
+                          disabled={inviteLoading === key}
+                          onClick={() => handleCreateInvite(key)}
+                        >
+                          {inviteLoading === key ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : null}
+                          Connect
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          Demnächst
                         </span>
-                        <div className="min-w-0 flex-1">
-                          <span className="text-sm font-medium">{displayName}</span>
-                          {acc.username && (
-                            <span className="text-[10px] text-muted-foreground"> · @{acc.username}</span>
-                          )}
-                        </div>
-                        <div className="flex gap-4 shrink-0 text-right">
-                          <div>
-                            <div className="text-[10px] text-muted-foreground">Follower</div>
-                            <div className="text-sm font-semibold tabular-nums">{fmtNum(m.audience)}</div>
-                          </div>
-                          <div>
-                            <div className="text-[10px] text-muted-foreground">Views/30d</div>
-                            <div className="text-sm font-semibold tabular-nums">{fmtNum(m.views_30d)}</div>
-                          </div>
-                          <div>
-                            <div className="text-[10px] text-muted-foreground">ER</div>
-                            <div className="text-sm font-semibold tabular-nums">{m.engagement_rate.toFixed(1)}%</div>
-                          </div>
-                        </div>
-                      </Card>
-                    );
-                  })}
+                      )}
+                    </Card>
+                  ))}
                 </div>
               </div>
             )}
@@ -343,17 +384,22 @@ export function PlatformSheet({ creator, open, onOpenChange }: PlatformSheetProp
           <DialogHeader>
             <DialogTitle>OAuth-Link erstellt</DialogTitle>
             <DialogDescription>
-              Teile diesen Link mit dem Creator. Er ist 48 Stunden gültig und startet den Verbindungs-Flow direkt.
+              Teile diesen Link mit dem Creator. Er ist 48 Stunden gültig und
+              startet den Verbindungs-Flow direkt.
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center gap-2 rounded-lg border bg-muted px-3 py-2.5">
-            <p className="flex-1 text-xs font-mono truncate text-muted-foreground">{inviteUrl}</p>
+            <p className="flex-1 text-xs font-mono truncate text-muted-foreground">
+              {inviteUrl}
+            </p>
             <CopyButton
               value={inviteUrl ?? ""}
               className="shrink-0 p-1 rounded hover:bg-background transition-colors"
             />
           </div>
-          {inviteError && <p className="text-xs text-destructive">{inviteError}</p>}
+          {inviteError && (
+            <p className="text-xs text-destructive">{inviteError}</p>
+          )}
           <a
             href={inviteUrl ?? "#"}
             target="_blank"
@@ -364,7 +410,9 @@ export function PlatformSheet({ creator, open, onOpenChange }: PlatformSheetProp
             Link im Browser öffnen
           </a>
           <DialogFooter>
-            <DialogClose render={<Button variant="outline" />}>Schließen</DialogClose>
+            <DialogClose render={<Button variant="outline" />}>
+              Schließen
+            </DialogClose>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -62,7 +62,7 @@ export function CreatorCard({
   return (
     <div
       onClick={() => router.push(`/creators/dashboard/${c.id}`)}
-      className="group relative overflow-hidden rounded-2xl bg-card border border-border p-6 cursor-pointer flex flex-col
+      className="group relative overflow-hidden rounded-xl bg-card border border-border p-6 cursor-pointer flex flex-col
         transition-all duration-200
         hover:shadow-md hover:-translate-y-0.5"
     >
@@ -89,8 +89,8 @@ export function CreatorCard({
       <div className="mb-5 flex justify-center relative z-10">
         <div className="relative">
           <div
-            className="h-24 w-24 rounded-full p-[3px] ring-1 ring-border
-              transition-all duration-200 group-hover:scale-105"
+            className="h-24 w-24 rounded-full  ring-1 ring-border
+              transition-all border-4 border-black duration-200 group-hover:scale-105"
           >
             <div
               className="h-full w-full rounded-full flex items-center justify-center text-2xl font-bold text-white"

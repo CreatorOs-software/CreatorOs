@@ -18,7 +18,7 @@ import {
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import type { Creator } from "@/domains/creators/types";
 import type { DealFull, Anfrage } from "./types";
-import { ALT, LAUFEND, daysUntil, fmtMoney } from "./constants";
+import { ALT, daysUntil, fmtMoney } from "./constants";
 import { DealDialog } from "./deal-dialog";
 import { AnfragenPanel } from "./anfragen-panel";
 import { laufendColumns } from "./deals-columns";
@@ -115,7 +115,7 @@ export function DealsTab({
       campaignTypeFilter.size === 0 || campaignTypeFilter.has(d.campaign_type ?? ""),
   );
 
-  const laufend = baseDeals.filter((d) => LAUFEND.has(d.status));
+  const laufend = baseDeals.filter((d) => !ALT.has(d.status));
   const alt = baseDeals.filter((d) => ALT.has(d.status));
   const activeAnfragen = anfragen.filter(
     (a) => a.status !== "gewonnen" && a.status !== "abgelehnt",
@@ -254,10 +254,7 @@ export function DealsTab({
               onChange={(v) => setShowAlt(v === "abgeschlossen")}
               options={[
                 { value: "laufend", label: "Laufend" },
-                {
-                  value: "abgeschlossen",
-                  label: alt.length > 0 ? `Abgeschlossen (${alt.length})` : "Abgeschlossen",
-                },
+                { value: "abgeschlossen", label: alt.length > 0 ? `Abgeschlossen (${alt.length})` : "Abgeschlossen" },
               ]}
             />
           }
