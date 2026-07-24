@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { BrandAvatar } from "./shared";
 import { Switch } from "@/components/ui/switch";
 import type { DealFull, PaymentItem, Deliverable } from "./types";
@@ -485,11 +486,11 @@ export function DealDialog({
                                     onCheckedChange={(checked) => handleInvoiceToggle(i, checked)}
                                   />
                                   {item.invoice_date && (
-                                    <input
+                                    <Input
                                       type="date"
                                       value={item.invoice_date}
                                       onChange={(e) => handleInvoiceDateChange(i, e.target.value)}
-                                      className="h-7 rounded-lg border border-input bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                                      className="h-7 text-xs"
                                     />
                                   )}
                                 </div>

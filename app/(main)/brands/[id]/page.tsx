@@ -6,24 +6,17 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   ArrowUpRight,
+  ChevronRight,
   Loader2,
   Mail,
   Pencil,
-  Phone,
   Plus,
   Trash2,
-  User,
 } from "lucide-react";
 import Link from "next/link";
+import { type ColumnDef } from "@tanstack/react-table";
 import { Card } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Auflister } from "@/components/ui/auflister";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,12 +27,16 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { usePageHeader } from "@/components/layout/page-header-context";
 import {
   STATUS_STYLE,
   fmtDate,
   fmtMoney,
 } from "@/components/creators/dashboard/constants";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -352,51 +349,83 @@ function CreatorSection({
   return (
     <>
       <Card className="p-5 gap-0 rounded-2xl">
-        <h3 className="text-sm font-semibold mb-4">Creator</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold">Creator mit dieser Brand</h3>
+          {summaries.length > 0 && (
+            <span className="text-xs text-muted-foreground">
+              {summaries.length}
+            </span>
+          )}
+        </div>
+
         {summaries.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-6">
             Noch keine Creator mit dieser Brand verknüpft.
           </p>
         ) : (
-          <div className="flex flex-col divide-y divide-border -mx-5">
-            {summaries.map((s) => (
-              <button
-                key={s.creator.id}
-                onClick={() => setSelected(s)}
-                className="flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors text-left"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <CreatorAvatar creator={s.creator} />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {s.creator.full_name}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">
+          <>
+            <div className="flex items-center gap-3 pb-2 border-b border-border">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex-1">
+                Creator
+              </p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-44 shrink-0">
+                Deals · Umsatz
+              </p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-40 shrink-0">
+                Status
+              </p>
+              <div className="w-4 shrink-0" />
+            </div>
+
+            <div className="flex flex-col divide-y divide-border -mx-5">
+              {summaries.map((s) => (
+                <button
+                  key={s.creator.id}
+                  onClick={() => setSelected(s)}
+                  className="flex items-center gap-3 px-5 py-3 hover:bg-muted/40 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <CreatorAvatar creator={s.creator} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {s.creator.full_name}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        @{s.creator.full_name.toLowerCase().replace(/\s+/g, "")}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="w-44 shrink-0">
+                    <span className="text-sm">
                       {s.only_contact
                         ? "Nur Anfragen"
                         : `${s.deals.length} Deal${s.deals.length !== 1 ? "s" : ""} · ${fmtMoney(s.total_revenue)}`}
-                    </p>
+                    </span>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {s.only_contact ? (
-                    <span className="text-[9px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
-                      Nur Anfrage
-                    </span>
-                  ) : s.has_active_deal ? (
-                    <span className="text-[9px] bg-green-500/10 text-green-700 px-2 py-0.5 rounded-full">
-                      Aktiver Deal
-                    </span>
-                  ) : (
-                    <span className="text-[9px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
-                      Abgeschlossen
-                    </span>
-                  )}
-                  <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground" />
-                </div>
-              </button>
-            ))}
-          </div>
+
+                  <div className="w-40 shrink-0">
+                    {s.only_contact ? (
+                      <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
+                        Nur Anfrage
+                      </span>
+                    ) : s.has_active_deal ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] bg-green-500/10 text-green-700 px-2 py-0.5 rounded-full">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                        aktiver Deal läuft
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground px-2 py-0.5 rounded-full border border-border">
+                        abgeschlossen
+                      </span>
+                    )}
+                  </div>
+
+                  <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                </button>
+              ))}
+            </div>
+          </>
         )}
       </Card>
 
@@ -480,23 +509,21 @@ function ContactDialog({
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
               Name *
             </label>
-            <input
+            <Input
               autoFocus
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Max Muster"
-              className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
               Rolle
             </label>
-            <input
+            <Input
               value={role}
               onChange={(e) => setRole(e.target.value)}
               placeholder="Marketing, Buchhaltung, Agentur …"
-              className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -504,23 +531,21 @@ function ContactDialog({
               <label className="text-xs font-medium text-muted-foreground mb-1 block">
                 E-Mail
               </label>
-              <input
+              <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="m.muster@brand.com"
-                className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">
                 Telefon
               </label>
-              <input
+              <Input
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+49 …"
-                className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
           </div>
@@ -563,14 +588,16 @@ function ContactsSection({
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold">Ansprechpartner</h3>
           <Button
-            variant="ghost"
-            size="icon-sm"
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs gap-1 px-2.5"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
             }}
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3 h-3" />
+            Hinzufügen
           </Button>
         </div>
 
@@ -585,42 +612,22 @@ function ContactsSection({
                 key={c.id}
                 className="flex items-start justify-between gap-2 group"
               >
-                <div className="flex items-start gap-2.5 min-w-0">
-                  <span className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center shrink-0 mt-0.5">
-                    <User className="w-3.5 h-3.5 text-muted-foreground" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium leading-tight">
-                      {c.name}
-                    </p>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="text-sm font-medium leading-tight">{c.name}</p>
                     {c.role && (
-                      <p className="text-[10px] text-muted-foreground">
+                      <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full shrink-0">
                         {c.role}
-                      </p>
+                      </span>
                     )}
-                    <div className="flex flex-col gap-0.5 mt-1">
-                      {c.email && (
-                        <a
-                          href={`mailto:${c.email}`}
-                          className="text-[10px] text-muted-foreground flex items-center gap-1 hover:text-foreground transition-colors"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Mail className="w-2.5 h-2.5" /> {c.email}
-                        </a>
-                      )}
-                      {c.phone && (
-                        <a
-                          href={`tel:${c.phone}`}
-                          className="text-[10px] text-muted-foreground flex items-center gap-1 hover:text-foreground transition-colors"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Phone className="w-2.5 h-2.5" /> {c.phone}
-                        </a>
-                      )}
-                    </div>
                   </div>
+                  {(c.email || c.phone) && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {[c.email, c.phone].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
                 </div>
-                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                   <Button
                     variant="ghost"
                     size="icon-sm"
@@ -661,174 +668,212 @@ function ContactsSection({
 
 // ── Deal History Section ───────────────────────────────────────────────────────
 
+const dealHistoryColumns: ColumnDef<DealRow>[] = [
+  {
+    id: "datum",
+    header: "Datum",
+    accessorKey: "created_at",
+    cell: ({ row }) => (
+      <span className="text-xs text-muted-foreground">
+        {fmtDate(row.original.created_at)}
+      </span>
+    ),
+    size: 112,
+  },
+  {
+    id: "creator",
+    header: "Creator",
+    enableSorting: false,
+    cell: ({ row }) => {
+      const c = row.original.creators;
+      if (!c)
+        return <span className="text-muted-foreground/40 text-xs">—</span>;
+      return (
+        <div className="flex items-center gap-2">
+          <CreatorAvatar creator={c} />
+          <span className="text-xs font-medium truncate">{c.full_name}</span>
+        </div>
+      );
+    },
+  },
+  {
+    id: "kampagne",
+    header: "Kampagne",
+    enableSorting: false,
+    cell: ({ row }) => {
+      const d = row.original;
+      return (
+        <div>
+          <p className="text-xs font-medium truncate">{d.title}</p>
+          {d.campaign_type && (
+            <p className="text-[10px] text-muted-foreground">
+              {d.campaign_type}
+            </p>
+          )}
+        </div>
+      );
+    },
+  },
+  {
+    id: "honorar",
+    header: "Honorar",
+    accessorKey: "budget",
+    cell: ({ row }) => (
+      <span className="text-xs font-medium tabular-nums">
+        {fmtMoney(Number(row.original.budget))}
+      </span>
+    ),
+    size: 96,
+  },
+  {
+    id: "status",
+    header: "Status",
+    enableSorting: false,
+    cell: ({ row }) => <DealStatusBadge status={row.original.status} />,
+    size: 96,
+  },
+  {
+    id: "link",
+    header: "",
+    enableSorting: false,
+    cell: ({ row }) => {
+      const creatorId = row.original.creators?.id;
+      if (!creatorId) return null;
+      return (
+        <div
+          className="flex justify-end"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Link
+            href={`/creators/dashboard/${creatorId}`}
+            className="inline-flex items-center justify-center w-6 h-6 rounded-md hover:bg-muted transition-colors"
+          >
+            <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground" />
+          </Link>
+        </div>
+      );
+    },
+    size: 40,
+  },
+];
+
 function DealHistorySection({ deals }: { deals: DealRow[] }) {
+  const [showAlt, setShowAlt] = useState(false);
+  const [creatorFilter, setCreatorFilter] = useState<Set<string>>(new Set());
+
+  const availableCreators = [
+    ...new Set(
+      deals.map((d) => d.creators?.full_name).filter(Boolean) as string[],
+    ),
+  ].sort();
+
+  const filteredDeals = deals.filter(
+    (d) =>
+      creatorFilter.size === 0 ||
+      creatorFilter.has(d.creators?.full_name ?? ""),
+  );
+  const alt = filteredDeals.filter((d) => ALT.has(d.status));
+  const laufend = filteredDeals.filter((d) => !ALT.has(d.status));
+  const visible = showAlt ? alt : laufend;
+
   if (deals.length === 0) return null;
 
   return (
     <Card className="p-5 gap-0 rounded-2xl">
-      <h3 className="text-sm font-semibold mb-4">Deal-Historie</h3>
-      <div className="overflow-y-auto max-h-87.5 rounded-xl">
-        <Table className="table-fixed">
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="sticky top-0 z-10 bg-card h-9 text-[10px] uppercase tracking-wider w-28">
-                Datum
-              </TableHead>
-              <TableHead className="sticky top-0 z-10 bg-card h-9 text-[10px] uppercase tracking-wider">
+      <h3 className="text-sm font-semibold mb-3">Deal-Historie</h3>
+      <Auflister
+        data={visible}
+        columns={dealHistoryColumns}
+        emptyText={
+          showAlt ? "Keine abgeschlossenen Deals" : "Keine laufenden Deals"
+        }
+        searchPlaceholder="Deal suchen…"
+        filterContent={
+          availableCreators.length > 1 ? (
+            <div className="flex flex-col gap-0.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 px-1">
                 Creator
-              </TableHead>
-              <TableHead className="sticky top-0 z-10 bg-card h-9 text-[10px] uppercase tracking-wider">
-                Kampagne
-              </TableHead>
-              <TableHead className="sticky top-0 z-10 bg-card h-9 text-[10px] uppercase tracking-wider w-24">
-                Honorar
-              </TableHead>
-              <TableHead className="sticky top-0 z-10 bg-card h-9 text-[10px] uppercase tracking-wider w-24">
-                Status
-              </TableHead>
-              <TableHead className="sticky top-0 z-10 bg-card h-9 w-10" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {deals.map((d) => (
-              <TableRow key={d.id}>
-                <TableCell className="py-2.5 text-xs text-muted-foreground">
-                  {fmtDate(d.created_at)}
-                </TableCell>
-                <TableCell className="py-2.5">
-                  {d.creators ? (
-                    <div className="flex items-center gap-2">
-                      <CreatorAvatar creator={d.creators} />
-                      <span className="text-xs font-medium truncate">
-                        {d.creators.full_name}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground/40 text-xs">—</span>
-                  )}
-                </TableCell>
-                <TableCell className="py-2.5">
-                  <p className="text-xs font-medium truncate">{d.title}</p>
-                  {d.campaign_type && (
-                    <p className="text-[10px] text-muted-foreground">
-                      {d.campaign_type}
-                    </p>
-                  )}
-                </TableCell>
-                <TableCell className="py-2.5">
-                  <span className="text-xs font-medium tabular-nums">
-                    {fmtMoney(Number(d.budget))}
-                  </span>
-                </TableCell>
-                <TableCell className="py-2.5">
-                  <DealStatusBadge status={d.status} />
-                </TableCell>
-                <TableCell className="py-2.5">
-                  <Button variant="ghost" size="icon-sm">
-                    <Link
-                      href={
-                        d.creators?.id
-                          ? `/creators/dashboard/${d.creators.id}`
-                          : "#"
-                      }
-                    >
-                      <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground" />
-                    </Link>
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </Card>
-  );
-}
-
-// ── Rights Section ─────────────────────────────────────────────────────────────
-
-function RightsSection({ deals }: { deals: DealRow[] }) {
-  const withRights = deals.filter((d) => d.exclusivity || d.usage_rights);
-  if (withRights.length === 0) return null;
-
-  return (
-    <Card className="p-5 gap-0 rounded-2xl">
-      <h3 className="text-sm font-semibold mb-4">
-        Aktive Rechte & Sperrfristen
-      </h3>
-      <div className="flex flex-col divide-y divide-border -mx-5">
-        {withRights.map((d) => (
-          <div
-            key={d.id}
-            className="flex items-start justify-between px-5 py-3 gap-3"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              {d.creators && <CreatorAvatar creator={d.creators} />}
-              <div className="min-w-0">
-                <p className="text-xs font-medium truncate">
-                  {d.creators?.full_name ?? "—"}
-                </p>
-                {d.exclusivity && (
-                  <p className="text-[10px] text-muted-foreground">
-                    Exklusivität: {d.exclusivity}
-                  </p>
-                )}
-                {d.usage_rights && (
-                  <p className="text-[10px] text-muted-foreground">
-                    Nutzungsrechte: {d.usage_rights}
-                  </p>
-                )}
-              </div>
+              </p>
+              {availableCreators.map((name) => (
+                <label
+                  key={name}
+                  className="flex items-center gap-2 cursor-pointer rounded px-1 py-1 hover:bg-muted/50 text-xs"
+                >
+                  <Checkbox
+                    checked={creatorFilter.has(name)}
+                    onCheckedChange={(checked) =>
+                      setCreatorFilter((prev) => {
+                        const next = new Set(prev);
+                        if (checked) next.add(name);
+                        else next.delete(name);
+                        return next;
+                      })
+                    }
+                  />
+                  {name}
+                </label>
+              ))}
+              {creatorFilter.size > 0 && (
+                <button
+                  className="text-[10px] text-muted-foreground hover:text-foreground mt-2 px-1 text-left"
+                  onClick={() => setCreatorFilter(new Set())}
+                >
+                  Zurücksetzen
+                </button>
+              )}
             </div>
-            <Button variant="ghost" size="icon-sm">
-              <Link
-                href={
-                  d.creators?.id ? `/creators/dashboard/${d.creators.id}` : "#"
-                }
-              >
-                <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground" />
-              </Link>
-            </Button>
-          </div>
-        ))}
-      </div>
+          ) : undefined
+        }
+        activeFilterCount={creatorFilter.size}
+        filterLeft={
+          <SegmentedControl
+            value={showAlt ? "abgeschlossen" : "laufend"}
+            onChange={(v) => setShowAlt(v === "abgeschlossen")}
+            options={[
+              { value: "laufend", label: "Laufend" },
+              {
+                value: "abgeschlossen",
+                label:
+                  alt.length > 0
+                    ? `Abgeschlossen (${alt.length})`
+                    : "Abgeschlossen",
+              },
+            ]}
+          />
+        }
+      />
     </Card>
   );
 }
 
 // ── Gap Section ────────────────────────────────────────────────────────────────
 
-function GapSection({
-  creators,
-  brandName,
-}: {
-  creators: CreatorMin[];
-  brandName: string;
-}) {
+function GapSection({ creators }: { creators: CreatorMin[] }) {
   if (creators.length === 0) return null;
 
   return (
     <Card className="p-5 gap-0 rounded-2xl">
       <h3 className="text-sm font-semibold mb-1">
-        Noch nicht zusammengearbeitet mit
+        Hat noch nicht zusammengearbeitet mit
       </h3>
       <p className="text-xs text-muted-foreground mb-4">
-        Diese Creator haben noch keinen Deal mit {brandName}.
+        Klick legt eine Anfrage in der Pipeline an.
       </p>
       <div className="flex flex-wrap gap-2">
         {creators.map((c) => (
           <Link
             key={c.id}
             href={`/creators/dashboard/${c.id}`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-background hover:bg-muted transition-colors text-xs font-medium"
+            className="inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-full border border-border bg-background hover:bg-muted transition-colors text-xs font-medium"
           >
             <span
-              className="w-4 h-4 rounded-full inline-flex items-center justify-center text-white text-[8px] font-bold shrink-0"
+              className="w-5 h-5 rounded-full inline-flex items-center justify-center text-white text-[9px] font-bold shrink-0"
               style={{ background: c.color }}
             >
               {c.initials}
             </span>
             {c.full_name}
+            <span className="text-muted-foreground/60 ml-0.5">+</span>
           </Link>
         ))}
       </div>
@@ -847,7 +892,6 @@ function NotesSection({
 }) {
   const [value, setValue] = useState(initialNotes ?? "");
   const [saving, setSaving] = useState(false);
-  const isDirty = value !== (initialNotes ?? "");
 
   async function handleSave() {
     setSaving(true);
@@ -864,25 +908,24 @@ function NotesSection({
 
   return (
     <Card className="p-5 gap-0 rounded-2xl">
-      <h3 className="text-sm font-semibold mb-3">Notizen</h3>
-      <textarea
+      <h3 className="text-sm font-semibold mb-3">Notizen zur Brand</h3>
+      <Textarea
         value={value}
         onChange={(e) => setValue(e.target.value)}
         rows={4}
         placeholder="Freigaben dauern immer 2 Wochen, zahlt zuverlässig, Budget-Range 3–5k …"
-        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+        className="resize-none"
       />
-      {isDirty && (
+      <div className="flex justify-end mt-3">
         <Button
           variant="outline"
           size="sm"
-          className="mt-2"
           disabled={saving}
           onClick={handleSave}
         >
-          {saving ? "Speichern…" : "Notiz speichern"}
+          {saving ? "Speichern…" : "Speichern"}
         </Button>
-      )}
+      </div>
     </Card>
   );
 }
@@ -944,66 +987,89 @@ export default function BrandDetailPage() {
   const activeDeals = all_deals.filter((d) => LAUFEND.has(d.status));
 
   return (
-    <div className="flex flex-col gap-6 pb-8">
+    <div className="flex flex-col gap-5 pb-8">
       {/* Header card */}
       <Card className="rounded-2xl p-6 gap-0">
-        <div className="flex items-start gap-5">
-          <BrandAvatar color={brand.color} short_code={brand.short_code} />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div>
-                <h1 className="text-xl font-semibold leading-tight">
-                  {brand.company_name}
-                </h1>
-                {brand.industry && (
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {brand.industry}
-                  </p>
-                )}
-              </div>
+        <div className="flex items-start justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <BrandAvatar color={brand.color} short_code={brand.short_code} />
+            <div>
+              <h1 className="text-xl font-semibold leading-tight">
+                {brand.company_name}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Partner seit {fmtDate(brand.created_at)} ·{" "}
+                {creator_summaries.length} Creator im Roster aktiv
+              </p>
             </div>
-            <div className="flex gap-8">
-              <div>
-                <p className="text-2xl font-bold">{all_deals.length}</p>
-                <p className="text-xs text-muted-foreground">Deals gesamt</p>
+          </div>
+          <div className="flex flex-col items-end gap-4 shrink-0">
+            {(() => {
+              const emails = contacts
+                .map((c) => c.email)
+                .filter(Boolean) as string[];
+              return (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 h-8 text-xs"
+                  disabled={emails.length === 0}
+                  onClick={() => {
+                    if (emails.length > 0)
+                      window.location.href = `mailto:${emails.join(",")}`;
+                  }}
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  Kontaktieren
+                </Button>
+              );
+            })()}
+            <div className="flex items-center gap-10">
+              <div className="text-right">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Deals gesamt
+                </p>
+                <p className="text-2xl font-bold mt-0.5">{all_deals.length}</p>
               </div>
-              <div>
-                <p className="text-2xl font-bold">{fmtMoney(totalRevenue)}</p>
-                <p className="text-xs text-muted-foreground">Umsatz gesamt</p>
+              <div className="text-right">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Umsatz gesamt
+                </p>
+                <p className="text-2xl font-bold mt-0.5">
+                  {fmtMoney(totalRevenue)}
+                </p>
               </div>
-              <div>
-                <p className="text-2xl font-bold">{activeDeals.length}</p>
-                <p className="text-xs text-muted-foreground">Aktive Deals</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{creator_summaries.length}</p>
-                <p className="text-xs text-muted-foreground">Creator</p>
+              <div className="text-right">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Aktive Deals
+                </p>
+                <p className="text-2xl font-bold mt-0.5">
+                  {activeDeals.length}
+                </p>
               </div>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* Creator + Contacts grid */}
-      <div className="grid grid-cols-2 gap-6">
-        <CreatorSection
-          summaries={creator_summaries}
-          brandName={brand.company_name}
-        />
-        <ContactsSection contacts={contacts} brandId={id} onRefresh={refresh} />
+      {/* Two-column layout */}
+      <div className="grid grid-cols-[1fr_360px] gap-5 items-start">
+        {/* Left column */}
+        <div className="flex flex-col gap-5">
+          <CreatorSection
+            summaries={creator_summaries}
+            brandName={brand.company_name}
+          />
+          <DealHistorySection deals={all_deals} />
+        </div>
+
+        {/* Right column */}
+        <div className="flex flex-col gap-5">
+          <ContactsSection contacts={contacts} brandId={id} onRefresh={refresh} />
+          <GapSection creators={gap_creators} />
+          <NotesSection brandId={id} initialNotes={brand.notes} />
+        </div>
       </div>
-
-      {/* Deal history */}
-      <DealHistorySection deals={all_deals} />
-
-      {/* Rights & Exclusivities */}
-      <RightsSection deals={all_deals} />
-
-      {/* Gap view */}
-      <GapSection creators={gap_creators} brandName={brand.company_name} />
-
-      {/* Notes */}
-      <NotesSection brandId={id} initialNotes={brand.notes} />
     </div>
   );
 }

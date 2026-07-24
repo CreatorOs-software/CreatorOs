@@ -2,25 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Clock, CheckCircle2, XCircle, Pencil, X } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, XCircle, Pencil, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
-import {
-  ColumnDef,
-  SortingState,
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -31,9 +16,23 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { AnimatedHeight } from "@/components/ui/animated-height";
+import { Auflister } from "@/components/ui/auflister";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Anfrage } from "./types";
 import { fmtMoney } from "./constants";
+import {
+  anfrageColumns,
+  AnfrageBrandAvatar,
+  STATUS_META,
+} from "./anfragen-columns";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -46,39 +45,6 @@ const STATUS_ORDER = [
 ] as const;
 
 type AnfrageStatus = Anfrage["status"];
-
-const STATUS_META: Record<
-  AnfrageStatus,
-  { label: string; bg: string; text: string }
-> = {
-  neu: { label: "Neu", bg: "bg-zinc-100", text: "text-zinc-600" },
-  pruefung: {
-    label: "In Prüfung",
-    bg: "bg-blue-500/15",
-    text: "text-blue-600",
-  },
-  angebot: {
-    label: "Angebot raus",
-    bg: "bg-violet-500/15",
-    text: "text-violet-600",
-  },
-  verhandlung: {
-    label: "In Verhandlung",
-    bg: "bg-amber-400/15",
-    text: "text-amber-700",
-  },
-  zugesagt: {
-    label: "Zugesagt",
-    bg: "bg-green-500/15",
-    text: "text-green-700",
-  },
-  gewonnen: {
-    label: "Gewonnen",
-    bg: "bg-emerald-500/20",
-    text: "text-emerald-700",
-  },
-  abgelehnt: { label: "Abgelehnt", bg: "bg-red-500/15", text: "text-red-600" },
-};
 
 const SOURCE_LABEL: Record<string, string> = {
   email: "E-Mail",
@@ -106,59 +72,6 @@ function daysSince(isoDate: string): number {
 
 function isEndState(status: AnfrageStatus): boolean {
   return status === "gewonnen" || status === "abgelehnt";
-}
-
-// ── Brand Avatar ───────────────────────────────────────────────────────────────
-
-function AnfrageBrandAvatar({ anfrage }: { anfrage: Anfrage }) {
-  const color = anfrage.brands?.color ?? "#6b7280";
-  const code =
-    anfrage.brands?.short_code ??
-    anfrage.brand_name?.slice(0, 2).toUpperCase() ??
-    "?";
-  return (
-    <span
-      className="w-6 h-6 rounded-md shrink-0 inline-flex items-center justify-center text-white text-[9px] font-bold"
-      style={{ background: color }}
-    >
-      {code}
-    </span>
-  );
-}
-
-// ── Status Badge ───────────────────────────────────────────────────────────────
-
-function StatusBadge({ status }: { status: AnfrageStatus }) {
-  const meta = STATUS_META[status];
-  return (
-    <span
-      className={cn(
-        "text-[9px] font-medium px-2 py-0.5 rounded-full",
-        meta.bg,
-        meta.text,
-      )}
-    >
-      {meta.label}
-    </span>
-  );
-}
-
-// ── Days cell ──────────────────────────────────────────────────────────────────
-
-function DaysCell({ isoDate }: { isoDate: string }) {
-  const d = daysSince(isoDate);
-  const isLate = d >= 4;
-  return (
-    <span
-      className={cn(
-        "text-[10px] flex items-center gap-0.5",
-        isLate ? "text-red-500" : "text-muted-foreground",
-      )}
-    >
-      <Clock className="w-2.5 h-2.5" />
-      {d === 0 ? "heute" : `${d}T`}
-    </span>
-  );
 }
 
 // ── Neue Anfrage Dialog ────────────────────────────────────────────────────────
@@ -219,42 +132,39 @@ function NeueAnfrageDialog({
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
               Brand *
             </label>
-            <input
+            <Input
               autoFocus
               value={brandName}
               onChange={(e) => setBrandName(e.target.value)}
               placeholder="Nike, L'Oréal, …"
-              className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
               Format
             </label>
-            <select
-              value={format}
-              onChange={(e) => setFormat(e.target.value)}
-              className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
-            >
-              <option value="">— optional —</option>
-              {FORMAT_OPTIONS.map((f) => (
-                <option key={f} value={f}>
-                  {f}
-                </option>
-              ))}
-            </select>
+            <Select value={format} onValueChange={(v) => setFormat(v ?? "")}>
+              <SelectTrigger>
+                <SelectValue placeholder="— optional —" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">— optional —</SelectItem>
+                {FORMAT_OPTIONS.map((f) => (
+                  <SelectItem key={f} value={f}>{f}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
               Budget angefragt (€)
             </label>
-            <input
+            <Input
               type="text"
               inputMode="decimal"
               value={budgetRaw}
               onChange={(e) => setBudgetRaw(e.target.value)}
               placeholder="5000"
-              className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <DialogFooter className="mt-1">
@@ -294,7 +204,9 @@ function AnfrageDialog({
   const [notesValue, setNotesValue] = useState(initialAnfrage?.notes ?? "");
   const [notesSaving, setNotesSaving] = useState(false);
   const [offerValue, setOfferValue] = useState(
-    initialAnfrage?.budget_offer != null ? String(initialAnfrage.budget_offer) : "",
+    initialAnfrage?.budget_offer != null
+      ? String(initialAnfrage.budget_offer)
+      : "",
   );
   const [offerSaving, setOfferSaving] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -415,7 +327,10 @@ function AnfrageDialog({
           if (!o) onClose();
         }}
       >
-        <DialogContent className="max-w-lg sm:max-w-lg p-0 gap-0 overflow-hidden" showCloseButton={false}>
+        <DialogContent
+          className="max-w-lg sm:max-w-lg p-0 gap-0 overflow-hidden"
+          showCloseButton={false}
+        >
           {/* Header */}
           <div className="p-5 pb-4 border-b">
             <div className="flex items-start justify-between gap-3">
@@ -433,11 +348,23 @@ function AnfrageDialog({
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5"
+                >
                   <Pencil className="w-3 h-3" />
                   Bearbeiten
                 </Button>
-                <DialogClose render={<Button variant="ghost" size="icon-sm" className="-mt-0.5 -mr-1" />}>
+                <DialogClose
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="-mt-0.5 -mr-1"
+                    />
+                  }
+                >
                   <X className="w-4 h-4" />
                   <span className="sr-only">Schließen</span>
                 </DialogClose>
@@ -545,7 +472,7 @@ function AnfrageDialog({
                 Unser Angebot (€)
               </p>
               <div className="flex gap-2">
-                <input
+                <Input
                   type="text"
                   inputMode="decimal"
                   value={offerValue}
@@ -555,7 +482,7 @@ function AnfrageDialog({
                       ? String(anfrage.budget_requested)
                       : "0"
                   }
-                  className="h-8 rounded-lg border border-input bg-background px-3 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="h-8 w-36"
                 />
                 <Button
                   variant="outline"
@@ -573,12 +500,12 @@ function AnfrageDialog({
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
                 Notizen
               </p>
-              <textarea
+              <Textarea
                 value={notesValue}
                 onChange={(e) => setNotesValue(e.target.value)}
                 rows={3}
                 placeholder="Anmerkungen, nächste Schritte, …"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                className="resize-none"
               />
               {notesValue !== (anfrage.notes ?? "") && (
                 <Button
@@ -683,12 +610,12 @@ function AnfrageDialog({
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
               Grund (optional)
             </label>
-            <textarea
+            <Textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               rows={3}
               placeholder="Budget zu niedrig, falsches Format, …"
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+              className="resize-none"
             />
           </div>
           <DialogFooter>
@@ -735,185 +662,6 @@ function AnfrageDialog({
   );
 }
 
-// ── Anfragen Table ─────────────────────────────────────────────────────────────
-
-function AnfragenTable({
-  data,
-  onRowClick,
-  onEdit,
-  onDelete,
-}: {
-  data: Anfrage[];
-  onRowClick: (a: Anfrage) => void;
-  onEdit: (a: Anfrage) => void;
-  onDelete: (a: Anfrage) => void;
-}) {
-  "use no memo";
-  const [sorting, setSorting] = useState<SortingState>([]);
-
-  const columns: ColumnDef<Anfrage>[] = [
-    {
-      id: "brand",
-      header: "Brand",
-      accessorFn: (row) => row.brands?.company_name ?? row.brand_name ?? "",
-      cell: ({ row }) => {
-        const a = row.original;
-        return (
-          <div className="flex items-center gap-2.5 min-w-0">
-            <AnfrageBrandAvatar anfrage={a} />
-            <div className="min-w-0">
-              <p className="text-xs font-medium truncate leading-tight">
-                {a.brands?.company_name ?? a.brand_name ?? "—"}
-              </p>
-              {a.contact_person && (
-                <p className="text-[10px] text-muted-foreground truncate">
-                  {a.contact_person}
-                </p>
-              )}
-            </div>
-          </div>
-        );
-      },
-      size: 180,
-    },
-    {
-      id: "format",
-      header: "Format",
-      accessorKey: "format",
-      cell: ({ row }) => (
-        <p className="text-xs text-muted-foreground truncate">
-          {row.original.format ?? "—"}
-        </p>
-      ),
-      size: 160,
-    },
-    {
-      id: "budget",
-      header: "Budget",
-      accessorKey: "budget_requested",
-      cell: ({ row }) => {
-        const { budget_requested, budget_offer } = row.original;
-        return (
-          <div>
-            <p className="text-xs tabular-nums font-medium">
-              {budget_requested != null ? fmtMoney(budget_requested) : "—"}
-            </p>
-            {budget_offer != null && (
-              <p className="text-[10px] text-muted-foreground tabular-nums">
-                Angebot: {fmtMoney(budget_offer)}
-              </p>
-            )}
-          </div>
-        );
-      },
-      size: 120,
-    },
-    {
-      id: "status",
-      header: "Status",
-      accessorKey: "status",
-      cell: ({ row }) => <StatusBadge status={row.original.status} />,
-      size: 120,
-    },
-    {
-      id: "days",
-      header: "Liegt seit",
-      accessorKey: "created_at",
-      cell: ({ row }) => <DaysCell isoDate={row.original.created_at} />,
-      size: 90,
-    },
-    {
-      id: "actions",
-      header: "",
-      cell: ({ row }) => (
-        <div
-          className="flex items-center justify-end gap-1"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="text-muted-foreground hover:text-foreground"
-            onClick={() => onEdit(row.original)}
-          >
-            <Pencil className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="text-muted-foreground hover:text-destructive"
-            onClick={() => onDelete(row.original)}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </Button>
-        </div>
-      ),
-      size: 72,
-      enableSorting: false,
-    },
-  ];
-
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
-    enableSortingRemoval: false,
-    state: { sorting },
-  });
-
-  return (
-    <AnimatedHeight>
-      {data.length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-8">
-          Noch keine Anfragen &ndash; klicke auf &bdquo;+ Neue Anfrage&ldquo;
-        </p>
-      ) : (
-        <div className="overflow-y-auto max-h-87.5 rounded-xl">
-          <Table className="table-fixed">
-            <TableHeader>
-              {table.getHeaderGroups().map((hg) => (
-                <TableRow key={hg.id} className="hover:bg-transparent">
-                  {hg.headers.map((header) => (
-                    <TableHead
-                      key={header.id}
-                      style={{ width: `${header.getSize()}px` }}
-                      className="sticky top-0 z-10 bg-card h-9 text-[10px] uppercase tracking-wider"
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="cursor-pointer"
-                  onClick={() => onRowClick(row.original)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-2.5">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-    </AnimatedHeight>
-  );
-}
-
 // ── AnfragenPanel (main export) ────────────────────────────────────────────────
 
 export function AnfragenPanel({
@@ -931,14 +679,24 @@ export function AnfragenPanel({
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [localCreated, setLocalCreated] = useState<Anfrage[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Anfrage | null>(null);
+  const [formatFilter, setFormatFilter] = useState<Set<string>>(new Set());
 
   // Derive anfragen from server data + local optimistic changes (no useEffect sync needed)
-  const anfragen: Anfrage[] = [
+  const allAnfragen: Anfrage[] = [
     ...localCreated.filter((a) => !initialAnfragen.some((b) => b.id === a.id)),
     ...initialAnfragen
       .filter((a) => !deletedIds.has(a.id))
       .map((a) => localUpdates[a.id] ?? a),
   ];
+
+  const availableFormats = [
+    ...new Set(allAnfragen.map((a) => a.format).filter(Boolean) as string[]),
+  ].sort();
+
+  const anfragen = allAnfragen.filter(
+    (a) =>
+      formatFilter.size === 0 || formatFilter.has(a.format ?? ""),
+  );
 
   const activeAnfragen = anfragen.filter((a) => !isEndState(a.status));
   const closedAnfragen = anfragen.filter((a) => isEndState(a.status));
@@ -971,21 +729,66 @@ export function AnfragenPanel({
   return (
     <>
       <Card className="p-5 gap-0 rounded-2xl">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold">Anfragen</h3>
-            {!showClosed && activeAnfragen.length > 0 && (
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/15 text-blue-600 text-[9px] font-medium">
-                {activeAnfragen.length}
-              </span>
-            )}
-            {!showClosed && lateCount > 0 && (
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500/15 text-red-500 text-[9px] font-medium">
-                {lateCount}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-sm font-semibold">Anfragen</h3>
+          {!showClosed && activeAnfragen.length > 0 && (
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/15 text-blue-600 text-[9px] font-medium">
+              {activeAnfragen.length}
+            </span>
+          )}
+          {!showClosed && lateCount > 0 && (
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500/15 text-red-500 text-[9px] font-medium">
+              {lateCount}
+            </span>
+          )}
+        </div>
+
+        <Auflister
+          data={showClosed ? closedAnfragen : activeAnfragen}
+          columns={anfrageColumns}
+          emptyText="Noch keine Anfragen – klicke auf »+ Neue Anfrage«"
+          onRowClick={setSelected}
+          onEdit={setSelected}
+          onDelete={setDeleteTarget}
+          searchPlaceholder="Anfrage suchen…"
+          filterContent={
+            availableFormats.length > 0 ? (
+              <div className="flex flex-col gap-0.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 px-1">
+                  Format
+                </p>
+                {availableFormats.map((fmt) => (
+                  <label
+                    key={fmt}
+                    className="flex items-center gap-2 cursor-pointer rounded px-1 py-1 hover:bg-muted/50 text-xs"
+                  >
+                    <Checkbox
+                      checked={formatFilter.has(fmt)}
+                      onCheckedChange={(checked) =>
+                        setFormatFilter((prev) => {
+                          const next = new Set(prev);
+                          if (checked) next.add(fmt);
+                          else next.delete(fmt);
+                          return next;
+                        })
+                      }
+                    />
+                    {fmt}
+                  </label>
+                ))}
+                {formatFilter.size > 0 && (
+                  <button
+                    className="text-[10px] text-muted-foreground hover:text-foreground mt-2 px-1 text-left"
+                    onClick={() => setFormatFilter(new Set())}
+                  >
+                    Zurücksetzen
+                  </button>
+                )}
+              </div>
+            ) : undefined
+          }
+          activeFilterCount={formatFilter.size}
+          filterLeft={
             <SegmentedControl
               value={showClosed ? "closed" : "open"}
               onChange={(v) => setShowClosed(v === "closed")}
@@ -993,12 +796,22 @@ export function AnfragenPanel({
                 { value: "open", label: "Offen" },
                 {
                   value: "closed",
-                  label: closedAnfragen.length > 0
-                    ? <>{`Abgeschlossen`}<span className="ml-1 opacity-60">({closedAnfragen.length})</span></>
-                    : "Abgeschlossen",
+                  label:
+                    closedAnfragen.length > 0 ? (
+                      <>
+                        {`Abgeschlossen`}
+                        <span className="ml-1 opacity-60">
+                          ({closedAnfragen.length})
+                        </span>
+                      </>
+                    ) : (
+                      "Abgeschlossen"
+                    ),
                 },
               ]}
             />
+          }
+          filterRight={
             <Button
               variant="default"
               className="gap-1.5 h-7 text-xs"
@@ -1007,14 +820,7 @@ export function AnfragenPanel({
               <Plus className="w-3 h-3" />
               Neue Anfrage
             </Button>
-          </div>
-        </div>
-
-        <AnfragenTable
-          data={showClosed ? closedAnfragen : activeAnfragen}
-          onRowClick={setSelected}
-          onEdit={setSelected}
-          onDelete={setDeleteTarget}
+          }
         />
       </Card>
 
@@ -1037,7 +843,9 @@ export function AnfragenPanel({
 
       <Dialog
         open={deleteTarget !== null}
-        onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
+        onOpenChange={(o) => {
+          if (!o) setDeleteTarget(null);
+        }}
       >
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
@@ -1046,7 +854,9 @@ export function AnfragenPanel({
           <p className="text-sm text-muted-foreground">
             Die Anfrage von{" "}
             <span className="font-medium text-foreground">
-              {deleteTarget?.brands?.company_name ?? deleteTarget?.brand_name ?? "dieser Brand"}
+              {deleteTarget?.brands?.company_name ??
+                deleteTarget?.brand_name ??
+                "dieser Brand"}
             </span>{" "}
             wird unwiderruflich gelöscht.
           </p>
@@ -1054,10 +864,7 @@ export function AnfragenPanel({
             <DialogClose render={<Button variant="outline" />}>
               Abbrechen
             </DialogClose>
-            <Button
-              variant="destructive"
-              onClick={handleConfirmDelete}
-            >
+            <Button variant="destructive" onClick={handleConfirmDelete}>
               Löschen
             </Button>
           </DialogFooter>

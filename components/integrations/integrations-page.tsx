@@ -6,6 +6,14 @@ import { useState } from "react";
 import { Inbox, RefreshCw, X, Check, AlertCircle, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Provider = "gmail" | "outlook" | "imap";
 
@@ -343,21 +351,27 @@ export function IntegrationsPage() {
                         {assignedCreator.initials}
                       </span>
                     )}
-                    <select
+                    <Select
                       value={integ.creator_id ?? ""}
-                      disabled={assigningId === integ.id}
-                      onChange={(e) =>
-                        handleAssignCreator(integ.id, e.target.value || null)
+                      onValueChange={(v) =>
+                        handleAssignCreator(integ.id, v || null)
                       }
-                      className="text-xs px-2 py-1.5 rounded-xl bg-muted border border-border-light outline-none max-w-35 text-muted-foreground"
                     >
-                      <option value="">Kein Creator</option>
-                      {creators.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.full_name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger
+                        className="h-7 text-xs max-w-35"
+                        disabled={assigningId === integ.id}
+                      >
+                        <SelectValue placeholder="Kein Creator" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Kein Creator</SelectItem>
+                        {creators.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.full_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <span
@@ -478,60 +492,28 @@ export function IntegrationsPage() {
             {/* Form */}
             <div className="p-5 flex flex-col gap-3.5">
               <Field label="E-Mail-Adresse">
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => handleEmailChange(e.target.value)}
-                  placeholder="du@gmail.com"
-                  className="w-full px-3 py-2 rounded-xl bg-card border border-border-light text-sm outline-none focus:ring-1 focus:ring-foreground/20"
-                />
+                <Input type="email" value={form.email} onChange={(e) => handleEmailChange(e.target.value)} placeholder="du@gmail.com" />
               </Field>
 
               <Field label="Anzeigename (optional)">
-                <input
-                  value={form.display_name}
-                  onChange={(e) => setForm((f) => ({ ...f, display_name: e.target.value }))}
-                  placeholder="Partnerships Inbox"
-                  className="w-full px-3 py-2 rounded-xl bg-card border border-border-light text-sm outline-none focus:ring-1 focus:ring-foreground/20"
-                />
+                <Input value={form.display_name} onChange={(e) => setForm((f) => ({ ...f, display_name: e.target.value }))} placeholder="Partnerships Inbox" />
               </Field>
 
               <div className="grid grid-cols-[2fr_1fr] gap-2.5">
                 <Field label="IMAP-Host">
-                  <input
-                    value={form.imap_host}
-                    onChange={(e) => setForm((f) => ({ ...f, imap_host: e.target.value }))}
-                    placeholder="imap.gmail.com"
-                    className="w-full px-3 py-2 rounded-xl bg-card border border-border-light text-sm outline-none focus:ring-1 focus:ring-foreground/20"
-                  />
+                  <Input value={form.imap_host} onChange={(e) => setForm((f) => ({ ...f, imap_host: e.target.value }))} placeholder="imap.gmail.com" />
                 </Field>
                 <Field label="Port">
-                  <input
-                    type="number"
-                    value={form.imap_port}
-                    onChange={(e) => setForm((f) => ({ ...f, imap_port: parseInt(e.target.value, 10) || 993 }))}
-                    className="w-full px-3 py-2 rounded-xl bg-card border border-border-light text-sm outline-none focus:ring-1 focus:ring-foreground/20"
-                  />
+                  <Input type="number" value={form.imap_port} onChange={(e) => setForm((f) => ({ ...f, imap_port: parseInt(e.target.value, 10) || 993 }))} />
                 </Field>
               </div>
 
               <Field label="IMAP-Benutzername (Standard: E-Mail)">
-                <input
-                  value={form.imap_username}
-                  onChange={(e) => setForm((f) => ({ ...f, imap_username: e.target.value }))}
-                  placeholder={form.email || "du@gmail.com"}
-                  className="w-full px-3 py-2 rounded-xl bg-card border border-border-light text-sm outline-none focus:ring-1 focus:ring-foreground/20"
-                />
+                <Input value={form.imap_username} onChange={(e) => setForm((f) => ({ ...f, imap_username: e.target.value }))} placeholder={form.email || "du@gmail.com"} />
               </Field>
 
               <Field label="IMAP-Passwort / App-Passwort">
-                <input
-                  type="password"
-                  value={form.imap_password}
-                  onChange={(e) => setForm((f) => ({ ...f, imap_password: e.target.value }))}
-                  placeholder="••••••••••••••••"
-                  className="w-full px-3 py-2 rounded-xl bg-card border border-border-light text-sm outline-none focus:ring-1 focus:ring-foreground/20"
-                />
+                <Input type="password" value={form.imap_password} onChange={(e) => setForm((f) => ({ ...f, imap_password: e.target.value }))} placeholder="••••••••••••••••" />
               </Field>
 
               <details className="text-xs text-muted-foreground">
@@ -540,20 +522,10 @@ export function IntegrationsPage() {
                 </summary>
                 <div className="grid grid-cols-[2fr_1fr] gap-2.5 mt-3">
                   <Field label="SMTP-Host">
-                    <input
-                      value={form.smtp_host}
-                      onChange={(e) => setForm((f) => ({ ...f, smtp_host: e.target.value }))}
-                      placeholder="smtp.gmail.com"
-                      className="w-full px-3 py-2 rounded-xl bg-card border border-border-light text-sm outline-none focus:ring-1 focus:ring-foreground/20"
-                    />
+                    <Input value={form.smtp_host} onChange={(e) => setForm((f) => ({ ...f, smtp_host: e.target.value }))} placeholder="smtp.gmail.com" />
                   </Field>
                   <Field label="Port">
-                    <input
-                      type="number"
-                      value={form.smtp_port}
-                      onChange={(e) => setForm((f) => ({ ...f, smtp_port: parseInt(e.target.value, 10) || 465 }))}
-                      className="w-full px-3 py-2 rounded-xl bg-card border border-border-light text-sm outline-none focus:ring-1 focus:ring-foreground/20"
-                    />
+                    <Input type="number" value={form.smtp_port} onChange={(e) => setForm((f) => ({ ...f, smtp_port: parseInt(e.target.value, 10) || 465 }))} />
                   </Field>
                 </div>
               </details>

@@ -12,6 +12,7 @@ import {
   CreatorSheet,
   type Creator,
 } from "@/components/creators/creator-sheet";
+import { PlatformSheet } from "@/components/creators/platform-sheet";
 import type { CreatorsPageData } from "@/domains/creators";
 
 export default function CreatorsPage() {
@@ -46,6 +47,7 @@ export default function CreatorsPage() {
 
   const [search, setSearch] = useState("");
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [platformId, setPlatformId] = useState<string | null>(null);
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handleCardClick(id: string) {
@@ -135,6 +137,7 @@ export default function CreatorsPage() {
                 c={c}
                 activeDeals={activePerCreator(c.id)}
                 onOpenSheet={() => handleCardClick(c.id)}
+                onOpenPlatformSheet={() => setPlatformId(c.id)}
               />
             ))}
           </div>
@@ -151,6 +154,13 @@ export default function CreatorsPage() {
         onDelete={async (id) => {
           await deleteMutation.mutateAsync(id);
           setProfileId(null);
+        }}
+      />
+      <PlatformSheet
+        creator={creators.find((c) => c.id === platformId) ?? null}
+        open={!!platformId}
+        onOpenChange={(open) => {
+          if (!open) setPlatformId(null);
         }}
       />
     </div>

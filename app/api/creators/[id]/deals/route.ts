@@ -67,6 +67,7 @@ export async function POST(
         description: notes || null,
         budget: fee,
         payment_items,
+        status: "confirmed",
         source: "manual",
       })
       .select("id")

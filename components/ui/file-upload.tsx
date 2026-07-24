@@ -36,6 +36,15 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -598,12 +607,11 @@ export function DocumentUpload({ creatorId }: { creatorId: string }) {
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
-            <input
-              type="text"
+            <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Suchen…"
-              className="bg-background placeholder:text-muted-foreground h-7 w-44 rounded-lg border border-border px-7 text-[13px] outline-none focus:ring-2 focus:ring-ring/50"
+              className="h-7 w-44 pl-7 text-[13px]"
               aria-label="Dateien suchen"
             />
             <SearchIcon
@@ -613,16 +621,16 @@ export function DocumentUpload({ creatorId }: { creatorId: string }) {
           </div>
 
           <div className="flex items-center gap-1">
-            <select
-              className="bg-background h-7 rounded-lg border border-border px-2 text-[13px] text-foreground"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              aria-label="Sortieren nach"
-            >
-              <option value="name">Name</option>
-              <option value="type">Typ</option>
-              <option value="size">Größe</option>
-            </select>
+            <Select value={sortBy} onValueChange={(v) => v && setSortBy(v as typeof sortBy)}>
+              <SelectTrigger className="h-7 text-[13px]" aria-label="Sortieren nach">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="type">Typ</SelectItem>
+                <SelectItem value="size">Größe</SelectItem>
+              </SelectContent>
+            </Select>
             <Button
               variant="outline"
               size="icon-sm"
@@ -692,11 +700,9 @@ export function DocumentUpload({ creatorId }: { creatorId: string }) {
           {/* Bulk action bar */}
           <div className="flex items-center justify-between gap-2">
             <label className="inline-flex cursor-pointer items-center gap-1.5 text-[13px]">
-              <input
-                type="checkbox"
-                className="accent-primary size-3.5"
+              <Checkbox
                 checked={allSelected}
-                onChange={toggleAll}
+                onCheckedChange={() => toggleAll()}
                 aria-label={allSelected ? "Alle abwählen" : "Alle auswählen"}
               />
               <span className="text-muted-foreground">
@@ -740,11 +746,9 @@ export function DocumentUpload({ creatorId }: { creatorId: string }) {
                     return (
                       <TableRow key={doc.id} className={isSelected ? "bg-primary/5" : ""}>
                         <TableCell className="py-2">
-                          <input
-                            type="checkbox"
-                            className="accent-primary size-3.5"
+                          <Checkbox
                             checked={isSelected}
-                            onChange={() => toggleOne(doc.id)}
+                            onCheckedChange={() => toggleOne(doc.id)}
                             aria-label={`${doc.name} auswählen`}
                           />
                         </TableCell>
@@ -805,9 +809,11 @@ export function DocumentUpload({ creatorId }: { creatorId: string }) {
                     }`}
                   >
                     <label className="bg-card/80 absolute left-2 top-2 z-10 inline-flex items-center rounded-lg px-1.5 py-1">
-                      <input type="checkbox" className="accent-primary size-3.5"
-                        checked={isSelected} onChange={() => toggleOne(doc.id)}
-                        aria-label={`${doc.name} auswählen`} />
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleOne(doc.id)}
+                        aria-label={`${doc.name} auswählen`}
+                      />
                     </label>
                     <div className="relative h-24 w-full overflow-hidden bg-muted/30">
                       {isImage && doc.url ? (

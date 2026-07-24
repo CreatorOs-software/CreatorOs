@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check } from "lucide-react";
 import { useForm } from "@tanstack/react-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Stepper } from "@/components/ui/stepper";
 import type { Creator } from "@/domains/creators/types";
@@ -26,6 +27,7 @@ interface CreateDealWizardProps {
 
 export function CreateDealWizard({ creator, brands, creators }: CreateDealWizardProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
@@ -50,6 +52,7 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
           const json = await res.json().catch(() => ({}));
           throw new Error(json.error ?? "Fehler beim Speichern");
         }
+        await queryClient.invalidateQueries({ queryKey: ["creator-deals-full", creator.id] });
         setDone(true);
       } catch (e) {
         setSubmitError((e as Error).message ?? "Fehler beim Speichern");

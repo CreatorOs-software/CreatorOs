@@ -121,13 +121,11 @@ function FinanzenPanel({
 }
 
 export function UebersichtTab({
-  creator,
   creatorId,
   deals,
   invoices,
   isPending,
 }: {
-  creator: import("@/domains/creators/types").Creator | null;
   creatorId: string;
   deals: DealFull[];
   invoices: Invoice[];
@@ -143,22 +141,6 @@ export function UebersichtTab({
 
   return (
     <div className="flex flex-col gap-4 pb-6">
-      {creator && (
-        <div className="flex items-center gap-4 py-2">
-          <span
-            className="w-14 h-14 rounded-2xl shrink-0 inline-flex items-center justify-center font-bold text-white text-lg"
-            style={{ background: creator.color }}
-          >
-            {creator.initials}
-          </span>
-          <div>
-            <h2 className="text-2xl font-semibold leading-tight">{creator.full_name}</h2>
-            {creator.handle && (
-              <p className="text-sm text-muted-foreground">@{creator.handle}</p>
-            )}
-          </div>
-        </div>
-      )}
       <FinanzenPanel deals={deals} invoices={invoices} />
       <CalendarCard creatorId={creatorId} />
     </div>
