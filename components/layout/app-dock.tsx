@@ -13,30 +13,88 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GlassEffect, GlassFilter } from "@/components/ui/liquid-glass";
-import { useDock } from "./dock-context";
+import { FloatingWindow } from "@/components/ui/floating-window";
+import { useDock, type PanelId } from "./dock-context";
 
 type DockItem =
-  | { label: string; href: string; icon: React.ElementType; action?: never }
-  | { label: string; action: () => void; icon: React.ElementType; href?: never };
+  | { label: string; href: string; icon: React.ElementType; panel?: never }
+  | { label: string; panel: PanelId; icon: React.ElementType; href?: never };
 
 const dockItems: DockItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Inbox", href: "/inbox", icon: Inbox },
-  { label: "Benachrichtigungen", action: () => {}, icon: Bell },
-  { label: "Notizen", action: () => {}, icon: NotebookPen },
-  { label: "Todos", action: () => {}, icon: CheckSquare },
+  { label: "Inbox", panel: "inbox", icon: Inbox },
+  { label: "Benachrichtigungen", panel: "benachrichtigungen", icon: Bell },
+  { label: "Notizen", panel: "notizen", icon: NotebookPen },
+  { label: "Todos", panel: "todos", icon: CheckSquare },
   { label: "Settings", href: "/settings", icon: Settings2 },
 ];
 
-const springTransition = { type: "spring", stiffness: 400, damping: 20 } as const;
+const panelConfig: Record<PanelId, { title: string; placeholder: string }> = {
+  inbox: {
+    title: "Inbox",
+    placeholder: "Deine Nachrichten erscheinen hier.",
+  },
+  benachrichtigungen: {
+    title: "Benachrichtigungen",
+    placeholder: "Keine neuen Benachrichtigungen.",
+  },
+  notizen: {
+    title: "Notizen",
+    placeholder: "Deine Notizen erscheinen hier.",
+  },
+  todos: {
+    title: "Todos",
+    placeholder: "Deine To-dos erscheinen hier.",
+  },
+};
+
+const springTransition = {
+  type: "spring",
+  stiffness: 400,
+  damping: 20,
+} as const;
+
+function bottomRightPosition() {
+  if (typeof window === "undefined") return { x: 24, y: 80 };
+  return {
+    x: window.innerWidth - 440 - 24,
+    y: window.innerHeight - 520 - 30,
+  };
+}
 
 export function AppDock() {
-  const { dockVisible } = useDock();
+  const { dockVisible, activePanel, setActivePanel } = useDock();
   const pathname = usePathname();
+
+  function handlePanelToggle(panel: PanelId) {
+    setActivePanel(activePanel === panel ? null : panel);
+  }
 
   return (
     <>
       <GlassFilter />
+
+      {/* Floating panel – keyed by panel so position resets on switch */}
+      {activePanel && (
+        <FloatingWindow.Root
+          key={activePanel}
+          open={activePanel !== null}
+          onOpenChange={(open) => {
+            if (!open) setActivePanel(null);
+          }}
+          defaultPosition={bottomRightPosition()}
+        >
+          <FloatingWindow.Content>
+            <FloatingWindow.Header title={panelConfig[activePanel].title} />
+            <FloatingWindow.Body>
+              <p className="text-sm text-muted-foreground">
+                {panelConfig[activePanel].placeholder}
+              </p>
+            </FloatingWindow.Body>
+          </FloatingWindow.Content>
+        </FloatingWindow.Root>
+      )}
+
       <AnimatePresence>
         {dockVisible && (
           <motion.div
@@ -59,8 +117,10 @@ export function AppDock() {
                 {dockItems.map((item) => {
                   const { label, icon: Icon } = item;
                   const isActive =
-                    item.href !== undefined &&
-                    (pathname === item.href || pathname.startsWith(item.href + "/"));
+                    item.href !== undefined
+                      ? pathname === item.href ||
+                        pathname.startsWith(item.href + "/")
+                      : item.panel === activePanel;
 
                   const iconNode = (
                     <motion.div
@@ -69,13 +129,13 @@ export function AppDock() {
                       transition={springTransition}
                       className={cn(
                         "w-12 h-12 flex items-center justify-center rounded-2xl transition-colors duration-200",
-                        isActive ? "bg-white/40" : "hover:bg-white/20",
+                        isActive ? "bg-black" : "hover:bg-white/20",
                       )}
                     >
                       <Icon
                         className={cn(
                           "w-5.5 h-5.5 transition-colors",
-                          isActive ? "text-black" : "text-black/65",
+                          isActive ? "text-white" : "text-black/65",
                         )}
                       />
                     </motion.div>
@@ -86,7 +146,11 @@ export function AppDock() {
                       {iconNode}
                     </Link>
                   ) : (
-                    <button key={label} onClick={item.action} title={label}>
+                    <button
+                      key={label}
+                      title={label}
+                      onClick={() => handlePanelToggle(item.panel)}
+                    >
                       {iconNode}
                     </button>
                   );
