@@ -19,6 +19,12 @@ export function TableProgress({
   const [hoveredSegment, setHoveredSegment] = useState<number | null>(null)
   const filledSegments = Math.round((value / 100) * segments)
 
+  const barColor =
+    value <= 10 ? "bg-red-500" :
+    value <= 40 ? "bg-orange-500" :
+    value <= 80 ? "bg-yellow-400" :
+    "bg-green-500"
+
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <div
@@ -52,7 +58,7 @@ export function TableProgress({
               className={cn(
                 "h-2.5 w-2.5 rounded-[3px] cursor-default origin-center",
                 "transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
-                isFilled ? "bg-accent" : "bg-muted/60",
+                isFilled ? barColor : "bg-muted/60",
                 isHovered && isFilled && "brightness-110",
                 isHovered && !isFilled && "bg-muted",
                 hoveredSegment !== null && !isFilled && !isHovered && "bg-muted/40",
