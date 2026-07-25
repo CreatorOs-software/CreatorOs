@@ -63,7 +63,7 @@ function DockToggleButton() {
       onClick={toggleDock}
       title={dockVisible ? "Dock schließen" : "Dock öffnen"}
       className={cn(
-        "flex items-center rounded-md py-2 transition-colors text-sidebar-foreground hover:bg-sidebar-accent/50",
+        "flex items-center rounded-full py-2 transition-colors text-sidebar-foreground hover:bg-sidebar-accent/50",
         open ? "gap-3 px-2 w-full" : "justify-center w-full",
       )}
     >
@@ -122,7 +122,7 @@ function ProfileSection() {
         </p>
         <button
           onClick={signOut}
-          className="ml-2 p-1 rounded-md hover:bg-sidebar-accent transition-colors shrink-0"
+          className="ml-2 p-1 rounded-full hover:bg-sidebar-accent transition-colors shrink-0"
           title="Abmelden"
         >
           <LogOut className="w-4 h-4 text-current" />

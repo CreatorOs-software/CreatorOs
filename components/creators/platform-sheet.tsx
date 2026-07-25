@@ -295,15 +295,14 @@ export function PlatformSheet({
                                 />
                               </Button>
                               <Button
-                                variant="ghost"
+                                variant="default"
                                 size="sm"
-                                className="h-7 w-7 p-0 text-muted-foreground/40 hover:text-destructive"
                                 onClick={() =>
                                   setDisconnectConfirmId(account!.id)
                                 }
                                 title="Verbindung trennen"
                               >
-                                <Link2Off className="w-3.5 h-3.5" />
+                                Verbindung trennen
                               </Button>
                             </div>
                           )
