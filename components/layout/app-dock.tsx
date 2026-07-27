@@ -14,6 +14,8 @@ import {
 import { cn } from "@/lib/utils";
 import { GlassEffect, GlassFilter } from "@/components/ui/liquid-glass";
 import { FloatingWindow } from "@/components/ui/floating-window";
+import { TodoPanel } from "@/components/ui/todo-panel";
+import { NotesPanel } from "@/components/ui/notes-panel";
 import { useDock, type PanelId } from "./dock-context";
 
 type DockItem =
@@ -54,12 +56,23 @@ const springTransition = {
   damping: 20,
 } as const;
 
-function bottomRightPosition() {
-  if (typeof window === "undefined") return { x: 24, y: 80 };
-  return {
-    x: window.innerWidth - 440 - 24,
-    y: window.innerHeight - 520 - 30,
-  };
+const PANEL_SIZES: Record<PanelId, { width: number; height: number }> = {
+  notizen:          { width: 640, height: 480 },
+  todos:            { width: 440, height: 520 },
+  inbox:            { width: 440, height: 520 },
+  benachrichtigungen: { width: 440, height: 520 },
+};
+
+function getPanelDefaults(panel: PanelId) {
+  const size = PANEL_SIZES[panel];
+  const position =
+    typeof window === "undefined"
+      ? { x: 24, y: 80 }
+      : {
+          x: window.innerWidth - size.width - 24,
+          y: window.innerHeight - size.height - 30,
+        };
+  return { size, position };
 }
 
 export function AppDock() {
@@ -82,15 +95,24 @@ export function AppDock() {
           onOpenChange={(open) => {
             if (!open) setActivePanel(null);
           }}
-          defaultPosition={bottomRightPosition()}
+          defaultPosition={getPanelDefaults(activePanel).position}
+          defaultSize={getPanelDefaults(activePanel).size}
         >
           <FloatingWindow.Content>
-            <FloatingWindow.Header title={panelConfig[activePanel].title} />
-            <FloatingWindow.Body>
-              <p className="text-sm text-muted-foreground">
-                {panelConfig[activePanel].placeholder}
-              </p>
-            </FloatingWindow.Body>
+            {activePanel === "todos" ? (
+              <TodoPanel />
+            ) : activePanel === "notizen" ? (
+              <NotesPanel />
+            ) : (
+              <>
+                <FloatingWindow.Header title={panelConfig[activePanel].title} />
+                <FloatingWindow.Body>
+                  <p className="text-sm text-muted-foreground">
+                    {panelConfig[activePanel].placeholder}
+                  </p>
+                </FloatingWindow.Body>
+              </>
+            )}
           </FloatingWindow.Content>
         </FloatingWindow.Root>
       )}

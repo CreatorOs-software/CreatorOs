@@ -1,43 +1,15 @@
 "use client";
 
-import React, {
-  useState,
-  useRef,
-  useCallback,
-  useEffect,
-  createContext,
-  useContext,
-  useId,
-} from "react";
-import { Pin, X, GripHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import React from "react";
+import { FloatingPanel } from "@ark-ui/react/floating-panel";
+import { Portal } from "@ark-ui/react/portal";
+import { ArrowDownLeft, ArrowLeft, GripHorizontal, Maximize2, Minus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const WIN_WIDTH = 440;
-const WIN_HEIGHT = 520;
+// ─── Shared button style for header controls ───────────────────────────────────
 
-// ─── Context ─────────────────────────────────────────────────────────────────
-
-interface FloatingWindowContextValue {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  pinned: boolean;
-  setPinned: React.Dispatch<React.SetStateAction<boolean>>;
-  position: { x: number; y: number };
-  startDrag: (clientX: number, clientY: number) => void;
-  windowRef: React.RefObject<HTMLDivElement | null>;
-}
-
-const FloatingWindowContext = createContext<FloatingWindowContextValue | null>(
-  null,
-);
-
-function useFloatingWindow() {
-  const ctx = useContext(FloatingWindowContext);
-  if (!ctx)
-    throw new Error("FloatingWindow.* must be used inside FloatingWindow.Root");
-  return ctx;
-}
+const ctrlCls =
+  "flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-black/8 hover:text-foreground";
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
@@ -45,89 +17,42 @@ interface RootProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultPosition?: { x: number; y: number };
+  defaultSize?: { width: number; height: number };
   children: React.ReactNode;
 }
 
-function Root({ open, onOpenChange, defaultPosition, children }: RootProps) {
-  const [pinned, setPinned] = useState(false);
-  const [position, setPosition] = useState(
-    defaultPosition ?? { x: 120, y: 20 },
-  );
-  const dragState = useRef<{ offsetX: number; offsetY: number } | null>(null);
-  const windowRef = useRef<HTMLDivElement | null>(null);
-
-  const startDrag = useCallback(
-    (clientX: number, clientY: number) => {
-      dragState.current = {
-        offsetX: clientX - position.x,
-        offsetY: clientY - position.y,
-      };
-    },
-    [position],
-  );
-
-  const onPointerMove = useCallback((e: PointerEvent) => {
-    if (!dragState.current) return;
-    const { offsetX, offsetY } = dragState.current;
-    const maxX = window.innerWidth - WIN_WIDTH;
-    const maxY = window.innerHeight - WIN_HEIGHT;
-    setPosition({
-      x: Math.min(Math.max(0, e.clientX - offsetX), Math.max(0, maxX)),
-      y: Math.min(Math.max(0, e.clientY - offsetY), Math.max(0, maxY)),
-    });
-  }, []);
-
-  const onPointerUp = useCallback(() => {
-    dragState.current = null;
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-    return () => {
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-    };
-  }, [onPointerMove, onPointerUp]);
-
-  // Outside click closes when not pinned
-  useEffect(() => {
-    if (!open) return;
-    function handlePointerDown(e: PointerEvent) {
-      if (pinned) return;
-      if (windowRef.current && !windowRef.current.contains(e.target as Node)) {
-        onOpenChange(false);
-      }
-    }
-    document.addEventListener("pointerdown", handlePointerDown, true);
-    return () =>
-      document.removeEventListener("pointerdown", handlePointerDown, true);
-  }, [open, pinned, onOpenChange]);
-
-  // Escape always closes
-  useEffect(() => {
-    if (!open) return;
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onOpenChange(false);
-    }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [open, onOpenChange]);
-
+function Root({ open, onOpenChange, defaultPosition, defaultSize, children }: RootProps) {
   return (
-    <FloatingWindowContext.Provider
-      value={{
-        open,
-        onOpenChange,
-        pinned,
-        setPinned,
-        position,
-        startDrag,
-        windowRef,
-      }}
+    <FloatingPanel.Root
+      open={open}
+      onOpenChange={(d) => onOpenChange(d.open)}
+      defaultPosition={defaultPosition ?? { x: 120, y: 80 }}
+      defaultSize={defaultSize ?? { width: 440, height: 520 }}
+      minSize={{ width: 320, height: 380 }}
     >
-      {children}
-    </FloatingWindowContext.Provider>
+      <Portal>
+        <FloatingPanel.Positioner style={{ zIndex: 50 }}>
+          <FloatingPanel.Content
+            className="relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-lg data-maximized:rounded-none"
+            style={{
+              boxShadow: "0 1px 2px oklch(0 0 0 / 0.04), 0 16px 40px oklch(0 0 0 / 0.12)",
+            }}
+          >
+            {children}
+
+            {/* Resize handles */}
+            <FloatingPanel.ResizeTrigger axis="n" className="absolute top-0 left-2 right-2 h-1.5 cursor-n-resize opacity-0" />
+            <FloatingPanel.ResizeTrigger axis="e" className="absolute top-2 right-0 bottom-2 w-1.5 cursor-e-resize opacity-0" />
+            <FloatingPanel.ResizeTrigger axis="w" className="absolute top-2 left-0 bottom-2 w-1.5 cursor-w-resize opacity-0" />
+            <FloatingPanel.ResizeTrigger axis="s" className="absolute bottom-0 left-2 right-2 h-1.5 cursor-s-resize opacity-0" />
+            <FloatingPanel.ResizeTrigger axis="ne" className="absolute top-0 right-0 size-3 cursor-ne-resize opacity-0" />
+            <FloatingPanel.ResizeTrigger axis="se" className="absolute bottom-0 right-0 size-3 cursor-se-resize opacity-0" />
+            <FloatingPanel.ResizeTrigger axis="sw" className="absolute bottom-0 left-0 size-3 cursor-sw-resize opacity-0" />
+            <FloatingPanel.ResizeTrigger axis="nw" className="absolute top-0 left-0 size-3 cursor-nw-resize opacity-0" />
+          </FloatingPanel.Content>
+        </FloatingPanel.Positioner>
+      </Portal>
+    </FloatingPanel.Root>
   );
 }
 
@@ -136,100 +61,71 @@ function Root({ open, onOpenChange, defaultPosition, children }: RootProps) {
 interface ContentProps {
   children: React.ReactNode;
   className?: string;
-  labelledBy?: string;
 }
 
-function Content({ children, className, labelledBy }: ContentProps) {
-  const { open, position, windowRef } = useFloatingWindow();
-  if (!open) return null;
-
-  return (
-    <div
-      ref={windowRef}
-      role="dialog"
-      aria-modal="false"
-      aria-labelledby={labelledBy}
-      className={cn(
-        "fixed z-50 flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-lg",
-        className,
-      )}
-      style={{
-        left: position.x,
-        top: position.y,
-        width: WIN_WIDTH,
-        height: WIN_HEIGHT,
-        boxShadow:
-          "0 1px 2px oklch(0 0 0 / 0.04), 0 16px 40px oklch(0 0 0 / 0.12)",
-      }}
-    >
-      {children}
-    </div>
-  );
+function Content({ children }: ContentProps) {
+  return <>{children}</>;
 }
 
 // ─── Header ───────────────────────────────────────────────────────────────────
 
 interface HeaderProps {
   title: string;
+  className?: string;
+  children?: React.ReactNode;
+  onBack?: () => void;
 }
 
-function Header({ title }: HeaderProps) {
-  const { startDrag, pinned, setPinned, onOpenChange } = useFloatingWindow();
-  const titleId = useId();
+function Header({ title, className, children, onBack }: HeaderProps) {
+  const headerEl = (
+    <FloatingPanel.Header
+      className={cn(
+        "flex shrink-0 select-none items-center gap-2 border-b border-border bg-muted px-3 py-2.5",
+        !onBack && "cursor-grab active:cursor-grabbing",
+        className,
+      )}
+    >
+      {onBack ? (
+        <button type="button" onClick={onBack} className={ctrlCls} aria-label="Zurück">
+          <ArrowLeft className="size-3.5" />
+        </button>
+      ) : (
+        <GripHorizontal className="size-3.5 shrink-0 text-muted-foreground/60" />
+      )}
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest("button")) return;
-    e.preventDefault();
-    startDrag(e.clientX, e.clientY);
-  };
+      <FloatingPanel.Title className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-sm font-semibold text-foreground">
+        {title}
+      </FloatingPanel.Title>
+
+      {children}
+
+      <FloatingPanel.Control className="flex items-center gap-0.5">
+        {!onBack && (
+          <>
+            <FloatingPanel.StageTrigger stage="minimized" className={ctrlCls}>
+              <Minus className="size-3.5" />
+            </FloatingPanel.StageTrigger>
+            <FloatingPanel.StageTrigger stage="maximized" className={ctrlCls}>
+              <Maximize2 className="size-3.5" />
+            </FloatingPanel.StageTrigger>
+            <FloatingPanel.StageTrigger stage="default" className={ctrlCls}>
+              <ArrowDownLeft className="size-3.5" />
+            </FloatingPanel.StageTrigger>
+          </>
+        )}
+        <FloatingPanel.CloseTrigger className={cn(ctrlCls, "hover:bg-red-50 hover:text-red-600")}>
+          <X className="size-3.5" />
+        </FloatingPanel.CloseTrigger>
+      </FloatingPanel.Control>
+    </FloatingPanel.Header>
+  );
+
+  if (onBack) return headerEl;
 
   return (
-    <div
-      onPointerDown={handlePointerDown}
-      className="flex shrink-0 cursor-grab select-none items-center gap-2 border-b border-border bg-muted px-3 py-2.5 active:cursor-grabbing"
-    >
-      <GripHorizontal className="size-3.5 shrink-0 text-muted-foreground" />
-      <span
-        id={titleId}
-        className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-sm font-semibold text-foreground"
-      >
-        {title}
-      </span>
-
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        aria-pressed={pinned}
-        aria-label={pinned ? "Fenster lösen" : "Fenster anpinnen"}
-        title={
-          pinned
-            ? "Angepinnt – bleibt beim Klicken außerhalb offen"
-            : "Anpinnen"
-        }
-        className={cn(
-          pinned && "bg-primary text-primary-foreground hover:bg-primary/80",
-        )}
-        onClick={() => setPinned((p) => !p)}
-      >
-        <Pin
-          className={cn(
-            "size-3.5 transition-transform",
-            pinned ? "rotate-0" : "rotate-45",
-          )}
-        />
-      </Button>
-
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        aria-label="Fenster schließen"
-        onClick={() => onOpenChange(false)}
-      >
-        <X className="size-3.5" />
-      </Button>
-    </div>
+    <FloatingPanel.DragTrigger>
+      {headerEl}
+    </FloatingPanel.DragTrigger>
   );
 }
 
@@ -242,7 +138,9 @@ interface BodyProps {
 
 function Body({ children, className }: BodyProps) {
   return (
-    <div className={cn("flex-1 overflow-auto p-4", className)}>{children}</div>
+    <FloatingPanel.Body className={cn("flex-1 overflow-auto p-4", className)}>
+      {children}
+    </FloatingPanel.Body>
   );
 }
 
