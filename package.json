@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ark-ui/react": "^5.37.2",
     "@base-ui/react": "^1.5.0",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@supabase/ssr": "^0.10.3",
@@ -17,6 +18,12 @@
     "@tanstack/react-query": "^5.100.14",
     "@tanstack/react-query-devtools": "^5.100.14",
     "@tanstack/react-table": "^8.21.3",
+    "@tiptap/extension-link": "^3.29.1",
+    "@tiptap/extension-placeholder": "^3.29.1",
+    "@tiptap/extension-underline": "^3.29.1",
+    "@tiptap/pm": "^3.29.1",
+    "@tiptap/react": "^3.29.1",
+    "@tiptap/starter-kit": "^3.29.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",

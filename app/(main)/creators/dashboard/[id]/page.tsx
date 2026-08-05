@@ -236,6 +236,7 @@ export default function CreatorDashboardPage() {
               creatorId={id}
               deals={deals}
               invoices={invoices}
+              creator={creator}
               isPending={creatorPending}
             />
           </TabsContent>

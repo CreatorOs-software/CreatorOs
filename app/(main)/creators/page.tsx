@@ -42,8 +42,17 @@ export default function CreatorsPage() {
     staleTime: 5 * 60_000,
   });
 
+  const { data: todosData } = useQuery<{ todos: { assignee?: { id: string } | null; done: boolean }[] }>({
+    queryKey: QueryKeys.todos.all(),
+    queryFn: () => fetch("/api/todos").then((r) => r.json()),
+    staleTime: 2 * 60_000,
+  });
+
   const creators: Creator[] = allData?.creators ?? [];
   const deals = allData?.deals ?? [];
+
+  const todoCountPerCreator = (id: string) =>
+    (todosData?.todos ?? []).filter((t) => !t.done && t.assignee?.id === id).length;
 
   const [search, setSearch] = useState("");
   const [profileId, setProfileId] = useState<string | null>(null);
@@ -136,6 +145,7 @@ export default function CreatorsPage() {
                 key={c.id}
                 c={c}
                 activeDeals={activePerCreator(c.id)}
+                todoCount={todoCountPerCreator(c.id)}
                 onOpenSheet={() => handleCardClick(c.id)}
                 onOpenPlatformSheet={() => setPlatformId(c.id)}
               />
