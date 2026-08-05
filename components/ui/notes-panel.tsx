@@ -78,11 +78,11 @@ export function NotesPanel() {
     fetchNotes();
     fetch("/api/creators/list")
       .then((r) => r.json())
-      .then((d: { creators: Creator[] }) => setCreators(d.creators))
+      .then((d: { creators?: Creator[] }) => setCreators(d.creators ?? []))
       .catch(() => {});
     fetch("/api/brands")
       .then((r) => r.json())
-      .then((d: { brands: Brand[] }) => setBrands(d.brands))
+      .then((d: { brands?: Brand[] }) => setBrands(d.brands ?? []))
       .catch(() => {});
   }, [fetchNotes]);
 

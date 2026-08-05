@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { QueryKeys } from "@/lib/query-keys";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,31 +86,26 @@ function formatDate(iso: string) {
 // ─── Main panel ───────────────────────────────────────────────────────────────
 
 export function TodoPanel() {
-  const [items, setItems] = useState<TodoItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [creators, setCreators] = useState<Creator[]>([]);
   const [view, setView] = useState<"list" | "form">("list");
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
-  const fetchTodos = useCallback(async () => {
-    try {
-      const res = await fetch("/api/todos");
-      if (!res.ok) return;
-      const data = await res.json();
-      setItems(data.todos ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data, isPending: loading } = useQuery<{ todos: TodoItem[] }>({
+    queryKey: QueryKeys.todos.all(),
+    queryFn: () => fetch("/api/todos").then((r) => r.json()),
+    staleTime: 2 * 60_000,
+  });
+
+  const items = data?.todos ?? [];
 
   useEffect(() => {
-    fetchTodos();
     fetch("/api/creators/list")
       .then((r) => r.json())
-      .then((data: { creators: Creator[] }) => setCreators(data.creators))
+      .then((d: { creators?: Creator[] }) => setCreators(d.creators ?? []))
       .catch(() => {});
-  }, [fetchTodos]);
+  }, []);
 
   const allDone = useMemo(
     () => items.length > 0 && items.every((i) => i.done),
@@ -130,21 +127,21 @@ export function TodoPanel() {
     return () => clearTimeout(t);
   }, [allDone]);
 
+  function patchCache(updater: (t: TodoItem) => TodoItem) {
+    queryClient.setQueryData<{ todos: TodoItem[] }>(QueryKeys.todos.all(), (old) => ({
+      todos: (old?.todos ?? []).map(updater),
+    }));
+  }
+
   async function toggleItem(item: TodoItem) {
-    // Optimistic update
-    setItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, done: !i.done } : i)),
-    );
+    patchCache((t) => t.id === item.id ? { ...t, done: !t.done } : t);
     const res = await fetch(`/api/todos/${item.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ done: !item.done }),
     });
     if (!res.ok) {
-      // Revert on failure
-      setItems((prev) =>
-        prev.map((i) => (i.id === item.id ? { ...i, done: item.done } : i)),
-      );
+      patchCache((t) => t.id === item.id ? { ...t, done: item.done } : t);
     }
   }
 
@@ -164,7 +161,9 @@ export function TodoPanel() {
       });
       if (!res.ok) return;
       const { todo } = await res.json();
-      setItems((prev) => [...prev, todo]);
+      queryClient.setQueryData<{ todos: TodoItem[] }>(QueryKeys.todos.all(), (old) => ({
+        todos: [...(old?.todos ?? []), todo],
+      }));
       setForm(EMPTY_FORM);
       setView("list");
     } finally {

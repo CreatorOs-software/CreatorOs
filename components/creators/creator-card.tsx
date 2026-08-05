@@ -48,11 +48,13 @@ export function Avatar({
 export function CreatorCard({
   c,
   activeDeals,
+  todoCount,
   onOpenSheet,
   onOpenPlatformSheet,
 }: {
   c: Creator;
   activeDeals: number;
+  todoCount: number;
   onOpenSheet: () => void;
   onOpenPlatformSheet: () => void;
 }) {
@@ -128,9 +130,9 @@ export function CreatorCard({
           </div>
         </div>
         <div className="text-center">
-          <div className="text-[10px] text-muted-foreground mb-0.5">MTD</div>
+          <div className="text-[10px] text-muted-foreground mb-0.5">Todos</div>
           <div className="text-sm font-semibold tabular-nums">
-            {formatMoney(c.monthly_revenue)}
+            {todoCount}
           </div>
         </div>
       </div>

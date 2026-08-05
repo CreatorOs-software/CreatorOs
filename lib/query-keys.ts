@@ -20,4 +20,7 @@ export const QueryKeys = {
     all: () => ["integrations"] as const,
     list: () => ["integrations", "list"] as const,
   },
+  todos: {
+    all: () => ["todos"] as const,
+  },
 } as const;
