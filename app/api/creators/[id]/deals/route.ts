@@ -17,6 +17,9 @@ export async function GET(
         brand_id, creator_id,
         campaign_type, deliverables, description, product, contact_person,
         usage_rights, exclusivity, payment_items, blocker, created_at,
+        campaign_start, campaign_end, contract_status, contract_date, contract_url,
+        rights, approval_info, delivery_info, guidelines, tracking_assets,
+        exclusivity_info, embargo, whitelisting,
         brands(company_name, color, short_code, contact_name, contact_email)
       `)
       .eq("creator_id", creatorId)
@@ -46,8 +49,11 @@ export async function POST(
 
     const {
       title, brand_id, product, platform, creator_id,
-      contact_person, deliverables, deadline, usage_rights, exclusivity, notes,
-      fee, payment_items,
+      contact_person, campaign_start, campaign_end, deliverables,
+      deadline, usage_rights, exclusivity, notes, fee, payment_items,
+      guidelines, tracking_assets,
+      rights, exclusivity_info, embargo, whitelisting,
+      contract_status, contract_date, contract_url,
     } = parsed.data;
 
     const { data: deal, error } = await supabase
@@ -60,11 +66,22 @@ export async function POST(
         product: product || null,
         platform: platform || null,
         contact_person: contact_person || null,
+        campaign_start: campaign_start || null,
+        campaign_end: campaign_end || null,
         deliverables,
         deadline: deadline || null,
         usage_rights: usage_rights || null,
         exclusivity: exclusivity || null,
         description: notes || null,
+        guidelines: guidelines ?? null,
+        tracking_assets: tracking_assets ?? null,
+        rights: rights ?? null,
+        exclusivity_info: exclusivity_info ?? null,
+        embargo: embargo ?? null,
+        whitelisting: whitelisting ?? null,
+        contract_status: contract_status ?? "offen",
+        contract_date: contract_date || null,
+        contract_url: contract_url || null,
         budget: fee,
         payment_items,
         status: "confirmed",

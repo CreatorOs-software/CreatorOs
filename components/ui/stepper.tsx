@@ -12,9 +12,10 @@ export type Step = {
 interface StepperProps {
   steps: Step[];
   current: number;
+  onStepClick?: (stepId: number) => void;
 }
 
-export function Stepper({ steps, current }: StepperProps) {
+export function Stepper({ steps, current, onStepClick }: StepperProps) {
   const total = steps.length;
 
   // Each step takes (1/total) of the full width.
@@ -48,7 +49,11 @@ export function Stepper({ steps, current }: StepperProps) {
         return (
           <div
             key={step.id}
-            className="relative z-10 flex-1 flex flex-col items-center"
+            className={cn(
+              "relative z-10 flex-1 flex flex-col items-center",
+              onStepClick && "cursor-pointer",
+            )}
+            onClick={() => onStepClick?.(step.id)}
           >
             {/* Circle */}
             <div
