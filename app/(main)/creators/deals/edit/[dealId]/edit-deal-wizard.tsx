@@ -15,6 +15,7 @@ import type { StepErrors, BrandOption, CreatorOption } from "../../create-deal/[
 
 import { Step1 } from "../../create-deal/[id]/steps/step-1";
 import { Step2 } from "../../create-deal/[id]/steps/step-2";
+import { Step3Rechte } from "../../create-deal/[id]/steps/step-3-rechte";
 import { Step3 } from "../../create-deal/[id]/steps/step-3";
 import { Step4 } from "../../create-deal/[id]/steps/step-4";
 
@@ -59,11 +60,22 @@ export function EditDealWizard({
             platform: value.platform || null,
             creator_id: value.creator_id || null,
             contact_person: value.contact_person || null,
+            campaign_start: value.campaign_start || null,
+            campaign_end: value.campaign_end || null,
             deliverables: value.deliverables,
             deadline: value.deadline || null,
             usage_rights: value.usage_rights || null,
             exclusivity: value.exclusivity || null,
             description: value.notes || null,
+            guidelines: value.guidelines ?? null,
+            tracking_assets: value.tracking_assets ?? null,
+            rights: value.rights ?? null,
+            exclusivity_info: value.exclusivity_info ?? null,
+            embargo: value.embargo ?? null,
+            whitelisting: value.whitelisting ?? null,
+            contract_status: value.contract_status || null,
+            contract_date: value.contract_date || null,
+            contract_url: value.contract_url || null,
             budget: value.fee,
             payment_items: value.payment_items,
           }),
@@ -81,7 +93,7 @@ export function EditDealWizard({
     },
   });
 
-  function validateStep(stepNum: 1 | 2 | 3 | 4): StepErrors {
+  function validateStep(stepNum: 1 | 2 | 3 | 4 | 5): StepErrors {
     const schema = STEP_SCHEMAS[stepNum];
     const result = schema.safeParse(form.state.values);
     if (result.success) return {};
@@ -95,7 +107,7 @@ export function EditDealWizard({
   }
 
   function handleNext() {
-    const errors = validateStep(step as 1 | 2 | 3 | 4);
+    const errors = validateStep(step as 1 | 2 | 3 | 4 | 5);
     if (Object.keys(errors).length > 0) {
       setStepErrors(errors);
       return;
@@ -216,7 +228,7 @@ export function EditDealWizard({
               />
             )}
             {step === 3 && (
-              <Step3
+              <Step3Rechte
                 form={form}
                 errors={stepErrors}
                 onNext={handleNext}
@@ -224,6 +236,14 @@ export function EditDealWizard({
               />
             )}
             {step === 4 && (
+              <Step3
+                form={form}
+                errors={stepErrors}
+                onNext={handleNext}
+                onPrev={handlePrev}
+              />
+            )}
+            {step === 5 && (
               <Step4
                 values={form.state.values}
                 brands={brands}

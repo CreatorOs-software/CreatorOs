@@ -256,8 +256,25 @@ export function Step4({
           </Row>
         </SectionCard>
 
+        {/* ── Rechte & Konditionen ────────────────────────── */}
+        <SectionCard title="Rechte & Konditionen" onEdit={() => onGoToStep(3)}>
+          <Row label="Umfang">{(values.rights as {scope?: string} | undefined)?.scope?.replace("_", " ") || <Empty />}</Row>
+          <Row label="Territorium">{(values.rights as {territory?: string} | undefined)?.territory || <Empty />}</Row>
+          <Row label="Laufzeit">
+            {(values.rights as {duration_value?: number; duration_unit?: string} | undefined)?.duration_value
+              ? `${(values.rights as {duration_value?: number; duration_unit?: string}).duration_value} ${(values.rights as {duration_value?: number; duration_unit?: string}).duration_unit === "wochen" ? "Wochen" : "Monate"}`
+              : <Empty />}
+          </Row>
+          <Row label="Kanäle">
+            {(values.rights as {channels?: string[]} | undefined)?.channels?.length
+              ? (values.rights as {channels: string[]}).channels.join(", ")
+              : <Empty />}
+          </Row>
+          <Row label="Vertragsstatus">{values.contract_status || <Empty />}</Row>
+        </SectionCard>
+
         {/* ── Zahlung ─────────────────────────────────────── */}
-        <SectionCard title="Zahlung" onEdit={() => onGoToStep(3)}>
+        <SectionCard title="Zahlung" onEdit={() => onGoToStep(4)}>
           <Row label="Gesamthonorar">
             {values.fee > 0 ? (
               <span className="font-medium">{formatCurrency(values.fee)}</span>

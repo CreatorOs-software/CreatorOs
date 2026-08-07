@@ -16,6 +16,7 @@ import type { StepErrors, BrandOption, CreatorOption } from "./deal-form.types";
 
 import { Step1 } from "./steps/step-1";
 import { Step2 } from "./steps/step-2";
+import { Step3Rechte } from "./steps/step-3-rechte";
 import { Step3 } from "./steps/step-3";
 import { Step4 } from "./steps/step-4";
 
@@ -62,7 +63,7 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
     },
   });
 
-  function validateStep(stepNum: 1 | 2 | 3 | 4): StepErrors {
+  function validateStep(stepNum: 1 | 2 | 3 | 4 | 5): StepErrors {
     const schema = STEP_SCHEMAS[stepNum];
     const result = schema.safeParse(form.state.values);
     if (result.success) return {};
@@ -76,7 +77,7 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
   }
 
   function handleNext() {
-    const errors = validateStep(step as 1 | 2 | 3 | 4);
+    const errors = validateStep(step as 1 | 2 | 3 | 4 | 5);
     if (Object.keys(errors).length > 0) {
       setStepErrors(errors);
       return;
@@ -189,7 +190,7 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
               />
             )}
             {step === 3 && (
-              <Step3
+              <Step3Rechte
                 form={form}
                 errors={stepErrors}
                 onNext={handleNext}
@@ -197,6 +198,14 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
               />
             )}
             {step === 4 && (
+              <Step3
+                form={form}
+                errors={stepErrors}
+                onNext={handleNext}
+                onPrev={handlePrev}
+              />
+            )}
+            {step === 5 && (
               <Step4
                 values={form.state.values}
                 brands={brands}

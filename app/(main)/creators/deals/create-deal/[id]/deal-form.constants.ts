@@ -3,8 +3,9 @@ import type { DealFormValues } from "./deal-form.schema";
 export const STEPS = [
   { id: 1, label: "Basisdaten" },
   { id: 2, label: "Rahmendaten" },
-  { id: 3, label: "Zahlung" },
-  { id: 4, label: "Prüfen" },
+  { id: 3, label: "Rechte & Konditionen" },
+  { id: 4, label: "Zahlung" },
+  { id: 5, label: "Prüfen" },
 ];
 
 export const PLATFORM_OPTIONS = [
@@ -43,12 +44,24 @@ export function getInitialValues(creatorId: string): DealFormValues {
     creator_id: creatorId,
     // Step 2
     contact_person: "",
+    campaign_start: "",
+    campaign_end: "",
     deliverables: [],
     deadline: "",
     usage_rights: "",
     exclusivity: "",
     notes: "",
-    // Step 3
+    guidelines: {},
+    tracking_assets: {},
+    // Step 3 – Rechte & Konditionen
+    rights: {},
+    exclusivity_info: {},
+    embargo: {},
+    whitelisting: {},
+    contract_status: "offen",
+    contract_date: "",
+    contract_url: "",
+    // Step 4
     fee: 0,
     payment_items: [
       { label: "Zahlung", amount: 0, invoice_date: "", payment_term: 30 },

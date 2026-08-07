@@ -17,6 +17,19 @@ const patchSchema = z.object({
   description: z.string().nullable().optional(),
   budget: z.number().optional(),
   payment_items: z.array(z.any()).optional(),
+  campaign_start: z.string().nullable().optional(),
+  campaign_end: z.string().nullable().optional(),
+  contract_status: z.string().nullable().optional(),
+  contract_date: z.string().nullable().optional(),
+  contract_url: z.string().nullable().optional(),
+  rights: z.record(z.string(), z.any()).nullable().optional(),
+  approval_info: z.record(z.string(), z.any()).nullable().optional(),
+  delivery_info: z.record(z.string(), z.any()).nullable().optional(),
+  guidelines: z.record(z.string(), z.any()).nullable().optional(),
+  tracking_assets: z.record(z.string(), z.any()).nullable().optional(),
+  exclusivity_info: z.record(z.string(), z.any()).nullable().optional(),
+  embargo: z.record(z.string(), z.any()).nullable().optional(),
+  whitelisting: z.record(z.string(), z.any()).nullable().optional(),
 });
 
 export async function DELETE(
