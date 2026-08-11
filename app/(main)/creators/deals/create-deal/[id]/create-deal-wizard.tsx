@@ -16,6 +16,7 @@ import type { StepErrors, BrandOption, CreatorOption } from "./deal-form.types";
 
 import { Step1 } from "./steps/step-1";
 import { Step2 } from "./steps/step-2";
+import { StepDeliverables } from "./steps/step-deliverables";
 import { Step3Rechte } from "./steps/step-3-rechte";
 import { Step3 } from "./steps/step-3";
 import { Step4 } from "./steps/step-4";
@@ -63,7 +64,7 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
     },
   });
 
-  function validateStep(stepNum: 1 | 2 | 3 | 4 | 5): StepErrors {
+  function validateStep(stepNum: 1 | 2 | 3 | 4 | 5 | 6): StepErrors {
     const schema = STEP_SCHEMAS[stepNum];
     const result = schema.safeParse(form.state.values);
     if (result.success) return {};
@@ -77,7 +78,7 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
   }
 
   function handleNext() {
-    const errors = validateStep(step as 1 | 2 | 3 | 4 | 5);
+    const errors = validateStep(step as 1 | 2 | 3 | 4 | 5 | 6);
     if (Object.keys(errors).length > 0) {
       setStepErrors(errors);
       return;
@@ -175,14 +176,12 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
                 form={form}
                 errors={stepErrors}
                 brands={brands}
-                creators={creators}
                 onNext={handleNext}
               />
             )}
             {step === 2 && (
               <Step2
                 form={form}
-                errors={stepErrors}
                 images={images}
                 onImagesChange={setImages}
                 onNext={handleNext}
@@ -190,7 +189,7 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
               />
             )}
             {step === 3 && (
-              <Step3Rechte
+              <StepDeliverables
                 form={form}
                 errors={stepErrors}
                 onNext={handleNext}
@@ -198,7 +197,7 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
               />
             )}
             {step === 4 && (
-              <Step3
+              <Step3Rechte
                 form={form}
                 errors={stepErrors}
                 onNext={handleNext}
@@ -206,6 +205,14 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
               />
             )}
             {step === 5 && (
+              <Step3
+                form={form}
+                errors={stepErrors}
+                onNext={handleNext}
+                onPrev={handlePrev}
+              />
+            )}
+            {step === 6 && (
               <Step4
                 values={form.state.values}
                 brands={brands}

@@ -8,6 +8,10 @@ export const deliverableSchema = z.object({
   draft_deadline: z.string().nullable().optional(),
   freigabe_deadline: z.string().nullable().optional(),
   live_date: z.string().nullable().optional(),
+  // Per-deliverable conditions
+  deadline: z.string().nullable().optional(),
+  usage_rights: z.string().nullable().optional(),
+  exclusivity: z.string().nullable().optional(),
 });
 
 export type Deliverable = z.infer<typeof deliverableSchema>;
@@ -129,15 +133,14 @@ export const STEP_SCHEMAS = {
     contact_person: z.string(),
     campaign_start: z.string(),
     campaign_end: z.string(),
-    deliverables: z.array(deliverableSchema),
-    deadline: z.string(),
-    usage_rights: z.string(),
-    exclusivity: z.string(),
     notes: z.string(),
     guidelines: guidelinesSchema.optional(),
     tracking_assets: trackingAssetsSchema.optional(),
   }),
   3: z.object({
+    deliverables: z.array(deliverableSchema),
+  }),
+  4: z.object({
     rights: rightsSchema.optional(),
     exclusivity_info: exclusivityInfoSchema.optional(),
     embargo: embargoSchema.optional(),
@@ -146,9 +149,9 @@ export const STEP_SCHEMAS = {
     contract_date: z.string().optional(),
     contract_url: z.string().optional(),
   }),
-  4: z.object({
+  5: z.object({
     fee: z.number().min(0),
     payment_items: z.array(paymentItemSchema).min(1),
   }),
-  5: z.object({}),
+  6: z.object({}),
 };

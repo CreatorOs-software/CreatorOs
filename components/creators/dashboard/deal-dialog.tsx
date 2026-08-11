@@ -38,6 +38,7 @@ import type {
 import { ALT, LAUFEND, PIPELINE, fmtMoney } from "./constants";
 import { Stepper } from "@/components/ui/stepper";
 import type { Step as StepperStep } from "@/components/ui/stepper";
+import { DatePicker } from "@/components/ui/date-picker";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -409,21 +410,13 @@ function UeberblickTab({
           />
         </FieldRow>
         <FieldRow label="Kampagnenzeitraum">
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={local.campaign_start}
-              onChange={(e) => patchLocal({ campaign_start: e.target.value })}
-              className="bg-muted/50 text-sm text-foreground outline-none focus:bg-muted rounded-md px-2 py-1 transition-colors"
-            />
-            <span className="text-muted-foreground text-xs">–</span>
-            <input
-              type="date"
-              value={local.campaign_end}
-              onChange={(e) => patchLocal({ campaign_end: e.target.value })}
-              className="bg-muted/50 text-sm text-foreground outline-none focus:bg-muted rounded-md px-2 py-1 transition-colors"
-            />
-          </div>
+          <DatePicker
+            range
+            startValue={local.campaign_start || null}
+            endValue={local.campaign_end || null}
+            onChangeStart={(v) => patchLocal({ campaign_start: v ?? "" })}
+            onChangeEnd={(v) => patchLocal({ campaign_end: v ?? "" })}
+          />
         </FieldRow>
         <FieldRow label="Nächste Deadline">
           {nextDeadline ? (
@@ -495,11 +488,9 @@ function UeberblickTab({
           <div className="px-4 py-3 grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] text-muted-foreground">Datum</span>
-              <input
-                type="date"
-                value={local.contract_date}
-                onChange={(e) => patchLocal({ contract_date: e.target.value })}
-                className="h-8 rounded-lg bg-muted px-3 text-xs outline-none focus:ring-1 focus:ring-ring/40"
+              <DatePicker
+                value={local.contract_date || null}
+                onChange={(v) => patchLocal({ contract_date: v ?? "" })}
               />
             </div>
             <div className="flex flex-col gap-1">

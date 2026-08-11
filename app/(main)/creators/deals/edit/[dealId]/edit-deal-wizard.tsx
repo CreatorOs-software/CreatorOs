@@ -15,6 +15,7 @@ import type { StepErrors, BrandOption, CreatorOption } from "../../create-deal/[
 
 import { Step1 } from "../../create-deal/[id]/steps/step-1";
 import { Step2 } from "../../create-deal/[id]/steps/step-2";
+import { StepDeliverables } from "../../create-deal/[id]/steps/step-deliverables";
 import { Step3Rechte } from "../../create-deal/[id]/steps/step-3-rechte";
 import { Step3 } from "../../create-deal/[id]/steps/step-3";
 import { Step4 } from "../../create-deal/[id]/steps/step-4";
@@ -93,7 +94,7 @@ export function EditDealWizard({
     },
   });
 
-  function validateStep(stepNum: 1 | 2 | 3 | 4 | 5): StepErrors {
+  function validateStep(stepNum: 1 | 2 | 3 | 4 | 5 | 6): StepErrors {
     const schema = STEP_SCHEMAS[stepNum];
     const result = schema.safeParse(form.state.values);
     if (result.success) return {};
@@ -107,7 +108,7 @@ export function EditDealWizard({
   }
 
   function handleNext() {
-    const errors = validateStep(step as 1 | 2 | 3 | 4 | 5);
+    const errors = validateStep(step as 1 | 2 | 3 | 4 | 5 | 6);
     if (Object.keys(errors).length > 0) {
       setStepErrors(errors);
       return;
@@ -213,14 +214,12 @@ export function EditDealWizard({
                 form={form}
                 errors={stepErrors}
                 brands={brands}
-                creators={creators}
                 onNext={handleNext}
               />
             )}
             {step === 2 && (
               <Step2
                 form={form}
-                errors={stepErrors}
                 images={images}
                 onImagesChange={setImages}
                 onNext={handleNext}
@@ -228,7 +227,7 @@ export function EditDealWizard({
               />
             )}
             {step === 3 && (
-              <Step3Rechte
+              <StepDeliverables
                 form={form}
                 errors={stepErrors}
                 onNext={handleNext}
@@ -236,7 +235,7 @@ export function EditDealWizard({
               />
             )}
             {step === 4 && (
-              <Step3
+              <Step3Rechte
                 form={form}
                 errors={stepErrors}
                 onNext={handleNext}
@@ -244,6 +243,14 @@ export function EditDealWizard({
               />
             )}
             {step === 5 && (
+              <Step3
+                form={form}
+                errors={stepErrors}
+                onNext={handleNext}
+                onPrev={handlePrev}
+              />
+            )}
+            {step === 6 && (
               <Step4
                 values={form.state.values}
                 brands={brands}

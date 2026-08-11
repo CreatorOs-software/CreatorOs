@@ -3,9 +3,10 @@ import type { DealFormValues } from "./deal-form.schema";
 export const STEPS = [
   { id: 1, label: "Basisdaten" },
   { id: 2, label: "Rahmendaten" },
-  { id: 3, label: "Rechte & Konditionen" },
-  { id: 4, label: "Zahlung" },
-  { id: 5, label: "Prüfen" },
+  { id: 3, label: "Deliverables" },
+  { id: 4, label: "Rechte & Konditionen" },
+  { id: 5, label: "Zahlung" },
+  { id: 6, label: "Prüfen" },
 ];
 
 export const PLATFORM_OPTIONS = [
