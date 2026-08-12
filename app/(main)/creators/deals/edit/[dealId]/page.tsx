@@ -13,7 +13,7 @@ export default async function EditDealPage({
   const { dealId } = await params;
   const { supabase, agencyId } = await getAuthContext();
 
-  const [dealRes, brandsRes, creatorsRes] = await Promise.all([
+  const [dealRes, brandsRes, creatorsRes, usersRes] = await Promise.all([
     supabase
       .from("deals")
       .select(
@@ -39,6 +39,11 @@ export default async function EditDealPage({
       .select("id, full_name, color, initials")
       .eq("agency_id", agencyId)
       .order("full_name"),
+    supabase
+      .from("profiles")
+      .select("id, display_name")
+      .eq("agency_id", agencyId)
+      .order("display_name"),
   ]);
 
   if (dealRes.error || !dealRes.data) notFound();
@@ -68,6 +73,7 @@ export default async function EditDealPage({
     contact_person: deal.contact_person ?? "",
     campaign_start: deal.campaign_start ?? "",
     campaign_end: deal.campaign_end ?? "",
+    assignee_id: (deal as Record<string, unknown>).assignee_id as string | undefined,
     deliverables,
     deadline: deal.deadline ?? "",
     usage_rights: deal.usage_rights ?? "",
@@ -93,6 +99,7 @@ export default async function EditDealPage({
       brands={brandsRes.data ?? []}
       creators={creatorsRes.data ?? []}
       initialValues={initialValues}
+      users={usersRes.data ?? []}
     />
   );
 }

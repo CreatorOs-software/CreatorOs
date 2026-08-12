@@ -48,9 +48,9 @@ export async function POST(
     }
 
     const {
-      title, brand_id, product, platform, creator_id,
+      title, brand_id, product, creator_id,
       contact_person, campaign_start, campaign_end, deliverables,
-      deadline, usage_rights, exclusivity, notes, fee, payment_items,
+      assignee_id, notes, fee, payment_items,
       guidelines, tracking_assets,
       rights, exclusivity_info, embargo, whitelisting,
       contract_status, contract_date, contract_url,
@@ -64,14 +64,11 @@ export async function POST(
         brand_id: brand_id || null,
         title,
         product: product || null,
-        platform: platform || null,
         contact_person: contact_person || null,
         campaign_start: campaign_start || null,
         campaign_end: campaign_end || null,
+        assignee_id: assignee_id || null,
         deliverables,
-        deadline: deadline || null,
-        usage_rights: usage_rights || null,
-        exclusivity: exclusivity || null,
         description: notes || null,
         guidelines: guidelines ?? null,
         tracking_assets: tracking_assets ?? null,

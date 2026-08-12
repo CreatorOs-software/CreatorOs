@@ -16,7 +16,6 @@ import type { StepErrors, BrandOption, CreatorOption } from "../../create-deal/[
 import { Step1 } from "../../create-deal/[id]/steps/step-1";
 import { Step2 } from "../../create-deal/[id]/steps/step-2";
 import { StepDeliverables } from "../../create-deal/[id]/steps/step-deliverables";
-import { Step3Rechte } from "../../create-deal/[id]/steps/step-3-rechte";
 import { Step3 } from "../../create-deal/[id]/steps/step-3";
 import { Step4 } from "../../create-deal/[id]/steps/step-4";
 
@@ -26,6 +25,7 @@ interface EditDealWizardProps {
   brands: BrandOption[];
   creators: CreatorOption[];
   initialValues: DealFormValues;
+  users: { id: string; display_name: string }[];
 }
 
 export function EditDealWizard({
@@ -34,6 +34,7 @@ export function EditDealWizard({
   brands,
   creators,
   initialValues,
+  users,
 }: EditDealWizardProps) {
   const router = useRouter();
 
@@ -41,6 +42,7 @@ export function EditDealWizard({
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [done, setDone] = useState(false);
   const [images, setImages] = useState<File[]>([]);
+  const [documents, setDocuments] = useState<File[]>([]);
   const [stepErrors, setStepErrors] = useState<StepErrors>({});
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -58,15 +60,12 @@ export function EditDealWizard({
             title: value.title,
             brand_id: value.brand_id || null,
             product: value.product || null,
-            platform: value.platform || null,
             creator_id: value.creator_id || null,
             contact_person: value.contact_person || null,
             campaign_start: value.campaign_start || null,
             campaign_end: value.campaign_end || null,
+            assignee_id: value.assignee_id || null,
             deliverables: value.deliverables,
-            deadline: value.deadline || null,
-            usage_rights: value.usage_rights || null,
-            exclusivity: value.exclusivity || null,
             description: value.notes || null,
             guidelines: value.guidelines ?? null,
             tracking_assets: value.tracking_assets ?? null,
@@ -94,7 +93,7 @@ export function EditDealWizard({
     },
   });
 
-  function validateStep(stepNum: 1 | 2 | 3 | 4 | 5 | 6): StepErrors {
+  function validateStep(stepNum: 1 | 2 | 3 | 4 | 5): StepErrors {
     const schema = STEP_SCHEMAS[stepNum];
     const result = schema.safeParse(form.state.values);
     if (result.success) return {};
@@ -108,7 +107,7 @@ export function EditDealWizard({
   }
 
   function handleNext() {
-    const errors = validateStep(step as 1 | 2 | 3 | 4 | 5 | 6);
+    const errors = validateStep(step as 1 | 2 | 3 | 4 | 5);
     if (Object.keys(errors).length > 0) {
       setStepErrors(errors);
       return;
@@ -214,6 +213,9 @@ export function EditDealWizard({
                 form={form}
                 errors={stepErrors}
                 brands={brands}
+                users={users}
+                documents={documents}
+                onDocumentsChange={setDocuments}
                 onNext={handleNext}
               />
             )}
@@ -235,14 +237,6 @@ export function EditDealWizard({
               />
             )}
             {step === 4 && (
-              <Step3Rechte
-                form={form}
-                errors={stepErrors}
-                onNext={handleNext}
-                onPrev={handlePrev}
-              />
-            )}
-            {step === 5 && (
               <Step3
                 form={form}
                 errors={stepErrors}
@@ -250,7 +244,7 @@ export function EditDealWizard({
                 onPrev={handlePrev}
               />
             )}
-            {step === 6 && (
+            {step === 5 && (
               <Step4
                 values={form.state.values}
                 brands={brands}

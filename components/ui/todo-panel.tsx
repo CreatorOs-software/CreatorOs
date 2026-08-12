@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/lib/query-keys";
-import { Plus } from "lucide-react";
+import { ArrowUpDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FloatingWindow } from "@/components/ui/floating-window";
@@ -83,6 +83,19 @@ function formatDate(iso: string) {
   });
 }
 
+// ─── Sort / filter config ─────────────────────────────────────────────────────
+
+type SortKey = "due_date" | "priority" | "title";
+type FilterPriority = "all" | Priority;
+
+const PRIORITY_ORDER: Record<Priority, number> = { hoch: 0, mittel: 1, niedrig: 2 };
+
+const SORT_LABELS: Record<SortKey, string> = {
+  due_date: "Fälligkeit",
+  priority: "Priorität",
+  title: "Alphabetisch",
+};
+
 // ─── Main panel ───────────────────────────────────────────────────────────────
 
 export function TodoPanel() {
@@ -91,6 +104,9 @@ export function TodoPanel() {
   const [view, setView] = useState<"list" | "form">("list");
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("due_date");
+  const [filterCreator, setFilterCreator] = useState<string>("all");
+  const [filterPriority, setFilterPriority] = useState<FilterPriority>("all");
 
   const { data, isPending: loading } = useQuery<{ todos: TodoItem[] }>({
     queryKey: QueryKeys.todos.all(),
@@ -98,7 +114,7 @@ export function TodoPanel() {
     staleTime: 2 * 60_000,
   });
 
-  const items = data?.todos ?? [];
+  const rawItems = useMemo(() => data?.todos ?? [], [data]);
 
   useEffect(() => {
     fetch("/api/creators/list")
@@ -108,9 +124,35 @@ export function TodoPanel() {
   }, []);
 
   const allDone = useMemo(
-    () => items.length > 0 && items.every((i) => i.done),
-    [items],
+    () => rawItems.length > 0 && rawItems.every((i) => i.done),
+    [rawItems],
   );
+
+  const sortedFilteredItems = useMemo(() => {
+    let result = rawItems;
+
+    if (filterCreator !== "all")
+      result = result.filter((i) => i.assignee?.id === filterCreator);
+    if (filterPriority !== "all")
+      result = result.filter((i) => i.priority === filterPriority);
+
+    return [...result].sort((a, b) => {
+      // Done items always sink to the bottom
+      if (a.done !== b.done) return a.done ? 1 : -1;
+
+      if (sortKey === "due_date") {
+        const da = a.due_date ? new Date(a.due_date).getTime() : Infinity;
+        const db = b.due_date ? new Date(b.due_date).getTime() : Infinity;
+        return da - db;
+      }
+      if (sortKey === "priority") {
+        const pa = a.priority != null ? PRIORITY_ORDER[a.priority] : 3;
+        const pb = b.priority != null ? PRIORITY_ORDER[b.priority] : 3;
+        return pa - pb;
+      }
+      return a.title.localeCompare(b.title, "de");
+    });
+  }, [rawItems, sortKey, filterCreator, filterPriority]);
 
   const [celebrating, setCelebrating] = useState(false);
   const wasAllDoneRef = useRef(false);
@@ -299,6 +341,90 @@ export function TodoPanel() {
         </button>
       </FloatingWindow.Header>
 
+      {/* ── Sort / Filter toolbar ── */}
+      <div className="flex shrink-0 items-center gap-1.5 border-b border-border bg-muted/60 px-3 py-1.5">
+        <ArrowUpDown className="size-3 shrink-0 text-muted-foreground" />
+        <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+          <SelectTrigger className="h-6 w-auto gap-1 rounded-md border-0 bg-transparent px-1.5 text-xs font-medium shadow-none focus:ring-0">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
+              <SelectItem key={k} value={k} className="text-xs">
+                {SORT_LABELS[k]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <div className="mx-1 h-3.5 w-px bg-border" />
+
+        {/* Creator filter */}
+        <Select value={filterCreator} onValueChange={(v) => setFilterCreator(v ?? "all")}>
+          <SelectTrigger className="h-6 w-auto max-w-30 gap-1 rounded-md border-0 bg-transparent px-1.5 text-xs font-medium shadow-none focus:ring-0">
+            {filterCreator === "all" ? (
+              <span className="text-muted-foreground">Creator</span>
+            ) : (
+              (() => {
+                const c = creators.find((x) => x.id === filterCreator);
+                return c ? (
+                  <span className="flex items-center gap-1.5 truncate">
+                    <span
+                      className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
+                      style={{ backgroundColor: c.color }}
+                    >
+                      {c.initials}
+                    </span>
+                    <span className="truncate">{c.full_name}</span>
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">Creator</span>
+                );
+              })()
+            )}
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" className="text-xs">
+              Alle Creator
+            </SelectItem>
+            {creators.map((c) => (
+              <SelectItem key={c.id} value={c.id} className="text-xs">
+                <span
+                  className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
+                  style={{ backgroundColor: c.color }}
+                >
+                  {c.initials}
+                </span>
+                {c.full_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Priority filter */}
+        <Select value={filterPriority} onValueChange={(v) => setFilterPriority(v as FilterPriority)}>
+          <SelectTrigger className="h-6 w-auto gap-1 rounded-md border-0 bg-transparent px-1.5 text-xs font-medium shadow-none focus:ring-0">
+            {filterPriority === "all" ? (
+              <span className="text-muted-foreground">Priorität</span>
+            ) : (
+              <span className="flex items-center gap-1">
+                <span className={cn("size-2 rounded-full", PRIORITY_CONFIG[filterPriority].dotClass)} />
+                {PRIORITY_CONFIG[filterPriority].label}
+              </span>
+            )}
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" className="text-xs">Alle</SelectItem>
+            {(["hoch", "mittel", "niedrig"] as Priority[]).map((p) => (
+              <SelectItem key={p} value={p} className="text-xs">
+                <span className={cn("mr-1 inline-block size-2 rounded-full", PRIORITY_CONFIG[p].dotClass)} />
+                {PRIORITY_CONFIG[p].label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <FloatingWindow.Body className="p-0">
         <div
           className={cn(
@@ -311,120 +437,108 @@ export function TodoPanel() {
         >
           {loading ? (
             <p className="text-sm text-muted-foreground">Lade…</p>
-          ) : (
-            <>
-              <h3 className="mb-3 text-base font-bold text-foreground">
-                {allDone ? "Du hast alles erledigt!" : "Heute zu tun"}
+          ) : allDone ? (
+            <div>
+              <h3 className="mb-2 text-base font-bold text-foreground">
+                Du hast alles erledigt!
               </h3>
-
-              {!allDone && (
-                <ul className="space-y-1.5">
-                  {items.map((item) => (
-                    <li
-                      key={item.id}
+              <p className="text-sm font-medium text-gray-700">
+                Gönn dir eine Pause – du hast es verdient!
+              </p>
+              {celebrating && <ConfettiOverlay />}
+            </div>
+          ) : sortedFilteredItems.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {rawItems.length === 0
+                ? "Noch keine Aufgaben. Leg los!"
+                : "Keine Aufgaben für diesen Filter."}
+            </p>
+          ) : (
+            <ul className="space-y-1.5">
+              {sortedFilteredItems.map((item) => (
+                <li
+                  key={item.id}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors",
+                    item.done && "bg-black/5",
+                  )}
+                >
+                  <label className="relative inline-flex size-6 shrink-0 cursor-pointer items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={item.done}
+                      onChange={() => toggleItem(item)}
+                      className="peer absolute inset-0 size-full cursor-pointer appearance-none opacity-0"
+                    />
+                    <span
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors",
-                        item.done && "bg-black/5",
+                        "flex size-5 items-center justify-center rounded-md border transition-all duration-200",
+                        item.done
+                          ? "scale-95 border-foreground bg-foreground"
+                          : "scale-100 border-border bg-background",
                       )}
                     >
-                      <label className="relative inline-flex size-6 shrink-0 cursor-pointer items-center justify-center">
-                        <input
-                          type="checkbox"
-                          checked={item.done}
-                          onChange={() => toggleItem(item)}
-                          className="peer absolute inset-0 size-full cursor-pointer appearance-none opacity-0"
-                        />
-                        <span
-                          className={cn(
-                            "flex size-5 items-center justify-center rounded-md border transition-all duration-200",
-                            item.done
-                              ? "scale-95 border-foreground bg-foreground"
-                              : "scale-100 border-border bg-background",
-                          )}
-                        >
-                          <svg
-                            className={cn(
-                              "size-3 text-white transition-opacity duration-200",
-                              item.done ? "opacity-100" : "opacity-0",
-                            )}
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            viewBox="0 0 12 9"
-                          >
-                            <path
-                              d="M1 4.2L4 7L11 1"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </span>
-                      </label>
-
-                      <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                        {item.priority && (
-                          <span
-                            className={cn(
-                              "size-2 shrink-0 rounded-full",
-                              PRIORITY_CONFIG[item.priority].dotClass,
-                            )}
-                          />
+                      <svg
+                        className={cn(
+                          "size-3 text-white transition-opacity duration-200",
+                          item.done ? "opacity-100" : "opacity-0",
                         )}
-                        <span
-                          className={cn(
-                            "truncate text-sm transition-all duration-200",
-                            item.done
-                              ? "text-muted-foreground line-through"
-                              : "text-foreground",
-                          )}
-                        >
-                          {item.title}
-                        </span>
-                      </div>
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 12 9"
+                      >
+                        <path
+                          d="M1 4.2L4 7L11 1"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  </label>
 
-                      {(item.due_date || item.assignee) && (
-                        <div className="flex shrink-0 items-center gap-1.5">
-                          {item.due_date && (
-                            <span className="text-xs text-muted-foreground">
-                              {formatDate(item.due_date)}
-                            </span>
-                          )}
-                          {item.assignee && (
-                            <span
-                              className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                              style={{ backgroundColor: item.assignee.color }}
-                              title={item.assignee.full_name}
-                            >
-                              {item.assignee.initials}
-                            </span>
-                          )}
-                        </div>
+                  <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                    {item.priority && (
+                      <span
+                        className={cn(
+                          "size-2 shrink-0 rounded-full",
+                          PRIORITY_CONFIG[item.priority].dotClass,
+                        )}
+                      />
+                    )}
+                    <span
+                      className={cn(
+                        "truncate text-sm transition-all duration-200",
+                        item.done
+                          ? "text-muted-foreground line-through"
+                          : "text-foreground",
                       )}
-                    </li>
-                  ))}
-                </ul>
-              )}
+                    >
+                      {item.title}
+                    </span>
+                  </div>
 
-              {allDone && (
-                <div className="mt-2">
-                  <p className="text-sm font-medium text-gray-700">
-                    Gönn dir eine Pause – du hast es verdient!
-                  </p>
-                  {celebrating && <ConfettiOverlay />}
-                </div>
-              )}
-
-              {!allDone && items.length > 0 && (
-                <p className="mt-4 text-sm font-medium text-muted-foreground">
-                  Weiter so!
-                </p>
-              )}
-              {items.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  Noch keine Aufgaben. Leg los!
-                </p>
-              )}
-            </>
+                  {(item.due_date || item.assignee) && (
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {item.due_date && (
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(item.due_date)}
+                        </span>
+                      )}
+                      {item.assignee && (
+                        <span
+                          className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                          style={{ backgroundColor: item.assignee.color }}
+                          title={item.assignee.full_name}
+                        >
+                          {item.assignee.initials}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </FloatingWindow.Body>

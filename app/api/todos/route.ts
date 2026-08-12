@@ -13,6 +13,15 @@ export async function GET() {
   try {
     const { supabase, agencyId } = await getAuthContext();
 
+    // Purge completed todos older than 3 days (fire-and-forget, non-blocking)
+    supabase
+      .from("todos")
+      .delete()
+      .eq("agency_id", agencyId)
+      .eq("done", true)
+      .lt("updated_at", new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString())
+      .then(() => {});
+
     const { data: todos, error } = await supabase
       .from("todos")
       .select(SELECT)

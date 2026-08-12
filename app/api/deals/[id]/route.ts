@@ -19,6 +19,7 @@ const patchSchema = z.object({
   payment_items: z.array(z.any()).optional(),
   campaign_start: z.string().nullable().optional(),
   campaign_end: z.string().nullable().optional(),
+  assignee_id: z.string().nullable().optional(),
   contract_status: z.string().nullable().optional(),
   contract_date: z.string().nullable().optional(),
   contract_url: z.string().nullable().optional(),

@@ -10,12 +10,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { Plus, X } from "lucide-react";
 import { PAYMENT_TERMS } from "../deal-form.constants";
 import type { PaymentItem, PaymentTerm } from "../deal-form.schema";
 import type { DealForm, DealField, StepErrors } from "../deal-form.types";
 import { StepNav } from "@/app/(main)/creators/create-form/steps/step-nav";
-
-// ── Helpers ─────────────────────────────────────────────────
 
 function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr + "T00:00:00");
@@ -71,19 +71,38 @@ function StatusBadge({ status }: { status: PaymentStatus }) {
   );
 }
 
-// ── PaymentCard ──────────────────────────────────────────────
-
 interface PaymentCardProps {
   item: PaymentItem;
+  index: number;
+  canRemove: boolean;
   onUpdate: (patch: Partial<PaymentItem>) => void;
+  onRemove: () => void;
 }
 
-function PaymentCard({ item, onUpdate }: PaymentCardProps) {
+function PaymentCard({ item, index, canRemove, onUpdate, onRemove }: PaymentCardProps) {
   const status = getStatus(item.invoice_date, item.payment_term);
   const invoiced = item.invoice_date !== "";
 
   return (
     <div className="rounded-xl border border-border-light bg-muted/30 p-4 flex flex-col gap-4">
+      {/* Header row */}
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">
+          Posten {index + 1}
+        </span>
+        {canRemove && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="w-6 h-6 text-muted-foreground hover:text-destructive"
+            onClick={onRemove}
+          >
+            <X className="w-3.5 h-3.5" />
+          </Button>
+        )}
+      </div>
+
       {/* Label + Amount */}
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -161,7 +180,6 @@ function PaymentCard({ item, onUpdate }: PaymentCardProps) {
         </div>
       </div>
 
-      {/* Calculated row — only visible once invoiced */}
       {invoiced && (
         <div className="flex items-center justify-between pt-3 border-t border-border-light">
           <span className="text-xs text-muted-foreground">
@@ -177,8 +195,6 @@ function PaymentCard({ item, onUpdate }: PaymentCardProps) {
   );
 }
 
-// ── Step 3 ───────────────────────────────────────────────────
-
 interface Step3Props {
   form: DealForm;
   errors: StepErrors;
@@ -189,7 +205,6 @@ interface Step3Props {
 export function Step3({ form, errors, onNext, onPrev }: Step3Props) {
   return (
     <div className="flex flex-col gap-0">
-      {/* ── Honorar ──────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
         <div>
           <h2 className="font-semibold text-foreground">Honorar</h2>
@@ -227,72 +242,51 @@ export function Step3({ form, errors, onNext, onPrev }: Step3Props) {
               )}
             </form.Field>
 
-            {/* Split toggle — lives inside payment_items field so it can update the array */}
+            {/* Payment items */}
             <form.Field name="payment_items">
               {(field: DealField<"payment_items">) => {
                 const items = (field.state.value ?? []) as PaymentItem[];
-                const isSplit = items.length >= 2;
 
-                function toggleSplit(checked: boolean) {
-                  const fee = (form.state.values.fee as number) ?? 0;
-                  if (checked) {
-                    const half = Math.round(fee / 2);
-                    field.handleChange([
-                      { ...items[0], label: "Anzahlung", amount: half },
-                      {
-                        label: "Restbetrag",
-                        amount: fee - half,
-                        invoice_date: "",
-                        payment_term: 30 as const,
-                      },
-                    ]);
-                  } else {
-                    field.handleChange([
-                      { ...items[0], label: "Zahlung", amount: fee },
-                    ]);
-                  }
+                function addItem() {
+                  field.handleChange([
+                    ...items,
+                    { label: "Zahlung", amount: 0, invoice_date: "", payment_term: 30 as const },
+                  ]);
                 }
 
                 function updateItem(index: number, patch: Partial<PaymentItem>) {
                   field.handleChange(
-                    items.map((item, i) =>
-                      i === index ? { ...item, ...patch } : item,
-                    ),
+                    items.map((item, i) => (i === index ? { ...item, ...patch } : item)),
                   );
                 }
 
-                return (
-                  <div className="flex flex-col gap-4">
-                    {/* Split toggle */}
-                    <div className="flex items-center gap-3">
-                      <Switch
-                        checked={isSplit}
-                        onCheckedChange={toggleSplit}
-                      />
-                      <div>
-                        <Label className="text-sm font-medium cursor-pointer select-none">
-                          Zwei Zahlungsposten
-                        </Label>
-                        <p className="text-xs text-muted-foreground">
-                          z.B. 50 % Anzahlung + 50 % nach Livegang
-                        </p>
-                      </div>
-                    </div>
+                function removeItem(index: number) {
+                  field.handleChange(items.filter((_, i) => i !== index));
+                }
 
-                    {/* Payment cards */}
+                return (
+                  <div className="flex flex-col gap-3">
                     {items.map((item, i) => (
-                      <div key={i}>
-                        {isSplit && (
-                          <p className="text-xs font-medium text-muted-foreground mb-2">
-                            Posten {i + 1}
-                          </p>
-                        )}
-                        <PaymentCard
-                          item={item}
-                          onUpdate={(patch) => updateItem(i, patch)}
-                        />
-                      </div>
+                      <PaymentCard
+                        key={i}
+                        item={item}
+                        index={i}
+                        canRemove={items.length > 1}
+                        onUpdate={(patch) => updateItem(i, patch)}
+                        onRemove={() => removeItem(i)}
+                      />
                     ))}
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addItem}
+                      className="self-start gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Zahlungsposten hinzufügen
+                    </Button>
                   </div>
                 );
               }}

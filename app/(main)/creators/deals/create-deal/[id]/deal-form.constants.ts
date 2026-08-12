@@ -2,11 +2,10 @@ import type { DealFormValues } from "./deal-form.schema";
 
 export const STEPS = [
   { id: 1, label: "Basisdaten" },
-  { id: 2, label: "Rahmendaten" },
+  { id: 2, label: "Notizen & Tracking" },
   { id: 3, label: "Deliverables" },
-  { id: 4, label: "Rechte & Konditionen" },
-  { id: 5, label: "Zahlung" },
-  { id: 6, label: "Prüfen" },
+  { id: 4, label: "Zahlung" },
+  { id: 5, label: "Prüfen" },
 ];
 
 export const PLATFORM_OPTIONS = [
@@ -37,24 +36,34 @@ export const PAYMENT_TERMS: { value: 14 | 30 | 45; label: string }[] = [
 
 export function getInitialValues(creatorId: string): DealFormValues {
   return {
-    // Step 1
+    // Step 1 – Basisdaten
     title: "",
     brand_id: "",
     product: "",
-    platform: "",
     creator_id: creatorId,
-    // Step 2
+    // Step 1 – Rahmendaten
     contact_person: "",
     campaign_start: "",
     campaign_end: "",
-    deliverables: [],
-    deadline: "",
-    usage_rights: "",
-    exclusivity: "",
+    // Step 1 – Bearbeiter & Dokumente
+    assignee_id: "",
+    documents: [],
+    // Step 2 – Notizen & Tracking
     notes: "",
     guidelines: {},
     tracking_assets: {},
-    // Step 3 – Rechte & Konditionen
+    // Step 3 – Deliverables
+    deliverables: [],
+    // Step 4 – Zahlung
+    fee: 0,
+    payment_items: [
+      { label: "Zahlung", amount: 0, invoice_date: "", payment_term: 30 },
+    ],
+    // Backwards compat (not shown in form)
+    platform: "",
+    deadline: "",
+    usage_rights: "",
+    exclusivity: "",
     rights: {},
     exclusivity_info: {},
     embargo: {},
@@ -62,10 +71,5 @@ export function getInitialValues(creatorId: string): DealFormValues {
     contract_status: "offen",
     contract_date: "",
     contract_url: "",
-    // Step 4
-    fee: 0,
-    payment_items: [
-      { label: "Zahlung", amount: 0, invoice_date: "", payment_term: 30 },
-    ],
   };
 }

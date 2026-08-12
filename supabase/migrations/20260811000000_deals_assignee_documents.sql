@@ -1,0 +1,3 @@
+ALTER TABLE public.deals
+  ADD COLUMN IF NOT EXISTS assignee_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS documents JSONB;

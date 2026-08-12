@@ -11,7 +11,7 @@ export default async function CreateDealPage({
   const { id } = await params;
   const { supabase, agencyId } = await getAuthContext();
 
-  const [creator, brandsRes, creatorsRes] = await Promise.all([
+  const [creator, brandsRes, creatorsRes, usersRes] = await Promise.all([
     CreatorRepository.findById(supabase, id),
     supabase
       .from("brands")
@@ -22,6 +22,11 @@ export default async function CreateDealPage({
       .select("id, full_name, color, initials")
       .eq("agency_id", agencyId)
       .order("full_name"),
+    supabase
+      .from("profiles")
+      .select("id, display_name")
+      .eq("agency_id", agencyId)
+      .order("display_name"),
   ]);
 
   if (!creator || creator.agency_id !== agencyId) notFound();
@@ -31,6 +36,7 @@ export default async function CreateDealPage({
       creator={creator}
       brands={brandsRes.data ?? []}
       creators={creatorsRes.data ?? []}
+      users={usersRes.data ?? []}
     />
   );
 }

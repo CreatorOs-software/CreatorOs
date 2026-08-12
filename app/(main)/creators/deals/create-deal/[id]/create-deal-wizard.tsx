@@ -17,7 +17,6 @@ import type { StepErrors, BrandOption, CreatorOption } from "./deal-form.types";
 import { Step1 } from "./steps/step-1";
 import { Step2 } from "./steps/step-2";
 import { StepDeliverables } from "./steps/step-deliverables";
-import { Step3Rechte } from "./steps/step-3-rechte";
 import { Step3 } from "./steps/step-3";
 import { Step4 } from "./steps/step-4";
 
@@ -25,9 +24,10 @@ interface CreateDealWizardProps {
   creator: Creator;
   brands: BrandOption[];
   creators: CreatorOption[];
+  users: { id: string; display_name: string }[];
 }
 
-export function CreateDealWizard({ creator, brands, creators }: CreateDealWizardProps) {
+export function CreateDealWizard({ creator, brands, creators, users }: CreateDealWizardProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -35,6 +35,7 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [done, setDone] = useState(false);
   const [images, setImages] = useState<File[]>([]);
+  const [documents, setDocuments] = useState<File[]>([]);
   const [stepErrors, setStepErrors] = useState<StepErrors>({});
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -64,7 +65,7 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
     },
   });
 
-  function validateStep(stepNum: 1 | 2 | 3 | 4 | 5 | 6): StepErrors {
+  function validateStep(stepNum: 1 | 2 | 3 | 4 | 5): StepErrors {
     const schema = STEP_SCHEMAS[stepNum];
     const result = schema.safeParse(form.state.values);
     if (result.success) return {};
@@ -78,7 +79,7 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
   }
 
   function handleNext() {
-    const errors = validateStep(step as 1 | 2 | 3 | 4 | 5 | 6);
+    const errors = validateStep(step as 1 | 2 | 3 | 4 | 5);
     if (Object.keys(errors).length > 0) {
       setStepErrors(errors);
       return;
@@ -176,6 +177,9 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
                 form={form}
                 errors={stepErrors}
                 brands={brands}
+                users={users}
+                documents={documents}
+                onDocumentsChange={setDocuments}
                 onNext={handleNext}
               />
             )}
@@ -197,14 +201,6 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
               />
             )}
             {step === 4 && (
-              <Step3Rechte
-                form={form}
-                errors={stepErrors}
-                onNext={handleNext}
-                onPrev={handlePrev}
-              />
-            )}
-            {step === 5 && (
               <Step3
                 form={form}
                 errors={stepErrors}
@@ -212,7 +208,7 @@ export function CreateDealWizard({ creator, brands, creators }: CreateDealWizard
                 onPrev={handlePrev}
               />
             )}
-            {step === 6 && (
+            {step === 5 && (
               <Step4
                 values={form.state.values}
                 brands={brands}
