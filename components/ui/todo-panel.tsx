@@ -264,7 +264,26 @@ export function TodoPanel() {
                 className="w-full rounded-full border-0 px-4"
                 style={{ backgroundColor: "var(--input)" }}
               >
-                <SelectValue placeholder="Creator auswählen…" />
+                {form.assignee_id ? (
+                  (() => {
+                    const c = creators.find((x) => x.id === form.assignee_id);
+                    return c ? (
+                      <span className="flex items-center gap-2 text-sm">
+                        <span
+                          className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                          style={{ backgroundColor: c.color }}
+                        >
+                          {c.initials}
+                        </span>
+                        {c.full_name}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">Creator auswählen…</span>
+                    );
+                  })()
+                ) : (
+                  <span className="text-muted-foreground">Creator auswählen…</span>
+                )}
               </SelectTrigger>
               <SelectContent>
                 {creators.map((c) => (

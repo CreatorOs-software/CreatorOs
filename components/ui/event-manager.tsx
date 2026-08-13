@@ -14,7 +14,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select"
 import {
   Dialog,
@@ -118,8 +117,16 @@ const TYPE_CONFIG: Record<EventType, { label: string; bg: string; dot: string; p
 }
 
 const ALL_TYPES = Object.keys(TYPE_CONFIG) as EventType[]
+const RECURRENCE_LABELS: Record<Recurrence, string> = {
+  none:    "Keine Wiederholung",
+  daily:   "Täglich",
+  weekly:  "Wöchentlich",
+  monthly: "Monatlich",
+  yearly:  "Jährlich",
+}
 const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
+const HOUR_HEIGHT = 64 // px per hour in time-grid views
 
 const MEMBER_COLORS = ["#6366f1", "#ec4899", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#14b8a6"]
 
@@ -331,6 +338,50 @@ function MonthView({
   )
 }
 
+// ─── Time-grid helpers ────────────────────────────────────────────────────────
+
+function getEventPosition(ev: CalEvent): { top: number; height: number } {
+  const startH = ev.startTime.getHours() + ev.startTime.getMinutes() / 60
+  const endH   = ev.endTime.getHours()   + ev.endTime.getMinutes()   / 60
+  const duration = Math.max(endH - startH, 0.25) // at least 15 min
+  return {
+    top:    startH   * HOUR_HEIGHT,
+    height: Math.max(duration * HOUR_HEIGHT, 22),
+  }
+}
+
+function TimeGridEvent({
+  event,
+  onClick,
+  onDragStart,
+  onDragEnd,
+}: {
+  event: CalEvent
+  onClick: (e: CalEvent) => void
+  onDragStart: (e: CalEvent) => void
+  onDragEnd: () => void
+}) {
+  const cfg = TYPE_CONFIG[event.type]
+  return (
+    <div
+      className={cn(
+        "absolute inset-x-0.5 overflow-hidden rounded-md px-1.5 py-0.5 cursor-pointer text-white",
+        cfg.bg,
+      )}
+      style={{ top: 0, bottom: 0 }}
+      onClick={() => onClick(event)}
+      draggable
+      onDragStart={() => onDragStart(event)}
+      onDragEnd={onDragEnd}
+    >
+      <p className="truncate text-xs font-semibold leading-tight">{event.title}</p>
+      <p className="text-[10px] leading-tight opacity-80">
+        {formatTime(event.startTime)}–{formatTime(event.endTime)}
+      </p>
+    </div>
+  )
+}
+
 // ─── WeekView ─────────────────────────────────────────────────────────────────
 
 function WeekView({
@@ -356,19 +407,22 @@ function WeekView({
     return d
   })
 
-  const eventsByDayHour = useMemo(() => {
+  const eventsByDay = useMemo(() => {
     const map = new Map<string, CalEvent[]>()
-    for (const e of events) {
-      const key = `${e.startTime.toDateString()}-${e.startTime.getHours()}`
-      map.set(key, [...(map.get(key) ?? []), e])
+    for (const ev of events) {
+      const key = ev.startTime.toDateString()
+      map.set(key, [...(map.get(key) ?? []), ev])
     }
     return map
   }, [events])
 
+  const gridHeight = HOURS.length * HOUR_HEIGHT
+
   return (
-    <Card className="flex-1 overflow-auto min-h-0">
-      <div className="sticky top-0 z-10 grid grid-cols-8 border-b bg-card">
-        <div className="border-r p-2 text-sm text-muted-foreground" />
+    <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      {/* Sticky header */}
+      <div className="grid shrink-0 grid-cols-8 border-b bg-card">
+        <div className="border-r" />
         {weekDays.map((day, i) => (
           <div
             key={day.toISOString()}
@@ -381,31 +435,57 @@ function WeekView({
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-8">
-        {HOURS.map((hour) => (
-          <>
-            <div key={`t-${hour}`} className="border-b border-r p-1 pr-2 text-right text-xs text-muted-foreground">
-              {String(hour).padStart(2, "0")}:00
-            </div>
-            {weekDays.map((day) => {
-              const cellEvents = eventsByDayHour.get(`${day.toDateString()}-${hour}`) ?? []
-              return (
-                <div
-                  key={`${day.toISOString()}-${hour}`}
-                  className="min-h-14 border-b border-r p-0.5 hover:bg-accent/40 last:border-r-0"
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => onDrop(day, hour)}
-                >
-                  <div className="space-y-0.5">
-                    {cellEvents.map((ev) => (
-                      <EventChip key={ev.id} event={ev} onClick={onEventClick} onDragStart={onDragStart} onDragEnd={onDragEnd} />
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </>
-        ))}
+      {/* Scrollable time grid */}
+      <div className="flex-1 overflow-auto">
+        <div className="grid grid-cols-8">
+          {/* Time axis */}
+          <div className="border-r">
+            {HOURS.map((hour) => (
+              <div
+                key={hour}
+                style={{ height: HOUR_HEIGHT }}
+                className="flex items-start justify-end border-b pr-2 pt-1"
+              >
+                <span className="text-xs text-muted-foreground">{String(hour).padStart(2, "0")}:00</span>
+              </div>
+            ))}
+          </div>
+          {/* Day columns */}
+          {weekDays.map((day) => {
+            const dayEvs = eventsByDay.get(day.toDateString()) ?? []
+            return (
+              <div
+                key={day.toISOString()}
+                className="relative border-r last:border-r-0"
+                style={{ height: gridHeight }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  const hour = Math.max(0, Math.min(23, Math.floor((e.clientY - rect.top) / HOUR_HEIGHT)))
+                  onDrop(day, hour)
+                }}
+              >
+                {/* Hour lines */}
+                {HOURS.map((hour) => (
+                  <div
+                    key={hour}
+                    className="absolute w-full border-b border-border/40"
+                    style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}
+                  />
+                ))}
+                {/* Events */}
+                {dayEvs.map((ev) => {
+                  const { top, height } = getEventPosition(ev)
+                  return (
+                    <div key={ev.id} className="absolute inset-x-0.5" style={{ top, height }}>
+                      <TimeGridEvent event={ev} onClick={onEventClick} onDragStart={onDragStart} onDragEnd={onDragEnd} />
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>
       </div>
     </Card>
   )
@@ -429,30 +509,53 @@ function DayView({
   onDrop: (date: Date, hour: number) => void
 }) {
   const dayEvents = events.filter((e) => isSameDay(e.startTime, currentDate))
+  const gridHeight = HOURS.length * HOUR_HEIGHT
+
   return (
-    <Card className="flex-1 overflow-auto min-h-0">
-      {HOURS.map((hour) => {
-        const hourEvents = dayEvents.filter((e) => e.startTime.getHours() === hour)
-        return (
-          <div
-            key={hour}
-            className="flex border-b last:border-b-0"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={() => onDrop(currentDate, hour)}
-          >
-            <div className="w-16 shrink-0 border-r p-2 text-right text-sm text-muted-foreground">
-              {String(hour).padStart(2, "0")}:00
+    <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 overflow-auto">
+        {/* Time axis */}
+        <div className="w-16 shrink-0 border-r">
+          {HOURS.map((hour) => (
+            <div
+              key={hour}
+              style={{ height: HOUR_HEIGHT }}
+              className="flex items-start justify-end border-b pr-2 pt-1"
+            >
+              <span className="text-sm text-muted-foreground">{String(hour).padStart(2, "0")}:00</span>
             </div>
-            <div className="min-h-16 flex-1 p-1 hover:bg-accent/40">
-              <div className="space-y-1">
-                {hourEvents.map((ev) => (
-                  <EventChip key={ev.id} event={ev} onClick={onEventClick} onDragStart={onDragStart} onDragEnd={onDragEnd} />
-                ))}
+          ))}
+        </div>
+        {/* Events column */}
+        <div
+          className="relative flex-1"
+          style={{ height: gridHeight }}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect()
+            const hour = Math.max(0, Math.min(23, Math.floor((e.clientY - rect.top) / HOUR_HEIGHT)))
+            onDrop(currentDate, hour)
+          }}
+        >
+          {/* Hour lines */}
+          {HOURS.map((hour) => (
+            <div
+              key={hour}
+              className="absolute w-full border-b border-border/40"
+              style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}
+            />
+          ))}
+          {/* Events */}
+          {dayEvents.map((ev) => {
+            const { top, height } = getEventPosition(ev)
+            return (
+              <div key={ev.id} className="absolute inset-x-2" style={{ top, height }}>
+                <TimeGridEvent event={ev} onClick={onEventClick} onDragStart={onDragStart} onDragEnd={onDragEnd} />
               </div>
-            </div>
-          </div>
-        )
-      })}
+            )
+          })}
+        </div>
+      </div>
     </Card>
   )
 }
@@ -553,13 +656,33 @@ function TimeInput({
   value: string
   onChange: (v: string) => void
 }) {
+  const parts = value.split(":")
+  const h = parts[0] ?? "00"
+  const m = parts[1] ?? "00"
+
+  const commit = (newH: string, newM: string) =>
+    onChange(`${newH.padStart(2, "0")}:${newM.padStart(2, "0")}`)
+
   return (
-    <input
-      type="time"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="flex h-9 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
-    />
+    <div className="flex h-9 w-full items-center rounded-lg border border-border bg-background px-2 text-sm focus-within:ring-1 focus-within:ring-ring">
+      <input
+        type="number"
+        min={0}
+        max={23}
+        value={h}
+        onChange={(e) => commit(String(Math.max(0, Math.min(23, parseInt(e.target.value) || 0))).padStart(2, "0"), m)}
+        className="w-8 bg-transparent text-center outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      />
+      <span className="text-muted-foreground select-none">:</span>
+      <input
+        type="number"
+        min={0}
+        max={59}
+        value={m}
+        onChange={(e) => commit(h, String(Math.max(0, Math.min(59, parseInt(e.target.value) || 0))).padStart(2, "0"))}
+        className="w-8 bg-transparent text-center outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      />
+    </div>
   )
 }
 
@@ -839,7 +962,9 @@ function EventDialog({
               }
             >
               <SelectTrigger>
-                <SelectValue />
+                <span className="text-sm">
+                  {RECURRENCE_LABELS[isCreating ? form.recurrence : (selectedEvent?.recurrence ?? "none")]}
+                </span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Keine Wiederholung</SelectItem>
@@ -864,7 +989,15 @@ function EventDialog({
                 }
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  {(() => {
+                    const t = isCreating ? form.type : (selectedEvent?.type ?? "internal")
+                    return (
+                      <span className="flex items-center gap-2 text-sm">
+                        <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", TYPE_CONFIG[t].dot)} />
+                        {TYPE_CONFIG[t].label}
+                      </span>
+                    )
+                  })()}
                 </SelectTrigger>
                 <SelectContent>
                   {ALL_TYPES.map((t) => (
