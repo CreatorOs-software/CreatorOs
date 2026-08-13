@@ -23,12 +23,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
 import {
   ChevronLeft,
   ChevronRight,
   Plus,
   Calendar,
+  CalendarCheck,
   Clock,
   Grid3x3,
   List,
@@ -36,16 +43,23 @@ import {
   X,
   MapPin,
   Users,
+  User,
+  ChevronsUpDown,
+  PenLine,
+  Repeat,
+  Tag,
+  FileText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type EventType = "shoot" | "travel" | "deadline" | "brand" | "internal" | "posting"
+type Recurrence = "none" | "daily" | "weekly" | "monthly" | "yearly"
 
 type Creator = { id: string; full_name: string; initials: string; color: string }
 
-type TeamMember = { id: string; full_name: string; email: string; role: string }
+type TeamMember = { id: string; display_name: string | null; initials: string | null; color: string | null; role: string }
 
 type DbEvent = {
   id: string
@@ -57,6 +71,8 @@ type DbEvent = {
   location: string | null
   creator_id: string | null
   attendee_ids: string[]
+  all_day: boolean
+  recurrence: string
   creators: { full_name: string; initials: string; color: string } | null
 }
 
@@ -70,6 +86,8 @@ type CalEvent = {
   location: string | null
   creatorId: string | null
   attendeeIds: string[]
+  allDay: boolean
+  recurrence: Recurrence
   creator: { full_name: string; initials: string; color: string } | null
 }
 
@@ -84,6 +102,8 @@ type FormState = {
   location: string
   creator_id: string
   attendee_ids: string[]
+  all_day: boolean
+  recurrence: Recurrence
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -114,6 +134,8 @@ const EMPTY_FORM: FormState = {
   location: "",
   creator_id: "",
   attendee_ids: [],
+  all_day: false,
+  recurrence: "none",
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -131,6 +153,8 @@ function toCalEvent(db: DbEvent): CalEvent {
     location: db.location,
     creatorId: db.creator_id,
     attendeeIds: db.attendee_ids ?? [],
+    allDay: db.all_day ?? false,
+    recurrence: (db.recurrence ?? "none") as Recurrence,
     creator: db.creators,
   }
 }
@@ -212,7 +236,7 @@ function EventChip({
       onDragEnd={onDragEnd}
       onClick={() => onClick(event)}
       className={cn(
-        "cursor-pointer truncate rounded px-1.5 text-xs font-medium text-white transition-all hover:brightness-110 hover:shadow-md",
+        "cursor-pointer truncate rounded px-1.5 text-sm font-medium text-white transition-all hover:brightness-110 hover:shadow-md",
         cfg.bg,
         compact ? "py-0.5" : "py-1",
       )}
@@ -264,7 +288,7 @@ function MonthView({
     <Card className="flex flex-1 flex-col overflow-hidden min-h-0">
       <div className="grid grid-cols-7 border-b shrink-0">
         {WEEKDAYS.map((d) => (
-          <div key={d} className="border-r p-2 text-center text-xs font-medium text-muted-foreground last:border-r-0">
+          <div key={d} className="border-r p-2 text-center text-sm font-medium text-muted-foreground last:border-r-0">
             {d}
           </div>
         ))}
@@ -284,7 +308,7 @@ function MonthView({
               <div
                 onClick={() => onDayClick(day)}
                 className={cn(
-                  "mb-1 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full text-xs transition-colors hover:bg-accent",
+                  "mb-1 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-sm transition-colors hover:bg-accent",
                   isToday && "bg-primary text-primary-foreground font-semibold hover:bg-primary/90",
                   !isCurrentMonth && "text-muted-foreground",
                 )}
@@ -296,7 +320,7 @@ function MonthView({
                   <EventChip key={ev.id} event={ev} onClick={onEventClick} onDragStart={onDragStart} onDragEnd={onDragEnd} compact />
                 ))}
                 {dayEvents.length > 3 && (
-                  <p className="pl-1 text-[10px] text-muted-foreground">+{dayEvents.length - 3} weitere</p>
+                  <p className="pl-1 text-xs text-muted-foreground">+{dayEvents.length - 3} weitere</p>
                 )}
               </div>
             </div>
@@ -344,11 +368,11 @@ function WeekView({
   return (
     <Card className="flex-1 overflow-auto min-h-0">
       <div className="sticky top-0 z-10 grid grid-cols-8 border-b bg-card">
-        <div className="border-r p-2 text-xs text-muted-foreground" />
+        <div className="border-r p-2 text-sm text-muted-foreground" />
         {weekDays.map((day, i) => (
           <div
             key={day.toISOString()}
-            className={cn("border-r p-2 text-center text-xs font-medium last:border-r-0", isSameDay(day, today) && "bg-primary/5")}
+            className={cn("border-r p-2 text-center text-sm font-medium last:border-r-0", isSameDay(day, today) && "bg-primary/5")}
           >
             <div className={cn(isSameDay(day, today) && "text-primary font-semibold")}>{WEEKDAYS[i]}</div>
             <div className="text-muted-foreground">
@@ -360,7 +384,7 @@ function WeekView({
       <div className="grid grid-cols-8">
         {HOURS.map((hour) => (
           <>
-            <div key={`t-${hour}`} className="border-b border-r p-1 pr-2 text-right text-[10px] text-muted-foreground">
+            <div key={`t-${hour}`} className="border-b border-r p-1 pr-2 text-right text-xs text-muted-foreground">
               {String(hour).padStart(2, "0")}:00
             </div>
             {weekDays.map((day) => {
@@ -416,7 +440,7 @@ function DayView({
             onDragOver={(e) => e.preventDefault()}
             onDrop={() => onDrop(currentDate, hour)}
           >
-            <div className="w-16 shrink-0 border-r p-2 text-right text-xs text-muted-foreground">
+            <div className="w-16 shrink-0 border-r p-2 text-right text-sm text-muted-foreground">
               {String(hour).padStart(2, "0")}:00
             </div>
             <div className="min-h-16 flex-1 p-1 hover:bg-accent/40">
@@ -485,11 +509,11 @@ function ListView({
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{ev.title}</p>
                     <div className="mt-0.5 flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-sm text-muted-foreground">
                         {formatTime(ev.startTime)} – {formatTime(ev.endTime)}
                       </span>
                       {ev.location && (
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1 text-sm text-muted-foreground">
                           <MapPin className="h-3 w-3" />
                           {ev.location}
                         </span>
@@ -636,30 +660,120 @@ function EventDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{isCreating ? "Neues Event" : "Event bearbeiten"}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-1">
-          {/* Title */}
+        <div className="space-y-4 py-2">
+          {/* Title + Ganztägig */}
+          <div className="flex items-end gap-4">
+            <div className="flex-1 space-y-1.5">
+              <Label className="flex items-center gap-1.5"><PenLine className="h-3.5 w-3.5" />Titel</Label>
+              <Input
+                placeholder="Event-Titel"
+                autoFocus
+                value={isCreating ? form.title : (selectedEvent?.title ?? "")}
+                onChange={(e) =>
+                  isCreating
+                    ? setForm((f) => ({ ...f, title: e.target.value }))
+                    : setSelectedEvent((ev) => ev ? { ...ev, title: e.target.value } : null)
+                }
+              />
+            </div>
+            <div className="flex shrink-0 items-center gap-2 pb-1.5">
+              <Switch
+                checked={isCreating ? form.all_day : (selectedEvent?.allDay ?? false)}
+                onCheckedChange={(checked) =>
+                  isCreating
+                    ? setForm((f) => ({ ...f, all_day: checked }))
+                    : setSelectedEvent((ev) => ev ? { ...ev, allDay: checked } : null)
+                }
+              />
+              <Label className="cursor-pointer whitespace-nowrap text-sm">Ganztägig</Label>
+            </div>
+          </div>
+
+          {/* Teilnehmer */}
           <div className="space-y-1.5">
-            <Label>Titel</Label>
-            <Input
-              placeholder="Event-Titel"
-              autoFocus
-              value={isCreating ? form.title : (selectedEvent?.title ?? "")}
-              onChange={(e) =>
-                isCreating
-                  ? setForm((f) => ({ ...f, title: e.target.value }))
-                  : setSelectedEvent((ev) => ev ? { ...ev, title: e.target.value } : null)
-              }
-            />
+            <Label className="flex items-center gap-1.5">
+              <Users className="h-3.5 w-3.5" />
+              Teilnehmer
+            </Label>
+            <Popover>
+              <PopoverTrigger
+                className="flex min-h-9 w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none hover:bg-muted/30 focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                {activeAttendees.length === 0 ? (
+                  <span className="text-muted-foreground">Teilnehmer hinzufügen…</span>
+                ) : (
+                  <span className="flex flex-wrap gap-1">
+                    {activeAttendees.map((id) => {
+                      const m = teamMembers.find((tm) => tm.id === id)
+                      if (!m) return null
+                      const bg = m.color ?? getMemberColor(id)
+                      const abbr = m.initials ?? getInitials(m.display_name ?? "")
+                      return (
+                        <span
+                          key={id}
+                          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium text-white"
+                          style={{ backgroundColor: bg }}
+                        >
+                          <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-white/20 text-[9px] font-bold">
+                            {abbr}
+                          </span>
+                          {m.display_name ?? abbr}
+                        </span>
+                      )
+                    })}
+                  </span>
+                )}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-2" align="start">
+                {teamMembers.length === 0 ? (
+                  <p className="px-2 py-4 text-center text-sm text-muted-foreground">
+                    Keine Teammitglieder gefunden
+                  </p>
+                ) : (
+                  <div className="space-y-0.5">
+                    {teamMembers.map((member) => {
+                      const active = activeAttendees.includes(member.id)
+                      const color = member.color ?? getMemberColor(member.id)
+                      const initials = member.initials ?? getInitials(member.display_name ?? "")
+                      return (
+                        <button
+                          key={member.id}
+                          type="button"
+                          onClick={() => toggleAttendee(member.id)}
+                          className={cn(
+                            "flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm transition-colors",
+                            active ? "bg-muted" : "hover:bg-muted/60",
+                          )}
+                        >
+                          <span
+                            className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
+                            style={{ backgroundColor: color }}
+                          >
+                            {initials}
+                          </span>
+                          <span className="flex-1 truncate text-left">{member.display_name ?? initials}</span>
+                          <span className="text-xs text-muted-foreground capitalize">{member.role}</span>
+                          {active && (
+                            <span className="ml-1 text-xs font-medium text-primary">✓</span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Start */}
           <div className="space-y-1.5">
-            <Label>Start</Label>
+            <Label className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />Start</Label>
             <div className="flex gap-2">
               <div className="flex-1">
                 <DatePicker
@@ -672,20 +786,22 @@ function EventDialog({
                   placeholder="Datum"
                 />
               </div>
-              <div className="w-28">
-                <TimeInput
-                  value={isCreating ? form.start_time : editStartTime}
-                  onChange={(v) =>
-                    isCreating ? setForm((f) => ({ ...f, start_time: v })) : setEditStartTime(v)
-                  }
-                />
-              </div>
+              {!(isCreating ? form.all_day : (selectedEvent?.allDay ?? false)) && (
+                <div className="w-32">
+                  <TimeInput
+                    value={isCreating ? form.start_time : editStartTime}
+                    onChange={(v) =>
+                      isCreating ? setForm((f) => ({ ...f, start_time: v })) : setEditStartTime(v)
+                    }
+                  />
+                </div>
+              )}
             </div>
           </div>
 
-          {/* End */}
+          {/* Ende */}
           <div className="space-y-1.5">
-            <Label>Ende</Label>
+            <Label className="flex items-center gap-1.5"><CalendarCheck className="h-3.5 w-3.5" />Ende</Label>
             <div className="flex gap-2">
               <div className="flex-1">
                 <DatePicker
@@ -698,21 +814,47 @@ function EventDialog({
                   placeholder="Datum"
                 />
               </div>
-              <div className="w-28">
-                <TimeInput
-                  value={isCreating ? form.end_time : editEndTime}
-                  onChange={(v) =>
-                    isCreating ? setForm((f) => ({ ...f, end_time: v })) : setEditEndTime(v)
-                  }
-                />
-              </div>
+              {!(isCreating ? form.all_day : (selectedEvent?.allDay ?? false)) && (
+                <div className="w-32">
+                  <TimeInput
+                    value={isCreating ? form.end_time : editEndTime}
+                    onChange={(v) =>
+                      isCreating ? setForm((f) => ({ ...f, end_time: v })) : setEditEndTime(v)
+                    }
+                  />
+                </div>
+              )}
             </div>
+          </div>
+
+          {/* Wiederholung */}
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1.5"><Repeat className="h-3.5 w-3.5" />Wiederholung</Label>
+            <Select
+              value={isCreating ? form.recurrence : (selectedEvent?.recurrence ?? "none")}
+              onValueChange={(v) =>
+                isCreating
+                  ? setForm((f) => ({ ...f, recurrence: v as Recurrence }))
+                  : setSelectedEvent((ev) => ev ? { ...ev, recurrence: v as Recurrence } : null)
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Keine Wiederholung</SelectItem>
+                <SelectItem value="daily">Täglich</SelectItem>
+                <SelectItem value="weekly">Wöchentlich</SelectItem>
+                <SelectItem value="monthly">Monatlich</SelectItem>
+                <SelectItem value="yearly">Jährlich</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Typ + Creator */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Typ</Label>
+              <Label className="flex items-center gap-1.5"><Tag className="h-3.5 w-3.5" />Typ</Label>
               <Select
                 value={isCreating ? form.type : (selectedEvent?.type ?? "internal")}
                 onValueChange={(v) =>
@@ -737,41 +879,59 @@ function EventDialog({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Creator</Label>
-              <Select
-                value={isCreating ? (form.creator_id || "none") : (selectedEvent?.creatorId || "none")}
-                onValueChange={(v) =>
-                  isCreating
-                    ? setForm((f) => ({ ...f, creator_id: v === "none" ? "" : (v ?? "") }))
-                    : setSelectedEvent((ev) => ev ? { ...ev, creatorId: v === "none" ? null : (v ?? null) } : null)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Kein Creator" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Kein Creator</SelectItem>
-                  {creators.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      <span className="flex items-center gap-2">
-                        <span
-                          className="inline-flex size-4 items-center justify-center rounded-full text-[9px] font-semibold text-white"
-                          style={{ backgroundColor: c.color }}
-                        >
-                          {c.initials}
+              <Label className="flex items-center gap-1.5"><User className="h-3.5 w-3.5" />Creator</Label>
+              {(() => {
+                const selectedId = isCreating ? form.creator_id : selectedEvent?.creatorId
+                const displayCreator = creators.find((c) => c.id === selectedId)
+                return (
+                  <Select
+                    value={selectedId || "none"}
+                    onValueChange={(v) =>
+                      isCreating
+                        ? setForm((f) => ({ ...f, creator_id: v === "none" ? "" : (v ?? "") }))
+                        : setSelectedEvent((ev) => ev ? { ...ev, creatorId: v === "none" ? null : (v ?? null) } : null)
+                    }
+                  >
+                    <SelectTrigger>
+                      {displayCreator ? (
+                        <span className="flex items-center gap-2 text-sm">
+                          <span
+                            className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
+                            style={{ backgroundColor: displayCreator.color }}
+                          >
+                            {displayCreator.initials}
+                          </span>
+                          {displayCreator.full_name}
                         </span>
-                        {c.full_name}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Kein Creator</span>
+                      )}
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Kein Creator</SelectItem>
+                      {creators.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          <span className="flex items-center gap-2">
+                            <span
+                              className="inline-flex size-4 items-center justify-center rounded-full text-[9px] font-semibold text-white"
+                              style={{ backgroundColor: c.color }}
+                            >
+                              {c.initials}
+                            </span>
+                            {c.full_name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )
+              })()}
             </div>
           </div>
 
           {/* Ort */}
           <div className="space-y-1.5">
-            <Label>Ort</Label>
+            <Label className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />Ort</Label>
             <Input
               placeholder="Ort / Adresse"
               value={isCreating ? form.location : (selectedEvent?.location ?? "")}
@@ -783,51 +943,9 @@ function EventDialog({
             />
           </div>
 
-          {/* Teammitglieder */}
-          {teamMembers.length > 0 && (
-            <div className="space-y-1.5">
-              <Label className="flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" />
-                Teammitglieder
-              </Label>
-              <div className="flex flex-wrap gap-2">
-                {teamMembers.map((member) => {
-                  const active = activeAttendees.includes(member.id)
-                  const color = getMemberColor(member.id)
-                  const initials = getInitials(member.full_name)
-                  return (
-                    <button
-                      key={member.id}
-                      type="button"
-                      onClick={() => toggleAttendee(member.id)}
-                      className={cn(
-                        "flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-medium transition-all",
-                        active
-                          ? "border-transparent text-white"
-                          : "border-border text-muted-foreground hover:border-border/80 hover:bg-muted",
-                      )}
-                      style={active ? { backgroundColor: color } : {}}
-                    >
-                      <span
-                        className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold"
-                        style={{
-                          backgroundColor: active ? "rgba(255,255,255,0.25)" : color,
-                          color: "white",
-                        }}
-                      >
-                        {initials}
-                      </span>
-                      {member.full_name}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
           {/* Notizen */}
           <div className="space-y-1.5">
-            <Label>Notizen</Label>
+            <Label className="flex items-center gap-1.5"><FileText className="h-3.5 w-3.5" />Notizen</Label>
             <Textarea
               placeholder="Zusätzliche Informationen…"
               rows={2}
@@ -894,9 +1012,12 @@ export function EventManager() {
       .then((d: { creators?: Creator[] }) => setCreators(d.creators ?? []))
       .catch(() => {})
     fetch("/api/agency/users")
-      .then((r) => r.json())
-      .then((d: { users?: TeamMember[] }) => setTeamMembers(d.users ?? []))
-      .catch(() => {})
+      .then(async (r) => {
+        const d = await r.json()
+        if (!r.ok) { console.error("[agency/users]", d); return }
+        setTeamMembers(d.users ?? [])
+      })
+      .catch((e) => console.error("[agency/users] fetch failed", e))
   }, [])
 
   const allEvents = useMemo(() => (data?.events ?? []).map(toCalEvent), [data])
@@ -936,13 +1057,18 @@ export function EventManager() {
     if (!form.title.trim() || !form.start_date || saving) return
     setSaving(true)
     try {
+      const startTime = form.all_day ? "00:00" : form.start_time
+      const endTime   = form.all_day ? "23:59" : form.end_time
       const body: Record<string, unknown> = {
         title: form.title.trim(),
         type: form.type,
-        start_at: combineToISO(form.start_date, form.start_time),
+        start_at: combineToISO(form.start_date, startTime),
         attendee_ids: form.attendee_ids,
+        all_day: form.all_day,
+        recurrence: form.recurrence,
       }
-      if (form.end_date) body.end_at = combineToISO(form.end_date, form.end_time)
+      if (form.end_date) body.end_at = combineToISO(form.end_date, endTime)
+      else if (form.all_day) body.end_at = combineToISO(form.start_date, "23:59")
       if (form.notes.trim()) body.notes = form.notes.trim()
       if (form.location.trim()) body.location = form.location.trim()
       if (form.creator_id) body.creator_id = form.creator_id
@@ -974,6 +1100,8 @@ export function EventManager() {
           location: selectedEvent.location || null,
           creator_id: selectedEvent.creatorId || null,
           attendee_ids: selectedEvent.attendeeIds,
+          all_day: selectedEvent.allDay,
+          recurrence: selectedEvent.recurrence,
         }),
       })
       if (res.ok) { invalidate(); closeDialog() }

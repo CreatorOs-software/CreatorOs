@@ -5,7 +5,7 @@ import { getAuthContext, toErrorResponse } from "@/lib/auth-context";
 export const dynamic = "force-dynamic";
 
 const SELECT = `
-  id, title, notes, start_at, end_at, type, location, creator_id, attendee_ids,
+  id, title, notes, start_at, end_at, type, location, creator_id, attendee_ids, all_day, recurrence,
   creators:creator_id (full_name, initials, color)
 `;
 
@@ -46,6 +46,8 @@ const createSchema = z.object({
   creator_id: z.string().nullable().optional(),
   deal_id: z.string().nullable().optional(),
   attendee_ids: z.array(z.string()).optional(),
+  all_day: z.boolean().optional(),
+  recurrence: z.enum(["none", "daily", "weekly", "monthly", "yearly"]).optional(),
 });
 
 export async function POST(req: NextRequest) {

@@ -1,0 +1,3 @@
+ALTER TABLE public.events
+  ADD COLUMN IF NOT EXISTS all_day    BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS recurrence TEXT    NOT NULL DEFAULT 'none';

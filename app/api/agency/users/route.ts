@@ -1,14 +1,16 @@
 import { getAuthContext, toErrorResponse } from "@/lib/auth-context";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const { supabase, agencyId } = await getAuthContext();
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, full_name, email, role")
+      .select("id, display_name, initials, color, role")
       .eq("agency_id", agencyId)
-      .order("full_name");
+      .order("display_name");
 
     if (error) throw error;
 
