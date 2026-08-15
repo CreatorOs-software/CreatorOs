@@ -82,6 +82,9 @@ export function CreateDealWizard({ creator, brands, creators, users }: CreateDea
     const errors = validateStep(step as 1 | 2 | 3 | 4 | 5);
     if (Object.keys(errors).length > 0) {
       setStepErrors(errors);
+      setTimeout(() => {
+        document.querySelector("[data-field-error]")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 0);
       return;
     }
     setStepErrors({});

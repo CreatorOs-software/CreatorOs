@@ -144,7 +144,7 @@ export function StepZiele({ form, errors, onNext, onPrev }: StepZieleProps) {
                       className="mt-2"
                     />
                     {errors.min_kooperation_betrag && (
-                      <p className="mt-1.5 text-xs text-destructive">
+                      <p data-field-error className="mt-1.5 text-xs text-destructive">
                         {errors.min_kooperation_betrag}
                       </p>
                     )}
@@ -176,7 +176,7 @@ export function StepZiele({ form, errors, onNext, onPrev }: StepZieleProps) {
                       className="mt-2 resize-none h-28"
                     />
                     {errors.wunsche_anforderungen && (
-                      <p className="mt-1.5 text-xs text-destructive">
+                      <p data-field-error className="mt-1.5 text-xs text-destructive">
                         {errors.wunsche_anforderungen}
                       </p>
                     )}

@@ -72,7 +72,7 @@ export function Step1({ form, errors, brands, users, documents, onDocumentsChang
                   className="mt-2"
                 />
                 {errors.title && (
-                  <p className="mt-1.5 text-xs text-destructive">{errors.title}</p>
+                  <p data-field-error className="mt-1.5 text-xs text-destructive">{errors.title}</p>
                 )}
               </div>
             )}

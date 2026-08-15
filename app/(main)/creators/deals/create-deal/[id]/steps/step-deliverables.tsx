@@ -694,7 +694,7 @@ export function StepDeliverables({ form, errors, onNext, onPrev }: StepDeliverab
               return (
                 <div className="flex flex-col gap-4">
                   {errors.deliverables && (
-                    <p className="text-xs text-destructive">{errors.deliverables}</p>
+                    <p data-field-error className="text-xs text-destructive">{errors.deliverables}</p>
                   )}
 
                   {items.map((item, i) => (

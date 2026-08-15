@@ -236,7 +236,7 @@ export function Step3({ form, errors, onNext, onPrev }: Step3Props) {
                     className="mt-2"
                   />
                   {errors.fee && (
-                    <p className="mt-1.5 text-xs text-destructive">{errors.fee}</p>
+                    <p data-field-error className="mt-1.5 text-xs text-destructive">{errors.fee}</p>
                   )}
                 </div>
               )}

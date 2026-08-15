@@ -80,7 +80,7 @@ export function Step1({
                         className="mt-2"
                       />
                       {errors.vorname && (
-                        <p className="mt-1.5 text-xs text-destructive">
+                        <p data-field-error className="mt-1.5 text-xs text-destructive">
                           {errors.vorname}
                         </p>
                       )}
@@ -146,7 +146,7 @@ export function Step1({
                         className="mt-2"
                       />
                       {errors.email && (
-                        <p className="mt-1.5 text-xs text-destructive">
+                        <p data-field-error className="mt-1.5 text-xs text-destructive">
                           {errors.email}
                         </p>
                       )}

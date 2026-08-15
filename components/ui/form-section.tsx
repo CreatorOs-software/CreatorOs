@@ -21,6 +21,7 @@ export function FormSection({
   children,
 }: FormSectionProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const [overflowVisible, setOverflowVisible] = useState(defaultOpen);
 
   return (
     <div
@@ -66,7 +67,11 @@ export function FormSection({
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
-            style={{ overflow: "hidden" }}
+            style={{ overflow: overflowVisible ? "visible" : "hidden" }}
+            onAnimationStart={() => setOverflowVisible(false)}
+            onAnimationComplete={(def) => {
+              if (def === "animate") setOverflowVisible(true);
+            }}
           >
             <div className={cn("border-t border-border-light", nested ? "px-4 pb-4 pt-3" : "px-5 pb-6 pt-4")}>
               {children}

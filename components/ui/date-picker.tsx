@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   format,
   addMonths,
@@ -249,8 +250,10 @@ export function DatePicker(props: DatePickerProps) {
   const [draftEnd, setDraftEnd] = useState<Date | null>(null);
   const [month, setMonth] = useState(startOfMonth(committedStart ?? new Date()));
   const [createEvent, setCreateEvent] = useState(false);
+  const [popupPos, setPopupPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
-  const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   // Reset draft to committed values each time picker opens
   useEffect(() => {
@@ -258,6 +261,10 @@ export function DatePicker(props: DatePickerProps) {
       setDraftStart(committedStart);
       setDraftEnd(committedEnd);
       setMonth(startOfMonth(committedStart ?? new Date()));
+      if (triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        setPopupPos({ top: rect.bottom + 4, left: rect.left });
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -265,9 +272,10 @@ export function DatePicker(props: DatePickerProps) {
   // Close on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const target = e.target as Node;
+      const insideTrigger = triggerRef.current?.contains(target);
+      const insidePopup = popupRef.current?.contains(target);
+      if (!insideTrigger && !insidePopup) setOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
@@ -344,9 +352,10 @@ export function DatePicker(props: DatePickerProps) {
     : !draftStart;
 
   return (
-    <div ref={ref} className={cn("relative", props.className)}>
+    <div className={cn("relative", props.className)}>
       {/* Trigger */}
       <button
+        ref={triggerRef}
         type="button"
         disabled={props.disabled}
         onClick={() => setOpen((o) => !o)}
@@ -371,15 +380,18 @@ export function DatePicker(props: DatePickerProps) {
         )}
       </button>
 
-      {/* Two-panel picker */}
-      <AnimatePresence>
-        {open && (
+      {/* Two-panel picker – rendered via portal to escape overflow containers */}
+      {createPortal(
+        <AnimatePresence>
+          {open && (
           <motion.div
+            ref={popupRef}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 6 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="absolute z-50 mt-1 p-5 bg-card border border-border rounded-2xl shadow-xl flex gap-6"
+            style={{ position: "fixed", top: popupPos.top, left: popupPos.left, zIndex: 9999 }}
+            className="p-5 bg-card border border-border rounded-2xl shadow-xl flex gap-6"
           >
             {/* Left: Calendar */}
             <Calendar
@@ -444,7 +456,9 @@ export function DatePicker(props: DatePickerProps) {
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
