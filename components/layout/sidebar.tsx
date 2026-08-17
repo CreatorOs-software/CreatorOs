@@ -19,6 +19,7 @@ import {
   LogOut,
   PanelBottom,
   PanelBottomClose,
+  FolderOpen,
 } from "lucide-react";
 import {
   Sidebar,
@@ -180,6 +181,11 @@ export function AppSidebar() {
       label: "Events",
       href: "/events",
       icon: <Calendar className="h-5 w-5 shrink-0 text-current" />,
+    },
+    {
+      label: "Files",
+      href: "/files",
+      icon: <FolderOpen className="h-5 w-5 shrink-0 text-current" />,
     },
     {
       label: "Invoice",
