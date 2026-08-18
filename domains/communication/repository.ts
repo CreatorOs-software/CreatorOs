@@ -17,7 +17,7 @@ export const CommunicationRepository = {
       supabase
         .from("email_threads")
         .select(
-          "id, sender_email, sender_name, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id",
+          "id, sender_email, sender_name, recipient_email, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id",
         )
         .eq("agency_id", agencyId)
         .order("received_at", { ascending: false })
@@ -69,19 +69,24 @@ export const CommunicationRepository = {
   async findSmtpIntegration(
     supabase: SupabaseClient,
     agencyId: string,
+    integrationId?: string | null,
   ): Promise<SmtpIntegration | null> {
-    const { data } = await supabase
+    let q = supabase
       .from("email_integrations")
       .select(
         "id, email, display_name, smtp_host, smtp_port, smtp_secure, imap_username, imap_password",
       )
       .eq("agency_id", agencyId)
       .eq("status", "connected")
-      .not("smtp_host", "is", null)
-      .order("connected_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .not("smtp_host", "is", null);
 
+    if (integrationId) {
+      q = q.eq("id", integrationId);
+    } else {
+      q = q.order("connected_at", { ascending: false }).limit(1);
+    }
+
+    const { data } = await q.maybeSingle();
     return (data as SmtpIntegration | null) ?? null;
   },
 
@@ -93,6 +98,7 @@ export const CommunicationRepository = {
       folder: string;
       sender_email: string;
       sender_name: string | null;
+      recipient_email: string | null;
       subject: string;
       preview: string;
       body: string;

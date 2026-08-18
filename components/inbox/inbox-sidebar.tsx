@@ -8,19 +8,178 @@ import {
   Mail,
   MessageSquare,
   Pencil,
+  Plus,
   Send,
   Settings2,
+  Tag,
   Trash2,
+  X,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { Folder, Integration } from "./types";
 import { AddMailboxDialog } from "./add-mailbox-dialog";
+
+// ─── Labels ───────────────────────────────────────────────────────────────────
+
+const LABEL_COLORS = [
+  "#006FFE", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6",
+  "#EC4899", "#14B8A6", "#F97316", "#6366F1", "#84CC16",
+];
+
+type Label = { id: string; name: string; color: string };
+
+const STORAGE_KEY = "inbox_labels";
+
+function useLabels() {
+  const [labels, setLabels] = useState<Label[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]") as Label[];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(labels));
+  }, [labels]);
+
+  function addLabel(name: string, color: string) {
+    setLabels((prev) => [...prev, { id: crypto.randomUUID(), name, color }]);
+  }
+
+  function removeLabel(id: string) {
+    setLabels((prev) => prev.filter((l) => l.id !== id));
+  }
+
+  return { labels, addLabel, removeLabel };
+}
+
+// ─── CreateLabelDialog ────────────────────────────────────────────────────────
+
+function CreateLabelDialog({ onAdd }: { onAdd: (name: string, color: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [color, setColor] = useState(LABEL_COLORS[0]!);
+
+  function handleSubmit() {
+    if (!name.trim()) return;
+    onAdd(name.trim(), color);
+    setName("");
+    setColor(LABEL_COLORS[0]!);
+    setOpen(false);
+  }
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="flex h-4 w-4 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+      >
+        <Plus className="h-3 w-3" />
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Neues Label</DialogTitle>
+          </DialogHeader>
+          <div className="mt-2 flex flex-col gap-4">
+            <input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+              placeholder="Label-Name"
+              className="h-9 w-full rounded-lg bg-muted px-3 text-sm outline-none focus:ring-1 focus:ring-foreground/20"
+            />
+            <div>
+              <p className="mb-2 text-xs text-muted-foreground">Farbe</p>
+              <div className="flex flex-wrap gap-2">
+                {LABEL_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setColor(c)}
+                    className={cn(
+                      "h-6 w-6 rounded-full border-2 transition-transform",
+                      color === c ? "scale-110 border-foreground" : "border-transparent",
+                    )}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setOpen(false)}
+                className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={!name.trim()}
+                className="rounded-lg bg-foreground px-3 py-1.5 text-xs font-medium text-background disabled:opacity-40"
+              >
+                Erstellen
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// ─── LabelsSection ────────────────────────────────────────────────────────────
+
+function LabelsSection() {
+  const { labels, addLabel, removeLabel } = useLabels();
+
+  return (
+    <section>
+      <div className="mb-1.5 flex items-center justify-between px-2">
+        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60">
+          Labels
+        </p>
+        <CreateLabelDialog onAdd={addLabel} />
+      </div>
+      {labels.length === 0 ? (
+        <p className="px-2 text-[11px] text-muted-foreground/50">Noch keine Labels</p>
+      ) : (
+        <div className="flex flex-wrap gap-1.5 px-2">
+          {labels.map((label) => (
+            <span
+              key={label.id}
+              className="group flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] font-medium"
+              style={{ borderColor: label.color + "44", backgroundColor: label.color + "18", color: label.color }}
+            >
+              <Tag className="h-2.5 w-2.5 shrink-0" />
+              {label.name}
+              <button
+                onClick={() => removeLabel(label.id)}
+                className="ml-0.5 hidden rounded-full group-hover:block"
+              >
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
@@ -175,6 +334,7 @@ type InboxSidebarProps = {
   selectedIntegrationId: string | null;
   onFolderChange: (f: Folder) => void;
   onIntegrationChange: (id: string) => void;
+  onCompose: () => void;
 };
 
 export function InboxSidebar({
@@ -184,9 +344,10 @@ export function InboxSidebar({
   selectedIntegrationId,
   onFolderChange,
   onIntegrationChange,
+  onCompose,
 }: InboxSidebarProps) {
   return (
-    <div className="flex h-full w-52 shrink-0 select-none flex-col overflow-hidden rounded-2xl border border-[#E7E7E7] bg-white py-3 shadow-sm">
+    <div className="flex h-full w-52 shrink-0 select-none flex-col overflow-hidden border-r border-[#E7E7E7] bg-white py-3">
       {/* Account row */}
       <div className="flex items-center gap-1 px-2 pb-3">
         <AccountSwitcher
@@ -199,7 +360,10 @@ export function InboxSidebar({
 
       {/* Compose */}
       <div className="px-3 pb-3">
-        <button className="inline-flex h-8 w-full items-center justify-center gap-2 rounded-lg border border-[#E7E7E7] bg-transparent text-sm text-foreground transition-colors hover:bg-muted/50">
+        <button
+          onClick={onCompose}
+          className="inline-flex h-8 w-full items-center justify-center gap-2 rounded-lg border border-[#E7E7E7] bg-transparent text-sm text-foreground transition-colors hover:bg-muted/50"
+        >
           <Pencil className="h-3.5 w-3.5" />
           New Email
         </button>
@@ -239,6 +403,8 @@ export function InboxSidebar({
             ))}
           </div>
         </section>
+
+        <LabelsSection />
       </div>
 
       {/* Footer */}

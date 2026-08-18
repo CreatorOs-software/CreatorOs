@@ -8,9 +8,11 @@ import { InboxSidebar } from "./inbox-sidebar";
 import { CategorySelect } from "./category-select";
 import { ThreadItem } from "./thread-item";
 import { EmailDetailPanel, EmptyState } from "./email-detail-panel";
+import { ComposeEmailDialog } from "./compose-email-dialog";
 
 import type { Folder, InboxData, Thread, ThreadPatch } from "./types";
 import { QueryKeys } from "@/lib/query-keys";
+import { cn } from "@/lib/utils";
 
 // ─── Data fetching ────────────────────────────────────────────────────────────
 
@@ -74,6 +76,8 @@ export function OrbitInbox() {
   const [search, setSearch] = useState("");
   const [workPanelOpen, setWorkPanelOpen] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [autoLabel, setAutoLabel] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
 
   // Initialize selected integration when data first loads
   useEffect(() => {
@@ -206,100 +210,122 @@ export function OrbitInbox() {
 
   return (
     <div className="flex h-full min-w-0 overflow-hidden gap-2">
-      {/* Sidebar */}
-      <InboxSidebar
-        folder={folder}
-        unreadCount={inboxUnread}
-        integrations={integrations}
-        selectedIntegrationId={selectedIntegrationId}
-        onFolderChange={handleFolderChange}
-        onIntegrationChange={(id) => {
-          setSelectedIntegrationId(id);
-          setSelectedId(null);
-        }}
-      />
+      {/* Main inbox card: sidebar + thread list + email detail */}
+      <div className="flex flex-1 min-w-0 overflow-hidden rounded-2xl border border-[#E7E7E7] bg-white shadow-sm">
 
-      {/* Thread list */}
-      <div className="flex w-95 shrink-0 flex-col overflow-hidden rounded-2xl border border-[#E7E7E7] bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#E7E7E7] px-5 py-3">
-          <span className="text-sm font-semibold capitalize">{folder}</span>
-          <button
-            onClick={() => void handleSync()}
-            disabled={syncing}
-            className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted disabled:opacity-50"
-          >
-            <RefreshCcw className={`h-4 w-4 text-muted-foreground ${syncing ? "animate-spin" : ""}`} />
-          </button>
-        </div>
+        {/* Sidebar */}
+        <InboxSidebar
+          folder={folder}
+          unreadCount={inboxUnread}
+          integrations={integrations}
+          selectedIntegrationId={selectedIntegrationId}
+          onFolderChange={handleFolderChange}
+          onIntegrationChange={(id) => {
+            setSelectedIntegrationId(id);
+            setSelectedId(null);
+          }}
+          onCompose={() => setComposeOpen(true)}
+        />
 
-        <div className="px-5 pb-2 pt-3">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Suchen..."
-              className="h-8 w-full rounded-lg bg-muted pl-8 pr-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-foreground/20"
-            />
-          </div>
-        </div>
-
-        {folder === "inbox" && (
-          <div className="px-5 pb-3">
-            <CategorySelect category={category} onCategory={setCategory} />
-          </div>
-        )}
-
-        <div className="flex-1 overflow-y-auto py-1">
-          {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-12 text-center text-muted-foreground">
-              <Inbox className="h-8 w-8 opacity-20" />
-              <p className="text-sm">
-                {folder !== "inbox"
-                  ? "Keine Nachrichten"
-                  : search
-                    ? "Keine Ergebnisse"
-                    : "Alles gelesen"}
-              </p>
+        {/* Thread list */}
+        <div className="flex w-80 shrink-0 flex-col overflow-hidden border-x border-[#E7E7E7]">
+          <div className="flex items-center justify-between border-b border-[#E7E7E7] px-4 py-3">
+            <span className="text-sm font-semibold capitalize">{folder}</span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setAutoLabel((v) => !v)}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-medium uppercase transition-colors",
+                  autoLabel
+                    ? "border-transparent bg-muted text-foreground"
+                    : "border-[#E7E7E7] text-muted-foreground hover:bg-muted/50",
+                )}
+              >
+                <span className={cn("h-1.5 w-1.5 rounded-full", autoLabel ? "bg-green-400" : "bg-red-400")} />
+                Auto Label
+              </button>
+              <button
+                onClick={() => void handleSync()}
+                disabled={syncing}
+                className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted disabled:opacity-50"
+              >
+                <RefreshCcw className={`h-4 w-4 text-muted-foreground ${syncing ? "animate-spin" : ""}`} />
+              </button>
             </div>
-          ) : (
-            filtered.map((t) => (
-              <ThreadItem
-                key={t.id}
-                thread={t}
-                isSelected={selectedId === t.id}
-                onClick={() => handleSelect(t)}
-                onStar={() => handleStar(t.id)}
-                onArchive={() => handleArchive(t.id)}
-                onDelete={() => handleDelete(t.id)}
+          </div>
+
+          <div className="px-4 pb-2 pt-3">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Suchen..."
+                className="h-8 w-full rounded-lg bg-muted pl-8 pr-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-foreground/20"
               />
-            ))
+            </div>
+          </div>
+
+          {folder === "inbox" && (
+            <div className="px-4 pb-3">
+              <CategorySelect category={category} onCategory={setCategory} />
+            </div>
+          )}
+
+          <div className="flex-1 overflow-y-auto py-1">
+            {filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-12 text-center text-muted-foreground">
+                <Inbox className="h-8 w-8 opacity-20" />
+                <p className="text-sm">
+                  {folder !== "inbox"
+                    ? "Keine Nachrichten"
+                    : search
+                      ? "Keine Ergebnisse"
+                      : "Alles gelesen"}
+                </p>
+              </div>
+            ) : (
+              filtered.map((t) => (
+                <ThreadItem
+                  key={t.id}
+                  thread={t}
+                  isSelected={selectedId === t.id}
+                  onClick={() => handleSelect(t)}
+                  onStar={() => handleStar(t.id)}
+                  onArchive={() => handleArchive(t.id)}
+                  onDelete={() => handleDelete(t.id)}
+                />
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Email detail */}
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          {selected ? (
+            <EmailDetailPanel
+              thread={selected}
+              threads={filtered}
+              integrations={integrations}
+              selectedIndex={selectedIndex}
+              onClose={() => setSelectedId(null)}
+              onPrev={() => selectedIndex > 0 && setSelectedId(filtered[selectedIndex - 1]!.id)}
+              onNext={() =>
+                selectedIndex < filtered.length - 1 &&
+                setSelectedId(filtered[selectedIndex + 1]!.id)
+              }
+              onStar={() => handleStar(selected.id)}
+              onArchive={() => handleArchive(selected.id)}
+              onDelete={() => handleDelete(selected.id)}
+              onAfterSend={() => void queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() })}
+            />
+          ) : (
+            <EmptyState onCompose={() => setComposeOpen(true)} />
           )}
         </div>
       </div>
 
-      {/* Email detail */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-[#E7E7E7] bg-white shadow-sm">
-        {selected ? (
-          <EmailDetailPanel
-            thread={selected}
-            threads={filtered}
-            selectedIndex={selectedIndex}
-            onClose={() => setSelectedId(null)}
-            onPrev={() => selectedIndex > 0 && setSelectedId(filtered[selectedIndex - 1]!.id)}
-            onNext={() =>
-              selectedIndex < filtered.length - 1 &&
-              setSelectedId(filtered[selectedIndex + 1]!.id)
-            }
-            onStar={() => handleStar(selected.id)}
-            onArchive={() => handleArchive(selected.id)}
-            onDelete={() => handleDelete(selected.id)}
-            onAfterSend={() => void queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() })}
-          />
-        ) : (
-          <EmptyState />
-        )}
-      </div>
+      <ComposeEmailDialog open={composeOpen} onOpenChange={setComposeOpen} integrationId={selectedIntegrationId} />
 
       {/* Work panel */}
       <WorkPanel

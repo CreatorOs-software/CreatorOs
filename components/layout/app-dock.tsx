@@ -134,8 +134,8 @@ export function AppDock() {
             className="fixed bottom-6 left-1/2 z-50 pointer-events-auto"
             style={{ originX: 0.5, originY: 1 }}
           >
-            <GlassEffect className="rounded-3xl">
-              <div className="flex items-end gap-1 px-3 py-2.5">
+            <GlassEffect className="rounded-2xl">
+              <div className="flex items-end gap-1 px-2.5 py-2">
                 {dockItems.map((item) => {
                   const { label, icon: Icon } = item;
                   const isActive =
@@ -146,17 +146,17 @@ export function AppDock() {
 
                   const iconNode = (
                     <motion.div
-                      whileHover={{ scale: 1.25, y: -6 }}
+                      whileHover={{ scale: 1.2, y: -5 }}
                       whileTap={{ scale: 0.95 }}
                       transition={springTransition}
                       className={cn(
-                        "w-12 h-12 flex items-center justify-center rounded-2xl transition-colors duration-200",
+                        "w-10 h-10 flex items-center justify-center rounded-xl transition-colors duration-200",
                         isActive ? "bg-black" : "hover:bg-white/20",
                       )}
                     >
                       <Icon
                         className={cn(
-                          "w-5.5 h-5.5 transition-colors",
+                          "w-5 h-5 transition-colors",
                           isActive ? "text-white" : "text-black/65",
                         )}
                       />

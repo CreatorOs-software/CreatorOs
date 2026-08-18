@@ -46,14 +46,14 @@ type FormState = {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const PRESETS: Record<string, { imap_host: string; imap_port: number; smtp_host: string; smtp_port: number }> = {
-  gmail:   { imap_host: "imap.gmail.com",            imap_port: 993, smtp_host: "smtp.gmail.com",            smtp_port: 465 },
-  outlook: { imap_host: "outlook.office365.com",     imap_port: 993, smtp_host: "smtp.office365.com",        smtp_port: 587 },
-  icloud:  { imap_host: "imap.mail.me.com",          imap_port: 993, smtp_host: "smtp.mail.me.com",          smtp_port: 587 },
-  yahoo:   { imap_host: "imap.mail.yahoo.com",       imap_port: 993, smtp_host: "smtp.mail.yahoo.com",       smtp_port: 465 },
-  gmx:     { imap_host: "imap.gmx.com",              imap_port: 993, smtp_host: "mail.gmx.com",              smtp_port: 465 },
-  webde:   { imap_host: "imap.web.de",               imap_port: 993, smtp_host: "smtp.web.de",               smtp_port: 587 },
-  ionos:   { imap_host: "imap.ionos.de",             imap_port: 993, smtp_host: "smtp.ionos.de",             smtp_port: 465 },
+const PRESETS: Record<string, { imap_host: string; imap_port: number; smtp_host: string; smtp_port: number; smtp_secure: boolean }> = {
+  gmail:   { imap_host: "imap.gmail.com",            imap_port: 993, smtp_host: "smtp.gmail.com",            smtp_port: 465, smtp_secure: true  },
+  outlook: { imap_host: "outlook.office365.com",     imap_port: 993, smtp_host: "smtp.office365.com",        smtp_port: 587, smtp_secure: false },
+  icloud:  { imap_host: "imap.mail.me.com",          imap_port: 993, smtp_host: "smtp.mail.me.com",          smtp_port: 587, smtp_secure: false },
+  yahoo:   { imap_host: "imap.mail.yahoo.com",       imap_port: 993, smtp_host: "smtp.mail.yahoo.com",       smtp_port: 465, smtp_secure: true  },
+  gmx:     { imap_host: "imap.gmx.com",              imap_port: 993, smtp_host: "mail.gmx.com",              smtp_port: 465, smtp_secure: true  },
+  webde:   { imap_host: "imap.web.de",               imap_port: 993, smtp_host: "smtp.web.de",               smtp_port: 587, smtp_secure: false },
+  ionos:   { imap_host: "imap.ionos.de",             imap_port: 993, smtp_host: "smtp.ionos.de",             smtp_port: 465, smtp_secure: true  },
 };
 
 function getPresetForDomain(domain: string) {
@@ -83,7 +83,7 @@ const defaultForm = (): FormState => ({
 function presetForm(provider: Provider): Partial<FormState> {
   const p = PRESETS[provider] ?? null;
   if (!p) return {};
-  return { imap_host: p.imap_host, imap_port: p.imap_port, smtp_host: p.smtp_host, smtp_port: p.smtp_port };
+  return { imap_host: p.imap_host, imap_port: p.imap_port, smtp_host: p.smtp_host, smtp_port: p.smtp_port, smtp_secure: p.smtp_secure };
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────

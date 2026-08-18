@@ -5,6 +5,7 @@ export type EmailThread = {
   folder: string;
   sender_email: string;
   sender_name: string | null;
+  recipient_email: string | null;
   subject: string;
   preview: string | null;
   body: string | null;

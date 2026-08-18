@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   Archive,
   ChevronLeft,
@@ -7,7 +8,6 @@ import {
   Copy,
   FileText,
   Forward,
-  Inbox,
   Loader2,
   MoreHorizontal,
   Paperclip,
@@ -273,6 +273,7 @@ function ReplyComposer({ thread, onClose, onAfterSend }: ReplyComposerProps) {
 type EmailDetailPanelProps = {
   thread: Thread;
   threads: Thread[];
+  integrations: import("./types").Integration[];
   selectedIndex: number;
   onClose: () => void;
   onPrev: () => void;
@@ -286,6 +287,7 @@ type EmailDetailPanelProps = {
 export function EmailDetailPanel({
   thread,
   threads,
+  integrations,
   selectedIndex,
   onClose,
   onPrev,
@@ -300,6 +302,11 @@ export function EmailDetailPanel({
   const displayName = getDisplayName(thread.sender_name, thread.sender_email);
   const initial = getInitial(thread.sender_name, thread.sender_email);
   const avatarColor = getSenderColor(thread.sender_email);
+
+  const recipientLabel =
+    thread.recipient_email ??
+    integrations.find((i) => i.id === thread.integration_id)?.email ??
+    "Du";
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -415,7 +422,7 @@ export function EmailDetailPanel({
                           <span className="w-12 shrink-0 text-muted-foreground">
                             An
                           </span>
-                          <span className="font-medium">Du</span>
+                          <span className="font-medium">{recipientLabel}</span>
                         </div>
                         <div className="flex gap-2">
                           <span className="w-12 shrink-0 text-muted-foreground">
@@ -433,7 +440,7 @@ export function EmailDetailPanel({
                   {formatDate(thread.received_at)}
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-muted-foreground">An: Du</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">An: {recipientLabel}</p>
             </div>
           </div>
 
@@ -506,13 +513,37 @@ export function EmailDetailPanel({
 
 // ─── EmptyState ───────────────────────────────────────────────────────────────
 
-export function EmptyState() {
+export function EmptyState({ onCompose }: { onCompose?: () => void }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
-        <Inbox className="h-6 w-6 opacity-40" />
+    <div className="flex h-full items-center justify-center">
+      <div className="flex flex-col items-center gap-2 text-center">
+        <Image
+          src="/empty-state-light.svg"
+          alt="Keine Nachricht"
+          width={200}
+          height={200}
+        />
+        <div className="mt-4">
+          <p className="text-base font-medium text-foreground">Hier ist es leer</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Wähle eine E-Mail aus oder
+          </p>
+          <div className="mt-4 grid grid-cols-1 gap-2">
+            <button
+              onClick={onCompose}
+              className="rounded-lg border border-[#E7E7E7] bg-white px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+            >
+              E-Mail senden
+            </button>
+            <button
+              disabled
+              className="cursor-not-allowed rounded-lg border border-[#E7E7E7] bg-white px-4 py-2 text-sm text-muted-foreground opacity-50"
+            >
+              Letzte 50 E-Mails labeln
+            </button>
+          </div>
+        </div>
       </div>
-      <p className="text-sm">Nachricht auswählen</p>
     </div>
   );
 }
