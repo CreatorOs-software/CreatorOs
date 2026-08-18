@@ -2,7 +2,7 @@ import { getAuthContext } from "@/domains/auth";
 import { createClient } from "@/lib/supabase/server";
 import { serviceClient } from "@/lib/supabase/service";
 import { CommunicationRepository } from "./repository";
-import type { InboxPageData, ThreadPatch } from "./types";
+import type { EmailLabel, InboxPageData, ThreadPatch } from "./types";
 
 export class CommunicationError extends Error {}
 
@@ -17,6 +17,36 @@ export const CommunicationService = {
     const supabase = await createClient();
     await getAuthContext(supabase);
     return CommunicationRepository.patchThread(supabase, id, patch);
+  },
+
+  async createLabel(name: string, color: string): Promise<EmailLabel> {
+    const supabase = await createClient();
+    const { agencyId } = await getAuthContext(supabase);
+    return CommunicationRepository.createLabel(supabase, agencyId, name, color);
+  },
+
+  async findOrCreateLabel(name: string, color: string): Promise<EmailLabel> {
+    const supabase = await createClient();
+    const { agencyId } = await getAuthContext(supabase);
+    return CommunicationRepository.findOrCreateLabel(supabase, agencyId, name, color);
+  },
+
+  async deleteLabel(id: string): Promise<void> {
+    const supabase = await createClient();
+    await getAuthContext(supabase);
+    return CommunicationRepository.deleteLabel(supabase, id);
+  },
+
+  async assignLabel(threadId: string, labelId: string): Promise<void> {
+    const supabase = await createClient();
+    await getAuthContext(supabase);
+    return CommunicationRepository.assignLabel(supabase, threadId, labelId);
+  },
+
+  async removeLabel(threadId: string, labelId: string): Promise<void> {
+    const supabase = await createClient();
+    await getAuthContext(supabase);
+    return CommunicationRepository.removeLabel(supabase, threadId, labelId);
   },
 
   async composeEmail(input: {

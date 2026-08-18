@@ -62,6 +62,20 @@ export function ThreadItem({ thread, isSelected, onClick, onStar, onArchive, onD
           </div>
           <p className="mt-1 line-clamp-1 text-xs font-medium opacity-80">{thread.subject}</p>
           <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">{thread.preview}</p>
+          {thread.labels.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {thread.labels.map((label) => (
+                <span
+                  key={label.id}
+                  className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                  style={{ backgroundColor: label.color + "22", color: label.color }}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: label.color }} />
+                  {label.name}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

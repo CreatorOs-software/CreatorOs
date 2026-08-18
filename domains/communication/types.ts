@@ -1,3 +1,9 @@
+export type EmailLabel = {
+  id: string;
+  name: string;
+  color: string;
+};
+
 export type EmailThread = {
   id: string;
   agency_id: string;
@@ -6,6 +12,7 @@ export type EmailThread = {
   sender_email: string;
   sender_name: string | null;
   recipient_email: string | null;
+  labels: EmailLabel[];
   subject: string;
   preview: string | null;
   body: string | null;
@@ -44,6 +51,7 @@ export type InboxPageData = {
   threads: EmailThread[];
   integrations: InboxIntegration[];
   creators: InboxCreator[];
+  labels: EmailLabel[];
 };
 
 export type SmtpIntegration = {

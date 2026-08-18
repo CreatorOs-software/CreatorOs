@@ -3,6 +3,7 @@
 import Image from "next/image";
 import {
   Archive,
+  Check,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -14,6 +15,7 @@ import {
   Reply,
   ReplyAll,
   Star,
+  Tag,
   Trash2,
   X,
   Zap,
@@ -35,6 +37,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import type { Thread } from "./types";
+import type { EmailLabel } from "@/domains/communication";
+import { SYSTEM_LABELS } from "./constants";
 import {
   formatDate,
   formatFullDate,
@@ -274,6 +278,7 @@ type EmailDetailPanelProps = {
   thread: Thread;
   threads: Thread[];
   integrations: import("./types").Integration[];
+  allLabels: EmailLabel[];
   selectedIndex: number;
   onClose: () => void;
   onPrev: () => void;
@@ -282,12 +287,15 @@ type EmailDetailPanelProps = {
   onArchive: () => void;
   onDelete: () => void;
   onAfterSend: () => void;
+  onToggleLabel: (threadId: string, labelId: string, assign: boolean) => void;
+  onToggleCategoryLabel: (threadId: string, name: string, color: string, assign: boolean) => void;
 };
 
 export function EmailDetailPanel({
   thread,
   threads,
   integrations,
+  allLabels,
   selectedIndex,
   onClose,
   onPrev,
@@ -296,6 +304,8 @@ export function EmailDetailPanel({
   onArchive,
   onDelete,
   onAfterSend,
+  onToggleLabel,
+  onToggleCategoryLabel,
 }: EmailDetailPanelProps) {
   const [replyOpen, setReplyOpen] = useState(false);
 
@@ -352,6 +362,57 @@ export function EmailDetailPanel({
               )}
             />
           </button>
+          {/* Label picker */}
+          <Popover>
+            <PopoverTrigger
+              className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted"
+              title="Labels"
+            >
+              <Tag className="h-4 w-4 text-muted-foreground" />
+            </PopoverTrigger>
+            <PopoverContent align="end" sideOffset={6} className="w-52 p-1">
+              {/* System categories */}
+              <p className="px-2 pb-1 pt-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">Kategorien</p>
+              {SYSTEM_LABELS.map((sys) => {
+                const assigned = thread.labels.some((l) => l.name === sys.name);
+                return (
+                  <button
+                    key={sys.name}
+                    onClick={() => onToggleCategoryLabel(thread.id, sys.name, sys.color, !assigned)}
+                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted"
+                  >
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: sys.color }} />
+                    <span className="flex-1 truncate text-left">{sys.name}</span>
+                    {assigned && <Check className="h-3.5 w-3.5 shrink-0 text-foreground" />}
+                  </button>
+                );
+              })}
+              {/* User labels */}
+              {allLabels.filter((l) => !SYSTEM_LABELS.some((s) => s.name === l.name)).length > 0 && (
+                <>
+                  <div className="my-1 border-t border-[#E7E7E7]" />
+                  <p className="px-2 pb-1 pt-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">Labels</p>
+                  {allLabels
+                    .filter((l) => !SYSTEM_LABELS.some((s) => s.name === l.name))
+                    .map((label) => {
+                      const assigned = thread.labels.some((l2) => l2.id === label.id);
+                      return (
+                        <button
+                          key={label.id}
+                          onClick={() => onToggleLabel(thread.id, label.id, !assigned)}
+                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted"
+                        >
+                          <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: label.color }} />
+                          <span className="flex-1 truncate text-left">{label.name}</span>
+                          {assigned && <Check className="h-3.5 w-3.5 shrink-0 text-foreground" />}
+                        </button>
+                      );
+                    })}
+                </>
+              )}
+            </PopoverContent>
+          </Popover>
+
           <button
             onClick={onArchive}
             className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted"

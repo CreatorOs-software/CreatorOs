@@ -11,11 +11,10 @@ import {
   Plus,
   Send,
   Settings2,
-  Tag,
   Trash2,
   X,
 } from "lucide-react";
-import { type ReactNode, useState, useEffect } from "react";
+import { type ReactNode, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   Popover,
@@ -29,57 +28,35 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Folder, Integration } from "./types";
+import type { EmailLabel } from "@/domains/communication";
 import { AddMailboxDialog } from "./add-mailbox-dialog";
 
-// ─── Labels ───────────────────────────────────────────────────────────────────
+// ─── Label colors ─────────────────────────────────────────────────────────────
 
 const LABEL_COLORS = [
   "#006FFE", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6",
   "#EC4899", "#14B8A6", "#F97316", "#6366F1", "#84CC16",
 ];
 
-type Label = { id: string; name: string; color: string };
-
-const STORAGE_KEY = "inbox_labels";
-
-function useLabels() {
-  const [labels, setLabels] = useState<Label[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]") as Label[];
-    } catch {
-      return [];
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(labels));
-  }, [labels]);
-
-  function addLabel(name: string, color: string) {
-    setLabels((prev) => [...prev, { id: crypto.randomUUID(), name, color }]);
-  }
-
-  function removeLabel(id: string) {
-    setLabels((prev) => prev.filter((l) => l.id !== id));
-  }
-
-  return { labels, addLabel, removeLabel };
-}
-
 // ─── CreateLabelDialog ────────────────────────────────────────────────────────
 
-function CreateLabelDialog({ onAdd }: { onAdd: (name: string, color: string) => void }) {
+function CreateLabelDialog({ onAdd }: { onAdd: (name: string, color: string) => Promise<void> }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [color, setColor] = useState(LABEL_COLORS[0]!);
+  const [saving, setSaving] = useState(false);
 
-  function handleSubmit() {
-    if (!name.trim()) return;
-    onAdd(name.trim(), color);
-    setName("");
-    setColor(LABEL_COLORS[0]!);
-    setOpen(false);
+  async function handleSubmit() {
+    if (!name.trim() || saving) return;
+    setSaving(true);
+    try {
+      await onAdd(name.trim(), color);
+      setName("");
+      setColor(LABEL_COLORS[0]!);
+      setOpen(false);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -100,7 +77,7 @@ function CreateLabelDialog({ onAdd }: { onAdd: (name: string, color: string) => 
               autoFocus
               value={name}
               onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+              onKeyDown={(e) => e.key === "Enter" && void handleSubmit()}
               placeholder="Label-Name"
               className="h-9 w-full rounded-lg bg-muted px-3 text-sm outline-none focus:ring-1 focus:ring-foreground/20"
             />
@@ -128,8 +105,8 @@ function CreateLabelDialog({ onAdd }: { onAdd: (name: string, color: string) => 
                 Abbrechen
               </button>
               <button
-                onClick={handleSubmit}
-                disabled={!name.trim()}
+                onClick={() => void handleSubmit()}
+                disabled={!name.trim() || saving}
                 className="rounded-lg bg-foreground px-3 py-1.5 text-xs font-medium text-background disabled:opacity-40"
               >
                 Erstellen
@@ -144,37 +121,58 @@ function CreateLabelDialog({ onAdd }: { onAdd: (name: string, color: string) => 
 
 // ─── LabelsSection ────────────────────────────────────────────────────────────
 
-function LabelsSection() {
-  const { labels, addLabel, removeLabel } = useLabels();
-
+function LabelsSection({
+  labels,
+  activeLabelId,
+  onLabelClick,
+  onCreateLabel,
+  onDeleteLabel,
+}: {
+  labels: EmailLabel[];
+  activeLabelId: string | null;
+  onLabelClick: (id: string) => void;
+  onCreateLabel: (name: string, color: string) => Promise<void>;
+  onDeleteLabel: (id: string) => Promise<void>;
+}) {
   return (
     <section>
       <div className="mb-1.5 flex items-center justify-between px-2">
         <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60">
           Labels
         </p>
-        <CreateLabelDialog onAdd={addLabel} />
+        <CreateLabelDialog onAdd={onCreateLabel} />
       </div>
       {labels.length === 0 ? (
         <p className="px-2 text-[11px] text-muted-foreground/50">Noch keine Labels</p>
       ) : (
-        <div className="flex flex-wrap gap-1.5 px-2">
-          {labels.map((label) => (
-            <span
-              key={label.id}
-              className="group flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] font-medium"
-              style={{ borderColor: label.color + "44", backgroundColor: label.color + "18", color: label.color }}
-            >
-              <Tag className="h-2.5 w-2.5 shrink-0" />
-              {label.name}
+        <div className="flex flex-col gap-0.5">
+          {labels.map((label) => {
+            const isActive = activeLabelId === label.id;
+            return (
               <button
-                onClick={() => removeLabel(label.id)}
-                className="ml-0.5 hidden rounded-full group-hover:block"
+                key={label.id}
+                onClick={() => onLabelClick(label.id)}
+                className={cn(
+                  "group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors",
+                  isActive ? "bg-muted" : "hover:bg-muted/60",
+                )}
               >
-                <X className="h-2.5 w-2.5" />
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: label.color }}
+                />
+                <span className={cn("flex-1 truncate text-[13px]", isActive ? "font-medium text-foreground" : "text-muted-foreground")}>
+                  {label.name}
+                </span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); void onDeleteLabel(label.id); }}
+                  className="hidden rounded text-muted-foreground hover:text-foreground group-hover:block"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </button>
-            </span>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>
@@ -332,9 +330,14 @@ type InboxSidebarProps = {
   unreadCount: number;
   integrations: Integration[];
   selectedIntegrationId: string | null;
+  labels: EmailLabel[];
+  activeLabelId: string | null;
   onFolderChange: (f: Folder) => void;
   onIntegrationChange: (id: string) => void;
   onCompose: () => void;
+  onLabelClick: (id: string) => void;
+  onCreateLabel: (name: string, color: string) => Promise<void>;
+  onDeleteLabel: (id: string) => Promise<void>;
 };
 
 export function InboxSidebar({
@@ -342,9 +345,14 @@ export function InboxSidebar({
   unreadCount,
   integrations,
   selectedIntegrationId,
+  labels,
+  activeLabelId,
   onFolderChange,
   onIntegrationChange,
   onCompose,
+  onLabelClick,
+  onCreateLabel,
+  onDeleteLabel,
 }: InboxSidebarProps) {
   return (
     <div className="flex h-full w-52 shrink-0 select-none flex-col overflow-hidden border-r border-[#E7E7E7] bg-white py-3">
@@ -404,7 +412,13 @@ export function InboxSidebar({
           </div>
         </section>
 
-        <LabelsSection />
+        <LabelsSection
+          labels={labels}
+          activeLabelId={activeLabelId}
+          onLabelClick={onLabelClick}
+          onCreateLabel={onCreateLabel}
+          onDeleteLabel={onDeleteLabel}
+        />
       </div>
 
       {/* Footer */}

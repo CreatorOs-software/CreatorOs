@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  EmailLabel,
   EmailThread,
   InboxCreator,
   InboxIntegration,
@@ -13,11 +14,11 @@ export const CommunicationRepository = {
     supabase: SupabaseClient,
     agencyId: string,
   ): Promise<InboxPageData> {
-    const [threadsRes, integrationsRes, creatorsRes] = await Promise.all([
+    const [threadsRes, integrationsRes, creatorsRes, labelsRes] = await Promise.all([
       supabase
         .from("email_threads")
         .select(
-          "id, sender_email, sender_name, recipient_email, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id",
+          "id, sender_email, sender_name, recipient_email, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id, thread_labels:email_thread_labels(label:email_labels(id, name, color))",
         )
         .eq("agency_id", agencyId)
         .order("received_at", { ascending: false })
@@ -31,12 +32,25 @@ export const CommunicationRepository = {
         .from("creators")
         .select("id, full_name, initials, color")
         .eq("agency_id", agencyId),
+      supabase
+        .from("email_labels")
+        .select("id, name, color")
+        .eq("agency_id", agencyId)
+        .order("name"),
     ]);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const threads = (threadsRes.data ?? []).map((row: any) => ({
+      ...row,
+      labels: (row.thread_labels ?? []).map((tl: { label: EmailLabel | null }) => tl.label).filter(Boolean),
+      thread_labels: undefined,
+    })) as EmailThread[];
+
     return {
-      threads: (threadsRes.data ?? []) as EmailThread[],
+      threads,
       integrations: (integrationsRes.data ?? []) as InboxIntegration[],
       creators: (creatorsRes.data ?? []) as InboxCreator[],
+      labels: (labelsRes.data ?? []) as EmailLabel[],
     };
   },
 
@@ -89,6 +103,71 @@ export const CommunicationRepository = {
     const { data } = await q.maybeSingle();
     return (data as SmtpIntegration | null) ?? null;
   },
+
+  // ── Label CRUD ────────────────────────────────────────────────────────────────
+
+  async createLabel(
+    supabase: SupabaseClient,
+    agencyId: string,
+    name: string,
+    color: string,
+  ): Promise<EmailLabel> {
+    const { data, error } = await supabase
+      .from("email_labels")
+      .insert({ agency_id: agencyId, name, color })
+      .select("id, name, color")
+      .single();
+    if (error) throw new Error(error.message);
+    return data as EmailLabel;
+  },
+
+  async findOrCreateLabel(
+    supabase: SupabaseClient,
+    agencyId: string,
+    name: string,
+    color: string,
+  ): Promise<EmailLabel> {
+    const { data: existing } = await supabase
+      .from("email_labels")
+      .select("id, name, color")
+      .eq("agency_id", agencyId)
+      .eq("name", name)
+      .maybeSingle();
+    if (existing) return existing as EmailLabel;
+
+    const { data, error } = await supabase
+      .from("email_labels")
+      .insert({ agency_id: agencyId, name, color })
+      .select("id, name, color")
+      .single();
+    if (error) throw new Error(error.message);
+    return data as EmailLabel;
+  },
+
+  async deleteLabel(supabase: SupabaseClient, id: string): Promise<void> {
+    const { error } = await supabase.from("email_labels").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+  },
+
+  // ── Thread-label assignment ───────────────────────────────────────────────────
+
+  async assignLabel(supabase: SupabaseClient, threadId: string, labelId: string): Promise<void> {
+    const { error } = await supabase
+      .from("email_thread_labels")
+      .upsert({ thread_id: threadId, label_id: labelId }, { onConflict: "thread_id,label_id" });
+    if (error) throw new Error(error.message);
+  },
+
+  async removeLabel(supabase: SupabaseClient, threadId: string, labelId: string): Promise<void> {
+    const { error } = await supabase
+      .from("email_thread_labels")
+      .delete()
+      .eq("thread_id", threadId)
+      .eq("label_id", labelId);
+    if (error) throw new Error(error.message);
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────────
 
   async insertSentThread(
     supabase: SupabaseClient,

@@ -61,6 +61,7 @@ export function OrbitInbox() {
 
   const threads = data?.threads ?? [];
   const integrations = data?.integrations ?? [];
+  const labels = data?.labels ?? [];
 
   // Sync all integrations once on first successful load
   useEffect(() => {
@@ -78,6 +79,7 @@ export function OrbitInbox() {
   const [syncing, setSyncing] = useState(false);
   const [autoLabel, setAutoLabel] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [activeLabelId, setActiveLabelId] = useState<string | null>(null);
 
   // Initialize selected integration when data first loads
   useEffect(() => {
@@ -91,6 +93,7 @@ export function OrbitInbox() {
   const filtered = threads.filter((t) => {
     if (selectedIntegrationId && t.integration_id !== selectedIntegrationId) return false;
     if (!matchesFolder(t, folder)) return false;
+    if (activeLabelId && !t.labels.some((l) => l.id === activeLabelId)) return false;
 
     if (search) {
       const q = search.toLowerCase();
@@ -105,7 +108,8 @@ export function OrbitInbox() {
     if (category === "all") return true;
     if (category === "unread") return t.unread;
     if (category === "important") return t.starred;
-    return true;
+    // personal / updates / promotions → match by label name
+    return t.labels.some((l) => l.name.toLowerCase() === category);
   });
 
   const inboxUnread = threads.filter(
@@ -170,6 +174,70 @@ export function OrbitInbox() {
     setFolder(f);
     setSelectedId(null);
     setSearch("");
+    setActiveLabelId(null);
+  }
+
+  async function handleToggleLabel(threadId: string, labelId: string, assign: boolean) {
+    // Optimistic update
+    queryClient.setQueryData<InboxData>(QueryKeys.inbox.all(), (old) => {
+      if (!old) return old;
+      return {
+        ...old,
+        threads: old.threads.map((t) => {
+          if (t.id !== threadId) return t;
+          const labelObj = labels.find((l) => l.id === labelId);
+          if (!labelObj) return t;
+          return {
+            ...t,
+            labels: assign
+              ? t.labels.some((l) => l.id === labelId) ? t.labels : [...t.labels, labelObj]
+              : t.labels.filter((l) => l.id !== labelId),
+          };
+        }),
+      };
+    });
+
+    const url = assign
+      ? `/api/inbox/${threadId}/labels`
+      : `/api/inbox/${threadId}/labels/${labelId}`;
+    await fetch(url, {
+      method: assign ? "POST" : "DELETE",
+      ...(assign ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify({ labelId }) } : {}),
+    });
+  }
+
+  async function handleCreateLabel(name: string, color: string) {
+    const res = await fetch("/api/inbox/labels", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, color }),
+    });
+    if (res.ok) {
+      await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() });
+    }
+  }
+
+  async function handleDeleteLabel(id: string) {
+    await fetch(`/api/inbox/labels/${id}`, { method: "DELETE" });
+    if (activeLabelId === id) setActiveLabelId(null);
+    await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() });
+  }
+
+  async function handleToggleCategoryLabel(threadId: string, name: string, color: string, assign: boolean) {
+    // Find label by name in local list, or create it first
+    let label = labels.find((l) => l.name === name);
+    if (!label) {
+      const res = await fetch("/api/inbox/labels/upsert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, color }),
+      });
+      if (!res.ok) return;
+      label = await res.json() as typeof labels[number];
+      // Refresh labels list so new label appears in sidebar
+      await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() });
+    }
+    void handleToggleLabel(threadId, label.id, assign);
   }
 
   async function handleSync() {
@@ -219,12 +287,17 @@ export function OrbitInbox() {
           unreadCount={inboxUnread}
           integrations={integrations}
           selectedIntegrationId={selectedIntegrationId}
+          labels={labels}
+          activeLabelId={activeLabelId}
           onFolderChange={handleFolderChange}
           onIntegrationChange={(id) => {
             setSelectedIntegrationId(id);
             setSelectedId(null);
           }}
           onCompose={() => setComposeOpen(true)}
+          onLabelClick={(id) => setActiveLabelId((prev) => (prev === id ? null : id))}
+          onCreateLabel={handleCreateLabel}
+          onDeleteLabel={handleDeleteLabel}
         />
 
         {/* Thread list */}
@@ -307,6 +380,7 @@ export function OrbitInbox() {
               thread={selected}
               threads={filtered}
               integrations={integrations}
+              allLabels={labels}
               selectedIndex={selectedIndex}
               onClose={() => setSelectedId(null)}
               onPrev={() => selectedIndex > 0 && setSelectedId(filtered[selectedIndex - 1]!.id)}
@@ -318,6 +392,8 @@ export function OrbitInbox() {
               onArchive={() => handleArchive(selected.id)}
               onDelete={() => handleDelete(selected.id)}
               onAfterSend={() => void queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() })}
+              onToggleLabel={(threadId, labelId, assign) => void handleToggleLabel(threadId, labelId, assign)}
+              onToggleCategoryLabel={(threadId, name, color, assign) => void handleToggleCategoryLabel(threadId, name, color, assign)}
             />
           ) : (
             <EmptyState onCompose={() => setComposeOpen(true)} />

@@ -1,5 +1,12 @@
-import { Bell, Eye, Mail, Star, Tag as TagIcon, User, Zap } from "lucide-react";
+import { Bell, Eye, Mail, Star, Tag as TagIcon, User } from "lucide-react";
 import type { Category } from "./types";
+
+// System categories that can be assigned to threads as labels
+export const SYSTEM_LABELS = [
+  { name: "Personal",   color: "#39AE4A" },
+  { name: "Updates",    color: "#8B5CF6" },
+  { name: "Promotions", color: "#F43F5E" },
+] as const;
 
 export const CATEGORIES: Category[] = [
   {
