@@ -1,66 +1,165 @@
 "use client";
 
-import { Inbox, RefreshCcw, Search } from "lucide-react";
-import { useState } from "react";
-import demoData from "./demo.json";
+import { Inbox, Loader2, RefreshCcw, Search } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { WorkPanel } from "./work-panel";
 import { InboxSidebar } from "./inbox-sidebar";
 import { CategorySelect } from "./category-select";
 import { ThreadItem } from "./thread-item";
 import { EmailDetailPanel, EmptyState } from "./email-detail-panel";
-import { CATEGORIES } from "./constants";
-import type { DemoMessage, Folder } from "./types";
+
+import type { Folder, InboxData, Thread, ThreadPatch } from "./types";
+import { QueryKeys } from "@/lib/query-keys";
+
+// ─── Data fetching ────────────────────────────────────────────────────────────
+
+async function fetchInboxData(): Promise<InboxData> {
+  const res = await fetch("/api/inbox");
+  if (!res.ok) throw new Error("Failed to load inbox");
+  return res.json() as Promise<InboxData>;
+}
+
+async function syncIntegration(id: string): Promise<void> {
+  await fetch(`/api/integrations/${id}/sync`, { method: "POST" });
+}
+
+async function patchThread(id: string, patch: ThreadPatch): Promise<void> {
+  await fetch(`/api/inbox/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+}
+
+// ─── Folder filter ────────────────────────────────────────────────────────────
+
+function matchesFolder(thread: Thread, folder: Folder): boolean {
+  const f = (thread.folder ?? "INBOX").toUpperCase();
+  switch (folder) {
+    case "inbox":   return f === "INBOX" || f === "";
+    case "sent":    return f === "SENT";
+    case "drafts":  return f === "DRAFTS" || f === "DRAFT";
+    case "archive": return f === "ARCHIVE";
+    case "spam":    return f === "SPAM";
+    case "bin":     return f === "TRASH";
+    default:        return true;
+  }
+}
+
+// ─── OrbitInbox ───────────────────────────────────────────────────────────────
 
 export function OrbitInbox() {
-  const [messages, setMessages] = useState<DemoMessage[]>(
-    demoData.map((m) => ({ ...m, starred: false })),
-  );
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, isError } = useQuery<InboxData>({
+    queryKey: QueryKeys.inbox.all(),
+    queryFn: fetchInboxData,
+  });
+
+  const threads = data?.threads ?? [];
+  const integrations = data?.integrations ?? [];
+
+  // Sync all integrations once on first successful load
+  useEffect(() => {
+    if (!integrations.length) return;
+    void Promise.allSettled(integrations.map((i) => syncIntegration(i.id)));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [integrations.length]);
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [category, setCategory] = useState("important");
+  const [selectedIntegrationId, setSelectedIntegrationId] = useState<string | null>(null);
+  const [category, setCategory] = useState("all");
   const [folder, setFolder] = useState<Folder>("inbox");
   const [search, setSearch] = useState("");
   const [workPanelOpen, setWorkPanelOpen] = useState(true);
+  const [syncing, setSyncing] = useState(false);
 
-  const inboxUnread = messages.filter((m) => m.unread).length;
+  // Initialize selected integration when data first loads
+  useEffect(() => {
+    if (integrations.length > 0 && !selectedIntegrationId) {
+      setSelectedIntegrationId(integrations[0]!.id);
+    }
+  }, [integrations, selectedIntegrationId]);
 
-  const filtered = messages.filter((m) => {
-    if (folder !== "inbox") return false;
+  // ── Derived ──────────────────────────────────────────────────────────────────
 
-    const matchesSearch =
-      !search ||
-      m.sender.name.toLowerCase().includes(search.toLowerCase()) ||
-      m.subject.toLowerCase().includes(search.toLowerCase()) ||
-      m.body.toLowerCase().includes(search.toLowerCase());
+  const filtered = threads.filter((t) => {
+    if (selectedIntegrationId && t.integration_id !== selectedIntegrationId) return false;
+    if (!matchesFolder(t, folder)) return false;
 
-    if (!matchesSearch) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      const matches =
+        (t.sender_name?.toLowerCase().includes(q) ?? false) ||
+        t.sender_email.toLowerCase().includes(q) ||
+        t.subject.toLowerCase().includes(q) ||
+        (t.preview?.toLowerCase().includes(q) ?? false);
+      if (!matches) return false;
+    }
+
     if (category === "all") return true;
-    if (category === "unread") return m.unread;
-
-    const cat = CATEGORIES.find((c) => c.id === category);
-    if (cat?.tagId) return m.tags.some((t) => t.id === cat.tagId);
+    if (category === "unread") return t.unread;
+    if (category === "important") return t.starred;
     return true;
   });
 
-  const selectedIndex = filtered.findIndex((m) => m.id === selectedId);
-  const selected = filtered.find((m) => m.id === selectedId) ?? null;
+  const inboxUnread = threads.filter(
+    (t) =>
+      t.folder.toUpperCase() === "INBOX" &&
+      t.unread &&
+      (!selectedIntegrationId || t.integration_id === selectedIntegrationId),
+  ).length;
 
-  function patchMessage(id: string, patch: Partial<DemoMessage>) {
-    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
-  }
+  const selectedIndex = filtered.findIndex((t) => t.id === selectedId);
+  const selected = filtered.find((t) => t.id === selectedId) ?? null;
 
-  function handleSelect(m: DemoMessage) {
-    setSelectedId(m.id);
-    if (m.unread) patchMessage(m.id, { unread: false });
+  // ── Actions ──────────────────────────────────────────────────────────────────
+
+  const applyOptimistic = useCallback(
+    (id: string, patch: ThreadPatch) => {
+      queryClient.setQueryData<InboxData>(QueryKeys.inbox.all(), (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          threads: old.threads.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+        };
+      });
+    },
+    [queryClient],
+  );
+
+  function handleSelect(t: Thread) {
+    setSelectedId(t.id);
+    if (t.unread) {
+      applyOptimistic(t.id, { unread: false });
+      void patchThread(t.id, { unread: false });
+    }
   }
 
   function handleStar(id: string) {
-    const m = messages.find((x) => x.id === id);
-    if (m) patchMessage(id, { starred: !m.starred });
+    const t = threads.find((x) => x.id === id);
+    if (!t) return;
+    const patch = { starred: !t.starred };
+    applyOptimistic(id, patch);
+    void patchThread(id, patch);
+  }
+
+  function handleArchive(id: string) {
+    applyOptimistic(id, { folder: "ARCHIVE" });
+    void patchThread(id, { folder: "ARCHIVE" });
+    if (selectedId === id) setSelectedId(null);
   }
 
   function handleDelete(id: string) {
-    setMessages((prev) => prev.filter((m) => m.id !== id));
+    applyOptimistic(id, { folder: "TRASH" });
+    void patchThread(id, { folder: "TRASH" });
     if (selectedId === id) setSelectedId(null);
+  }
+
+  function handlePatch(id: string, patch: ThreadPatch) {
+    applyOptimistic(id, patch);
+    void patchThread(id, patch);
   }
 
   function handleFolderChange(f: Folder) {
@@ -69,21 +168,67 @@ export function OrbitInbox() {
     setSearch("");
   }
 
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      await Promise.allSettled(integrations.map((i) => syncIntegration(i.id)));
+      await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() });
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  // ── Loading / error states ───────────────────────────────────────────────────
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center text-muted-foreground">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
+        <p className="text-sm">Inbox konnte nicht geladen werden.</p>
+        <button
+          onClick={() => void queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() })}
+          className="text-xs underline hover:text-foreground"
+        >
+          Nochmal versuchen
+        </button>
+      </div>
+    );
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────────
+
   return (
-    <div className="flex h-full min-w-0 gap-2">
+    <div className="flex h-full min-w-0 overflow-hidden gap-2">
       {/* Sidebar */}
       <InboxSidebar
         folder={folder}
         unreadCount={inboxUnread}
+        integrations={integrations}
+        selectedIntegrationId={selectedIntegrationId}
         onFolderChange={handleFolderChange}
+        onIntegrationChange={(id) => {
+          setSelectedIntegrationId(id);
+          setSelectedId(null);
+        }}
       />
 
       {/* Thread list */}
       <div className="flex w-95 shrink-0 flex-col overflow-hidden rounded-2xl border border-[#E7E7E7] bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-[#E7E7E7] px-5 py-3">
           <span className="text-sm font-semibold capitalize">{folder}</span>
-          <button className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted">
-            <RefreshCcw className="h-4 w-4 text-muted-foreground" />
+          <button
+            onClick={() => void handleSync()}
+            disabled={syncing}
+            className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted disabled:opacity-50"
+          >
+            <RefreshCcw className={`h-4 w-4 text-muted-foreground ${syncing ? "animate-spin" : ""}`} />
           </button>
         </div>
 
@@ -93,7 +238,7 @@ export function OrbitInbox() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search..."
+              placeholder="Suchen..."
               className="h-8 w-full rounded-lg bg-muted pl-8 pr-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-foreground/20"
             />
           </div>
@@ -111,22 +256,22 @@ export function OrbitInbox() {
               <Inbox className="h-8 w-8 opacity-20" />
               <p className="text-sm">
                 {folder !== "inbox"
-                  ? "Wird im nächsten Schritt verbunden"
+                  ? "Keine Nachrichten"
                   : search
-                    ? "No results found"
-                    : "It's empty here"}
+                    ? "Keine Ergebnisse"
+                    : "Alles gelesen"}
               </p>
             </div>
           ) : (
-            filtered.map((m) => (
+            filtered.map((t) => (
               <ThreadItem
-                key={m.id}
-                message={m}
-                isSelected={selectedId === m.id}
-                onClick={() => handleSelect(m)}
-                onStar={() => handleStar(m.id)}
-                onArchive={() => {}}
-                onDelete={() => handleDelete(m.id)}
+                key={t.id}
+                thread={t}
+                isSelected={selectedId === t.id}
+                onClick={() => handleSelect(t)}
+                onStar={() => handleStar(t.id)}
+                onArchive={() => handleArchive(t.id)}
+                onDelete={() => handleDelete(t.id)}
               />
             ))
           )}
@@ -137,8 +282,8 @@ export function OrbitInbox() {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-[#E7E7E7] bg-white shadow-sm">
         {selected ? (
           <EmailDetailPanel
-            message={selected}
-            messages={filtered}
+            thread={selected}
+            threads={filtered}
             selectedIndex={selectedIndex}
             onClose={() => setSelectedId(null)}
             onPrev={() => selectedIndex > 0 && setSelectedId(filtered[selectedIndex - 1]!.id)}
@@ -147,7 +292,9 @@ export function OrbitInbox() {
               setSelectedId(filtered[selectedIndex + 1]!.id)
             }
             onStar={() => handleStar(selected.id)}
+            onArchive={() => handleArchive(selected.id)}
             onDelete={() => handleDelete(selected.id)}
+            onAfterSend={() => void queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() })}
           />
         ) : (
           <EmptyState />
@@ -156,11 +303,11 @@ export function OrbitInbox() {
 
       {/* Work panel */}
       <WorkPanel
-        selected={null}
+        selected={selected}
         open={workPanelOpen}
-        integrations={[]}
+        integrations={integrations}
         onToggle={() => setWorkPanelOpen((v) => !v)}
-        onPatch={() => {}}
+        onPatch={handlePatch}
       />
     </div>
   );

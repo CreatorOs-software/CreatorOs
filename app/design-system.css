@@ -95,7 +95,7 @@
   --popover-foreground: var(--card-foreground);
 
   /* Sidebar — white, like outer background */
-  --sidebar: oklch(100% 0 0);
+  --sidebar: oklch(100% 0.00011 271.152);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--foreground);
   --sidebar-primary-foreground: oklch(100% 0 0);

@@ -20,6 +20,7 @@ export type ThreadPatch = {
   unread?: boolean;
   starred?: boolean;
   priority?: "low" | "med" | "high";
+  folder?: string;
 };
 
 export type InboxCreator = {

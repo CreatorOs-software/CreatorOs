@@ -1,14 +1,12 @@
-import { Bell, Eye, Mail, Tag as TagIcon, User, Zap } from "lucide-react";
-import demoData from "./demo.json";
-import type { Category, Tag } from "./types";
+import { Bell, Eye, Mail, Star, Tag as TagIcon, User, Zap } from "lucide-react";
+import type { Category } from "./types";
 
 export const CATEGORIES: Category[] = [
   {
     id: "important",
-    label: "Important",
-    icon: <Zap className="h-3.5 w-3.5 fill-current" />,
+    label: "Starred",
+    icon: <Star className="h-3.5 w-3.5 fill-current" />,
     color: "bg-[#F59E0D]",
-    tagId: "important",
   },
   {
     id: "all",
@@ -21,21 +19,18 @@ export const CATEGORIES: Category[] = [
     label: "Personal",
     icon: <User className="h-3.5 w-3.5 fill-current" />,
     color: "bg-[#39AE4A]",
-    tagId: "personal",
   },
   {
     id: "updates",
     label: "Updates",
     icon: <Bell className="h-3.5 w-3.5 fill-current" />,
     color: "bg-[#8B5CF6]",
-    tagId: "updates",
   },
   {
     id: "promotions",
     label: "Promotions",
     icon: <TagIcon className="h-3.5 w-3.5 fill-current" />,
     color: "bg-[#F43F5E]",
-    tagId: "promotions",
   },
   {
     id: "unread",
@@ -45,17 +40,7 @@ export const CATEGORIES: Category[] = [
   },
 ];
 
-export const TAG_COLORS: Record<string, string> = {
-  important: "bg-[#F59E0D]/15 text-[#b45309] border border-[#F59E0D]/30",
-  updates: "bg-[#8B5CF6]/15 text-[#6d28d9] border border-[#8B5CF6]/30",
-  personal: "bg-[#39AE4A]/15 text-[#15803d] border border-[#39AE4A]/30",
-  promotions: "bg-[#F43F5E]/15 text-[#be123c] border border-[#F43F5E]/30",
-};
-
-export const DEMO_LABELS: Tag[] = Array.from(
-  new Map(demoData.flatMap((m) => m.tags).map((t) => [t.id, t])).values(),
-);
-
+// Google logo SVG paths (multicolor)
 export const GOOGLE_PATHS = [
   {
     d: "M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z",

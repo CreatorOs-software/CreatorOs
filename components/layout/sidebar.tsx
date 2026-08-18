@@ -100,7 +100,12 @@ function ProfileSection() {
     .join("");
 
   return (
-    <div className={cn("flex items-center py-2 rounded-md", open ? "gap-2 px-2" : "justify-center")}>
+    <div
+      className={cn(
+        "flex items-center py-2 rounded-md",
+        open ? "gap-2 px-2" : "justify-center",
+      )}
+    >
       <Avatar.Root className="w-7 h-7 rounded-full overflow-hidden shrink-0">
         <Avatar.Image
           src={user?.user_metadata?.avatar_url as string | undefined}
@@ -226,9 +231,10 @@ export function AppSidebar() {
                   key={item.label}
                   link={item}
                   className={cn(
+                    "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-[13px] transition-colors",
                     isActive
-                      ? "bg-sidebar-accent text-white"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent/50",
+                      ? "bg-sidebar-accent font-medium text-white"
+                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                   )}
                 />
               );

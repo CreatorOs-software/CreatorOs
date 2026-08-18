@@ -1,36 +1,20 @@
 import type { ReactNode } from "react";
 
-export type Tag = {
-  id: string;
-  name: string;
-};
+// Real domain types — single source of truth
+export type {
+  EmailThread as Thread,
+  InboxIntegration as Integration,
+  InboxCreator as Creator,
+  InboxPageData as InboxData,
+  ThreadPatch,
+} from "@/domains/communication";
 
-export type Sender = {
-  name: string;
-  email: string;
-};
-
-export type DemoMessage = {
-  id: string;
-  threadId: string;
-  tags: Tag[];
-  title: string;
-  body: string;
-  receivedOn: string;
-  sender: Sender;
-  unread: boolean;
-  subject: string;
-  totalReplies: number;
-  decodedBody: string;
-  starred?: boolean;
-};
-
+// UI-only types
 export type Category = {
   id: string;
   label: string;
   icon: ReactNode;
   color: string;
-  tagId?: string;
 };
 
 export type Folder = "inbox" | "drafts" | "sent" | "archive" | "spam" | "bin";
