@@ -160,8 +160,8 @@ export function ComposeEmailDialog({ open, onOpenChange, integrationId, initialT
               onRemove={(e) => setTo((p) => p.filter((x) => x !== e))}
             />
             <div className="flex shrink-0 gap-2 text-sm font-medium text-[#8C8C8C]">
-              <button className={cn("hover:text-foreground", showCc && "text-foreground")} onClick={() => setShowCc((v) => !v)}>Cc</button>
-              <button className={cn("hover:text-foreground", showBcc && "text-foreground")} onClick={() => setShowBcc((v) => !v)}>Bcc</button>
+              <button className={cn("hover:text-foreground", showCc && "text-foreground")} onClick={() => { setShowCc((v) => !v); if (showCc) setCc([]); }}>Cc</button>
+              <button className={cn("hover:text-foreground", showBcc && "text-foreground")} onClick={() => { setShowBcc((v) => !v); if (showBcc) setBcc([]); }}>Bcc</button>
             </div>
           </div>
 

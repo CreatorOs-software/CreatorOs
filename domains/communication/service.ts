@@ -95,31 +95,34 @@ export const CommunicationService = {
       await client.close();
     }
 
-    await CommunicationRepository.insertSentThread(serviceClient, {
-      agency_id: agencyId,
-      integration_id: integ.id,
-      folder: "SENT",
-      sender_email: integ.email,
-      sender_name: integ.display_name ?? displayName ?? null,
-      recipient_email: toList[0] ?? null,
-      subject: input.subject,
-      preview: input.body.slice(0, 240).replace(/\s+/g, " ").trim(),
-      body: input.body,
-      received_at: new Date().toISOString(),
-      unread: false,
-      starred: false,
-      priority: "med",
-    });
+    // best-effort — email is already delivered; a DB failure here must not cause the caller to retry and resend
+    try {
+      await CommunicationRepository.insertSentThread(serviceClient, {
+        agency_id: agencyId,
+        integration_id: integ.id,
+        folder: "SENT",
+        sender_email: integ.email,
+        sender_name: integ.display_name ?? displayName ?? null,
+        recipient_email: toList[0] ?? null,
+        subject: input.subject,
+        preview: input.body.slice(0, 240).replace(/\s+/g, " ").trim(),
+        body: input.body,
+        received_at: new Date().toISOString(),
+        unread: false,
+        starred: false,
+        priority: "med",
+      });
+    } catch {}
   },
 
-  async replyToThread(threadId: string, body: string): Promise<void> {
+  async replyToThread(threadId: string, body: string, cc?: string[]): Promise<void> {
     const supabase = await createClient();
     const { agencyId, displayName } = await getAuthContext(supabase);
 
     const thread = await CommunicationRepository.findThread(supabase, threadId);
     if (!thread) throw new CommunicationError("Thread not found");
 
-    const integ = await CommunicationRepository.findSmtpIntegration(serviceClient, agencyId);
+    const integ = await CommunicationRepository.findSmtpIntegration(serviceClient, agencyId, thread.integration_id);
     if (!integ?.smtp_host || !integ.smtp_port)
       throw new CommunicationError("Kein Postfach mit SMTP konfiguriert.");
     if (!integ.imap_password)
@@ -138,6 +141,7 @@ export const CommunicationService = {
       ? thread.subject
       : `Re: ${thread.subject}`;
     const inReplyTo = thread.gmail_thread_id?.startsWith("<") ? thread.gmail_thread_id : null;
+    const ccList = cc?.filter(Boolean) ?? [];
 
     try {
       await client.connect();
@@ -145,6 +149,7 @@ export const CommunicationService = {
       await client.send({
         from: { name: integ.display_name ?? displayName ?? null, email: integ.email },
         to: [thread.sender_email],
+        cc: ccList.length ? ccList : undefined,
         subject,
         text: body,
         inReplyTo,
@@ -157,20 +162,23 @@ export const CommunicationService = {
 
     await CommunicationRepository.patchThread(supabase, threadId, { unread: false });
 
-    await CommunicationRepository.insertSentThread(serviceClient, {
-      agency_id: thread.agency_id,
-      integration_id: integ.id,
-      folder: "sent",
-      sender_email: integ.email,
-      sender_name: integ.display_name ?? displayName ?? null,
-      recipient_email: thread.sender_email,
-      subject,
-      preview: body.slice(0, 240).replace(/\s+/g, " ").trim(),
-      body,
-      received_at: new Date().toISOString(),
-      unread: false,
-      starred: false,
-      priority: "med",
-    });
+    // best-effort — email is already delivered; a DB failure here must not cause the caller to retry and resend
+    try {
+      await CommunicationRepository.insertSentThread(serviceClient, {
+        agency_id: thread.agency_id,
+        integration_id: integ.id,
+        folder: "SENT",
+        sender_email: integ.email,
+        sender_name: integ.display_name ?? displayName ?? null,
+        recipient_email: thread.sender_email,
+        subject,
+        preview: body.slice(0, 240).replace(/\s+/g, " ").trim(),
+        body,
+        received_at: new Date().toISOString(),
+        unread: false,
+        starred: false,
+        priority: "med",
+      });
+    } catch {}
   },
 };

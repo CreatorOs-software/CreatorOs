@@ -1,5 +1,6 @@
 "use client";
 
+import DOMPurify from "dompurify";
 import Image from "next/image";
 import {
   Archive,
@@ -46,15 +47,6 @@ import {
   getInitial,
   getSenderColor,
 } from "./utils";
-
-// ─── Email HTML sanitizer ─────────────────────────────────────────────────────
-
-function sanitizeEmailHtml(html: string): string {
-  return html
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/<link[^>]+rel=["']?stylesheet["']?[^>]*\/?>/gi, "");
-}
 
 // ─── Chip templates ───────────────────────────────────────────────────────────
 
@@ -156,11 +148,12 @@ function SaveTemplateDialog({ body }: { body: string }) {
 
 type ReplyComposerProps = {
   thread: Thread;
+  cc?: string[];
   onClose: () => void;
   onAfterSend: () => void;
 };
 
-function ReplyComposer({ thread, onClose, onAfterSend }: ReplyComposerProps) {
+function ReplyComposer({ thread, cc, onClose, onAfterSend }: ReplyComposerProps) {
   const [reply, setReply] = useState("");
   const [usedChip, setUsedChip] = useState(false);
   const [sending, setSending] = useState(false);
@@ -174,13 +167,16 @@ function ReplyComposer({ thread, onClose, onAfterSend }: ReplyComposerProps) {
     if (!reply.trim() || sending) return;
     setSending(true);
     try {
-      await fetch(`/api/inbox/${thread.id}/reply`, {
+      const res = await fetch(`/api/inbox/${thread.id}/reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: reply }),
+        body: JSON.stringify({ body: reply, cc }),
       });
+      if (!res.ok) throw new Error(await res.text());
       onAfterSend();
       onClose();
+    } catch {
+      // keep composer open so the user can retry
     } finally {
       setSending(false);
     }
@@ -212,6 +208,14 @@ function ReplyComposer({ thread, onClose, onAfterSend }: ReplyComposerProps) {
         <span className="mx-1.5 opacity-40">·</span>
         <span>Re: {thread.subject}</span>
       </div>
+
+      {/* CC line (Reply All only) */}
+      {cc && cc.length > 0 && (
+        <div className="border-b border-[#E7E7E7] px-4 py-2 text-xs text-muted-foreground">
+          <span className="mr-1.5 font-medium text-foreground">CC:</span>
+          {cc.join(", ")}
+        </div>
+      )}
 
       {/* Chips */}
       <div className="flex flex-wrap gap-1.5 border-b border-[#E7E7E7] px-4 py-2.5">
@@ -307,7 +311,7 @@ export function EmailDetailPanel({
   onToggleLabel,
   onToggleCategoryLabel,
 }: EmailDetailPanelProps) {
-  const [replyOpen, setReplyOpen] = useState(false);
+  const [replyMode, setReplyMode] = useState<"reply" | "replyAll" | null>(null);
 
   const displayName = getDisplayName(thread.sender_name, thread.sender_email);
   const initial = getInitial(thread.sender_name, thread.sender_email);
@@ -510,7 +514,7 @@ export function EmailDetailPanel({
             {thread.body_html ? (
               <div
                 className="prose prose-sm max-w-none overflow-hidden text-foreground [&_a]:text-[#006FFE] [&_a]:underline [&_img]:max-w-full [&_table]:max-w-full [&_pre]:overflow-x-auto"
-                dangerouslySetInnerHTML={{ __html: sanitizeEmailHtml(thread.body_html) }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(thread.body_html) }}
               />
             ) : (
               <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">
@@ -523,7 +527,7 @@ export function EmailDetailPanel({
 
       {/* Fixed bottom: Reply buttons or composer */}
       <div className="shrink-0 ">
-        {!replyOpen ? (
+        {!replyMode ? (
           <div className="flex flex-wrap gap-2 px-6 py-3">
             {(
               [
@@ -531,13 +535,13 @@ export function EmailDetailPanel({
                   icon: <Reply className="h-4 w-4" />,
                   label: "Reply",
                   shortcut: "r",
-                  action: () => setReplyOpen(true),
+                  action: () => setReplyMode("reply"),
                 },
                 {
                   icon: <ReplyAll className="h-4 w-4" />,
                   label: "Reply All",
                   shortcut: "a",
-                  action: () => setReplyOpen(true),
+                  action: () => setReplyMode("replyAll"),
                 },
                 {
                   icon: <Forward className="h-4 w-4" />,
@@ -563,7 +567,8 @@ export function EmailDetailPanel({
         ) : (
           <ReplyComposer
             thread={thread}
-            onClose={() => setReplyOpen(false)}
+            cc={replyMode === "replyAll" && thread.recipient_email ? [thread.recipient_email] : undefined}
+            onClose={() => setReplyMode(null)}
             onAfterSend={onAfterSend}
           />
         )}

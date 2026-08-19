@@ -64,16 +64,32 @@ export class SmtpClient {
     const cfModule = `cloudflare:${"sockets"}`;
     try {
       const mod = await import(/* @vite-ignore */ cfModule);
-      const cfConnect = (mod as { connect?: (opts: { hostname: string; port: number }, init?: { secureTransport?: string }) => Socket }).connect;
+      const cfConnect = (mod as { connect?: (opts: { hostname: string; port: number }, init?: { secureTransport?: string }) => Socket & { startTls(): Socket } }).connect;
       if (typeof cfConnect === "function") {
-        this.socket = cfConnect(
+        const cfSocket = cfConnect(
           { hostname: this.opts.host, port: this.opts.port },
           { secureTransport: "starttls" },
-        ) as Socket;
+        );
+        this.socket = cfSocket;
         this.writer = this.socket.writable.getWriter();
         this.reader = this.socket.readable.getReader();
+
         const greeting = await this.readResponse();
         if (!greeting.code.startsWith("2")) throw new SmtpError(`SMTP greeting failed: ${greeting.text}`);
+
+        const ehlo = await this.cmd(`EHLO smtp.client.local`);
+        if (!ehlo.code.startsWith("2")) throw new SmtpError(`EHLO failed: ${ehlo.text}`);
+
+        const st = await this.cmd(`STARTTLS`);
+        if (!st.code.startsWith("2")) throw new SmtpError(`STARTTLS rejected: ${st.text}`);
+
+        this.reader.releaseLock();
+        this.writer.releaseLock();
+        const tlsSocket = cfSocket.startTls();
+        this.socket = tlsSocket;
+        this.buf = "";
+        this.writer = this.socket.writable.getWriter();
+        this.reader = this.socket.readable.getReader();
         return;
       }
     } catch (e) {
@@ -87,7 +103,7 @@ export class SmtpClient {
     const streamMod = await import(/* @vite-ignore */ `node:${"stream"}`);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    type NodeDuplex = { destroyed?: boolean; once(e: string, fn: (...a: any[]) => void): unknown; end(cb?: () => void): unknown; destroy(e?: Error): unknown; on(e: string, fn: (...a: any[]) => void): unknown; write(d: string, cb?: (err: Error | null | undefined) => void): void };
+    type NodeDuplex = { destroyed?: boolean; once(e: string, fn: (...a: any[]) => void): unknown; end(cb?: () => void): unknown; destroy(e?: Error): unknown; on(e: string, fn: (...a: any[]) => void): unknown; off(e: string, fn: (...a: any[]) => void): unknown; write(d: string, cb?: (err: Error | null | undefined) => void): void };
 
     const net = netMod as { connect(o: { host: string; port: number }): NodeDuplex };
     const tls = tlsMod as { connect(o: { socket: NodeDuplex; servername: string }): NodeDuplex & { authorized?: boolean } };
@@ -98,7 +114,8 @@ export class SmtpClient {
 
     // Line-buffered reader for the pre-TLS exchange
     let plainBuf = "";
-    netSocket.on("data", (chunk: unknown) => { plainBuf += (chunk as Buffer).toString("utf-8"); });
+    const onPlainData = (chunk: unknown) => { plainBuf += (chunk as Buffer).toString("utf-8"); };
+    netSocket.on("data", onPlainData);
 
     const readPlainLine = (): Promise<string> => new Promise((res, rej) => {
       const check = () => {
@@ -148,7 +165,8 @@ export class SmtpClient {
     const st = await readPlainResponse();
     if (!st.code.startsWith("2")) throw new SmtpError(`STARTTLS rejected: ${st.text}`);
 
-    // Upgrade to TLS
+    // Upgrade to TLS — remove the plain data accumulator first to avoid a listener leak
+    netSocket.off("data", onPlainData);
     const tlsSocket = tls.connect({ socket: netSocket, servername: this.opts.host });
     await new Promise<void>((res, rej) => { tlsSocket.once("secureConnect", res); tlsSocket.once("error", rej); });
 
@@ -156,9 +174,13 @@ export class SmtpClient {
       readable: Readable.toWeb(tlsSocket),
       writable: Writable.toWeb(tlsSocket),
       close: () => new Promise<void>((res) => {
-        if (tlsSocket.destroyed) { res(); return; }
-        tlsSocket.once("close", res);
-        try { tlsSocket.end(() => res()); } catch { try { tlsSocket.destroy(); } catch {} res(); }
+        const cleanup = () => {
+          if (!netSocket.destroyed) { try { netSocket.destroy(); } catch {} }
+          res();
+        };
+        if (tlsSocket.destroyed) { cleanup(); return; }
+        tlsSocket.once("close", cleanup);
+        try { tlsSocket.end(); } catch { try { tlsSocket.destroy(); } catch {} cleanup(); }
       }),
     };
     this.writer = this.socket.writable.getWriter();

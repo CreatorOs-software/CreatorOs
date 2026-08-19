@@ -18,7 +18,7 @@ export const CommunicationRepository = {
       supabase
         .from("email_threads")
         .select(
-          "id, sender_email, sender_name, recipient_email, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id, thread_labels:email_thread_labels(label:email_labels(id, name, color))",
+          "id, agency_id, sender_email, sender_name, recipient_email, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id, thread_labels:email_thread_labels(label:email_labels(id, name, color))",
         )
         .eq("agency_id", agencyId)
         .order("received_at", { ascending: false })
@@ -70,10 +70,10 @@ export const CommunicationRepository = {
   async findThread(
     supabase: SupabaseClient,
     id: string,
-  ): Promise<Pick<EmailThread, "id" | "agency_id" | "sender_email" | "subject" | "gmail_thread_id"> | null> {
+  ): Promise<Pick<EmailThread, "id" | "agency_id" | "sender_email" | "subject" | "gmail_thread_id" | "integration_id"> | null> {
     const { data } = await supabase
       .from("email_threads")
-      .select("id, agency_id, sender_email, sender_name, subject, gmail_thread_id")
+      .select("id, agency_id, sender_email, sender_name, subject, gmail_thread_id, integration_id")
       .eq("id", id)
       .maybeSingle();
 
@@ -127,17 +127,12 @@ export const CommunicationRepository = {
     name: string,
     color: string,
   ): Promise<EmailLabel> {
-    const { data: existing } = await supabase
-      .from("email_labels")
-      .select("id, name, color")
-      .eq("agency_id", agencyId)
-      .eq("name", name)
-      .maybeSingle();
-    if (existing) return existing as EmailLabel;
-
     const { data, error } = await supabase
       .from("email_labels")
-      .insert({ agency_id: agencyId, name, color })
+      .upsert(
+        { agency_id: agencyId, name, color },
+        { onConflict: "agency_id,name" },
+      )
       .select("id, name, color")
       .single();
     if (error) throw new Error(error.message);

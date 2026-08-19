@@ -27,11 +27,12 @@ async function syncIntegration(id: string): Promise<void> {
 }
 
 async function patchThread(id: string, patch: ThreadPatch): Promise<void> {
-  await fetch(`/api/inbox/${id}`, {
+  const res = await fetch(`/api/inbox/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(patch),
   });
+  if (!res.ok) throw new Error(await res.text());
 }
 
 // ─── Folder filter ────────────────────────────────────────────────────────────
@@ -114,7 +115,7 @@ export function OrbitInbox() {
 
   const inboxUnread = threads.filter(
     (t) =>
-      t.folder.toUpperCase() === "INBOX" &&
+      (t.folder ?? "INBOX").toUpperCase() === "INBOX" &&
       t.unread &&
       (!selectedIntegrationId || t.integration_id === selectedIntegrationId),
   ).length;
@@ -124,8 +125,9 @@ export function OrbitInbox() {
 
   // ── Actions ──────────────────────────────────────────────────────────────────
 
-  const applyOptimistic = useCallback(
-    (id: string, patch: ThreadPatch) => {
+  const syncPatch = useCallback(
+    async (id: string, patch: ThreadPatch) => {
+      const previous = queryClient.getQueryData<InboxData>(QueryKeys.inbox.all());
       queryClient.setQueryData<InboxData>(QueryKeys.inbox.all(), (old) => {
         if (!old) return old;
         return {
@@ -133,41 +135,38 @@ export function OrbitInbox() {
           threads: old.threads.map((t) => (t.id === id ? { ...t, ...patch } : t)),
         };
       });
+      try {
+        await patchThread(id, patch);
+      } catch {
+        queryClient.setQueryData(QueryKeys.inbox.all(), previous);
+      }
     },
     [queryClient],
   );
 
   function handleSelect(t: Thread) {
     setSelectedId(t.id);
-    if (t.unread) {
-      applyOptimistic(t.id, { unread: false });
-      void patchThread(t.id, { unread: false });
-    }
+    if (t.unread) void syncPatch(t.id, { unread: false });
   }
 
   function handleStar(id: string) {
     const t = threads.find((x) => x.id === id);
     if (!t) return;
-    const patch = { starred: !t.starred };
-    applyOptimistic(id, patch);
-    void patchThread(id, patch);
+    void syncPatch(id, { starred: !t.starred });
   }
 
   function handleArchive(id: string) {
-    applyOptimistic(id, { folder: "ARCHIVE" });
-    void patchThread(id, { folder: "ARCHIVE" });
     if (selectedId === id) setSelectedId(null);
+    void syncPatch(id, { folder: "ARCHIVE" });
   }
 
   function handleDelete(id: string) {
-    applyOptimistic(id, { folder: "TRASH" });
-    void patchThread(id, { folder: "TRASH" });
     if (selectedId === id) setSelectedId(null);
+    void syncPatch(id, { folder: "TRASH" });
   }
 
   function handlePatch(id: string, patch: ThreadPatch) {
-    applyOptimistic(id, patch);
-    void patchThread(id, patch);
+    void syncPatch(id, patch);
   }
 
   function handleFolderChange(f: Folder) {
@@ -178,7 +177,8 @@ export function OrbitInbox() {
   }
 
   async function handleToggleLabel(threadId: string, labelId: string, assign: boolean) {
-    // Optimistic update
+    const previous = queryClient.getQueryData<InboxData>(QueryKeys.inbox.all());
+
     queryClient.setQueryData<InboxData>(QueryKeys.inbox.all(), (old) => {
       if (!old) return old;
       return {
@@ -200,10 +200,14 @@ export function OrbitInbox() {
     const url = assign
       ? `/api/inbox/${threadId}/labels`
       : `/api/inbox/${threadId}/labels/${labelId}`;
-    await fetch(url, {
+    const res = await fetch(url, {
       method: assign ? "POST" : "DELETE",
       ...(assign ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify({ labelId }) } : {}),
     });
+
+    if (!res.ok) {
+      queryClient.setQueryData(QueryKeys.inbox.all(), previous);
+    }
   }
 
   async function handleCreateLabel(name: string, color: string) {

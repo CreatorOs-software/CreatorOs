@@ -7,12 +7,12 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { body: replyBody } = await request.json();
+    const { body: replyBody, cc } = await request.json();
 
     if (!replyBody?.trim())
       return Response.json({ error: "Empty reply" }, { status: 400 });
 
-    await CommunicationService.replyToThread(id, replyBody);
+    await CommunicationService.replyToThread(id, replyBody, Array.isArray(cc) ? cc : undefined);
     return Response.json({ ok: true });
   } catch (e) {
     if (e instanceof CommunicationError)
