@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { CreatorRef as Creator } from "@/domains/brands";
 
 type Provider = "gmail" | "outlook" | "imap";
 
@@ -25,13 +26,6 @@ type Integration = {
   status: string;
   last_sync_at: string | null;
   creator_id: string | null;
-};
-
-type Creator = {
-  id: string;
-  full_name: string;
-  initials: string;
-  color: string;
 };
 
 const PROVIDERS: {

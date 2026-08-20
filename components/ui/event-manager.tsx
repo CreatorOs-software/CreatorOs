@@ -50,13 +50,12 @@ import {
   FileText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import type { CreatorRef as Creator } from "@/domains/brands"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type EventType = "shoot" | "travel" | "deadline" | "brand" | "internal" | "posting"
 type Recurrence = "none" | "daily" | "weekly" | "monthly" | "yearly"
-
-type Creator = { id: string; full_name: string; initials: string; color: string }
 
 type TeamMember = { id: string; display_name: string | null; initials: string | null; color: string | null; role: string }
 

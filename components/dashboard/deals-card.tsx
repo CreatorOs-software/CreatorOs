@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { BrandAvatar } from "@/components/creators/dashboard/shared";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -108,13 +109,7 @@ export function DealsCard({ creatorId, className }: DealsCardProps) {
 
                   {/* Brand avatar */}
                   {deal.brands ? (
-                    <span
-                      className="w-6 h-6 rounded-md shrink-0 inline-flex items-center justify-center text-[9px] font-bold text-white"
-                      style={{ background: deal.brands.color }}
-                      title={deal.brands.company_name}
-                    >
-                      {deal.brands.short_code.slice(0, 2).toUpperCase()}
-                    </span>
+                    <BrandAvatar brand={deal.brands} />
                   ) : (
                     <span className="w-6 h-6 rounded-md shrink-0 bg-muted" />
                   )}

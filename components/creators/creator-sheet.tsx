@@ -29,52 +29,15 @@ import { AvatarCreator } from "@/components/ui/avatar-creator";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type Creator = {
-  id: string;
-  full_name: string;
-  handle: string | null;
-  initials: string;
-  color: string;
-  niche: string[];
-  status: "active" | "on-break" | "inactive";
-  platforms: string[];
-  followers: string | null;
-  monthly_revenue: number;
-};
+import type {
+  Creator,
+  Brand,
+  Deal,
+  CreatorMailbox as Mailbox,
+  CreatorsPageData as CreatorsData,
+} from "@/domains/creators";
 
-export type Brand = {
-  id: string;
-  company_name: string;
-  short_code: string;
-  color: string;
-};
-
-export type Deal = {
-  id: string;
-  creator_id: string | null;
-  brand_id: string | null;
-  title: string;
-  budget: number;
-  status: string;
-  deadline: string | null;
-  campaign_type: string | null;
-  deliverables: string[];
-};
-
-export type Mailbox = {
-  id: string;
-  email: string;
-  display_name: string | null;
-  provider: string;
-  creator_id: string | null;
-};
-
-export type CreatorsData = {
-  creators: Creator[];
-  brands: Brand[];
-  deals: Deal[];
-  mailboxes: Mailbox[];
-};
+export type { Creator, Brand, Deal, Mailbox, CreatorsData };
 
 // ─── Creator Sheet ────────────────────────────────────────────────────────────
 

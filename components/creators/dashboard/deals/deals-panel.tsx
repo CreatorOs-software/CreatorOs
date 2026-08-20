@@ -17,8 +17,8 @@ import {
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Auflister } from "@/components/ui/auflister";
 import type { Creator } from "@/domains/creators/types";
-import type { DealFull } from "./types";
-import { ALT, LAUFEND } from "./constants";
+import type { DealFull } from "../types";
+import { ALT, LAUFEND } from "../constants";
 import { laufendColumns } from "./deals-columns";
 import { DealDialog } from "./deal-dialog";
 

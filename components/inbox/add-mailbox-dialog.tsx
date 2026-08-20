@@ -23,13 +23,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { QueryKeys } from "@/lib/query-keys";
 import { GOOGLE_PATHS } from "./constants";
+import type { CreatorRef as Creator } from "@/domains/brands";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Provider = "gmail" | "outlook" | "imap";
 type Step = "provider" | "form" | "creator";
-
-type Creator = { id: string; full_name: string; initials: string; color: string };
 
 type FormState = {
   email: string;

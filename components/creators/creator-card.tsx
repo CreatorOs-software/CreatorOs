@@ -16,33 +16,6 @@ export function formatMoney(n: number) {
   return `$${(n / 1000).toFixed(1)}k`;
 }
 
-// ─── Avatar (small inline version used in other components) ───────────────────
-
-export function Avatar({
-  c,
-  size = "md",
-}: {
-  c: Creator;
-  size?: "sm" | "md" | "lg";
-}) {
-  const cls = {
-    sm: "w-7 h-7 text-[10px]",
-    md: "w-9 h-9 text-xs",
-    lg: "w-11 h-11 text-sm",
-  }[size];
-  return (
-    <span
-      className={cn(
-        "rounded-xl inline-flex items-center justify-center font-bold text-white shrink-0",
-        cls,
-      )}
-      style={{ background: c.color }}
-    >
-      {c.initials}
-    </span>
-  );
-}
-
 // ─── Creator Card ─────────────────────────────────────────────────────────────
 
 export function CreatorCard({

@@ -31,7 +31,7 @@ import {
   InsightsEmptyState,
 } from "@/components/creators/dashboard/insights-tab";
 import { VertraegeTab } from "@/components/creators/dashboard/vertraege-tab";
-import { DealsTab } from "@/components/creators/dashboard/deals-tab";
+import { DealsTab } from "@/components/creators/dashboard/deals/deals-tab";
 import { UebersichtTab } from "@/components/creators/dashboard/uebersicht-tab";
 
 export default function CreatorDashboardPage() {

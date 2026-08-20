@@ -17,10 +17,10 @@ import {
 } from "@/components/ui/dialog";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import type { Creator } from "@/domains/creators/types";
-import type { DealFull, Anfrage } from "./types";
-import { ALT, daysUntil, fmtMoney } from "./constants";
+import type { DealFull, Anfrage } from "../types";
+import { ALT, daysUntil, fmtMoney } from "../constants";
 import { DealDialog } from "./deal-dialog";
-import { AnfragenPanel } from "./anfragen-panel";
+import { AnfragenPanel } from "../anfragen/anfragen-panel";
 import { laufendColumns } from "./deals-columns";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────

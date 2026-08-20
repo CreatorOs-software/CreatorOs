@@ -21,7 +21,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BrandAvatar } from "./shared";
+import { BrandAvatar } from "../shared";
 import type {
   ApprovalInfo,
   DealFull,
@@ -34,8 +34,8 @@ import type {
   PaymentItem,
   TrackingAssets,
   WhitelistingInfo,
-} from "./types";
-import { ALT, LAUFEND, PIPELINE, fmtMoney } from "./constants";
+} from "../types";
+import { ALT, LAUFEND, PIPELINE, fmtMoney } from "../constants";
 import { Stepper } from "@/components/ui/stepper";
 import type { Step as StepperStep } from "@/components/ui/stepper";
 import { DatePicker } from "@/components/ui/date-picker";

@@ -1,10 +1,28 @@
 import { Clock } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
-import type { Anfrage } from "./types";
-import { fmtMoney } from "./constants";
+import type { Anfrage } from "../types";
+import { fmtMoney } from "../constants";
 
-// ── Constants ──────────────────────────────────────────────────────────────────
+// ── Constants & shared helpers ────────────────────────────────────────────────
+
+export const STATUS_ORDER = [
+  "neu",
+  "pruefung",
+  "angebot",
+  "verhandlung",
+  "zugesagt",
+] as const;
+
+export type AnfrageStatus = Anfrage["status"];
+
+export function daysSince(isoDate: string): number {
+  return Math.floor((Date.now() - new Date(isoDate).getTime()) / 86_400_000);
+}
+
+export function isEndState(status: AnfrageStatus): boolean {
+  return status === "gewonnen" || status === "abgelehnt";
+}
 
 export const STATUS_META: Record<
   Anfrage["status"],

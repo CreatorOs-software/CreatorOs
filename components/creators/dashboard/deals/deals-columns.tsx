@@ -2,7 +2,7 @@ import { Clock } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
 import { TableProgress } from "@/components/ui/table-progress";
-import type { DealFull } from "./types";
+import type { DealFull } from "../types";
 import {
   PLATFORM_ICONS,
   PLATFORM_KEY,
@@ -10,8 +10,8 @@ import {
   daysUntil,
   fmtDate,
   fmtMoney,
-} from "./constants";
-import { BrandAvatar } from "./shared";
+} from "../constants";
+import { BrandAvatar } from "../shared";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
