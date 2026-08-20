@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { getAuthContext, toErrorResponse } from "@/lib/auth-context";
+import { toErrorResponse } from "@/lib/auth-context";
+import { AnfrageService } from "@/domains/anfragen";
 
 const patchSchema = z.object({
   brand_id: z.string().nullable().optional(),
@@ -20,25 +21,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id: anfrageId } = await params;
-    const { supabase, agencyId } = await getAuthContext();
-
+    const { id } = await params;
     const body = await req.json();
     const parsed = patchSchema.safeParse(body);
     if (!parsed.success) {
       return Response.json({ error: "Ungültige Daten" }, { status: 400 });
     }
-
-    const { data: anfrage, error } = await supabase
-      .from("anfragen")
-      .update(parsed.data)
-      .eq("id", anfrageId)
-      .eq("agency_id", agencyId)
-      .select("id, status")
-      .single();
-
-    if (error) throw error;
-
+    const anfrage = await AnfrageService.updateAnfrage(id, parsed.data);
     return Response.json({ anfrage });
   } catch (e) {
     return toErrorResponse(e);
@@ -50,17 +39,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id: anfrageId } = await params;
-    const { supabase, agencyId } = await getAuthContext();
-
-    const { error } = await supabase
-      .from("anfragen")
-      .delete()
-      .eq("id", anfrageId)
-      .eq("agency_id", agencyId);
-
-    if (error) throw error;
-
+    const { id } = await params;
+    await AnfrageService.deleteAnfrage(id);
     return new Response(null, { status: 204 });
   } catch (e) {
     return toErrorResponse(e);
