@@ -74,7 +74,7 @@ export function DealsCard({ creatorId, className }: DealsCardProps) {
   const deals = data?.deals ?? [];
 
   return (
-    <Card className={cn("rounded-2xl p-5 gap-0 ring-0 flex flex-col", className)}>
+    <Card className={cn("p-5 gap-0 ring-0 flex flex-col", className)}>
       <CardHeader className="p-0 mb-4 flex flex-row items-center justify-between">
         <span className="text-sm font-semibold">Deals</span>
         {deals.length > 0 && (

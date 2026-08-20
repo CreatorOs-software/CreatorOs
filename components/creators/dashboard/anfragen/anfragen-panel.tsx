@@ -91,7 +91,7 @@ export function AnfragenPanel({
 
   return (
     <>
-      <Card className="p-5 gap-0 rounded-2xl">
+      <Card className="p-5 gap-0">
         <div className="flex items-center gap-2 mb-3">
           <h3 className="text-sm font-semibold">Anfragen</h3>
           {!showClosed && activeAnfragen.length > 0 && (

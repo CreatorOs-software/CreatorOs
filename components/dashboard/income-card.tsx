@@ -44,7 +44,7 @@ export function IncomeCard({
   }
 
   return (
-    <Card className={cn("rounded-2xl p-5 gap-0 ring-0", className)}>
+    <Card className={cn("p-5 gap-0 ring-0", className)}>
       <CardHeader className="flex flex-row items-center justify-between p-0 mb-4 gap-0">
         <CardTitle className="text-lg font-semibold text-foreground">
           {title}

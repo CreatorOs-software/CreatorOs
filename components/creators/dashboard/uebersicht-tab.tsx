@@ -183,7 +183,7 @@ function TermineCard({ creatorId }: { creatorId: string }) {
   const monthLabel = now.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
 
   return (
-    <Card className="p-5 rounded-2xl flex flex-col gap-4 h-full">
+    <Card className="p-5 flex flex-col gap-4 h-full">
       {/* Header */}
       <div>
         {/* Legend */}
@@ -285,7 +285,7 @@ function TodosWidget({ creatorId }: { creatorId: string }) {
   if (selected) {
     const pCfg = selected.priority ? PRIORITY_CFG[selected.priority] : null;
     return (
-      <Card className="p-5 rounded-2xl flex flex-col gap-4 w-72 shrink-0 h-full">
+      <Card className="p-5 flex flex-col gap-4 w-72 shrink-0 h-full">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setSelected(null)}
@@ -374,7 +374,7 @@ function TodosWidget({ creatorId }: { creatorId: string }) {
   // ── List view ─────────────────────────────────────────────────────────────
 
   return (
-    <Card className="p-5 rounded-2xl flex flex-col gap-4 w-72 shrink-0 h-full">
+    <Card className="p-5 flex flex-col gap-4 w-72 shrink-0 h-full">
       <h3 className="text-sm font-semibold">To-dos</h3>
 
       {/* Counters */}
@@ -488,20 +488,20 @@ function RevenueSection({
 
   return (
     <div className={cn("grid gap-4", isYearGoal && goalValue ? "grid-cols-3" : "grid-cols-2")}>
-      <Card className="p-5 rounded-2xl">
+      <Card className="p-5">
         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Umsatz · Diesen Monat</p>
         <p className="mt-2 text-2xl font-light tabular-nums">{fmtMoney(mtd)}</p>
         <p className="mt-1 text-xs text-muted-foreground">{monthLabel}</p>
       </Card>
 
-      <Card className="p-5 rounded-2xl">
+      <Card className="p-5">
         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Umsatz · Dieses Jahr</p>
         <p className="mt-2 text-2xl font-light tabular-nums">{fmtMoney(ytd)}</p>
         <p className="mt-1 text-xs text-muted-foreground">kumuliert {year}</p>
       </Card>
 
       {isYearGoal && goalValue && (
-        <Card className="p-5 rounded-2xl">
+        <Card className="p-5">
           <div className="flex items-start justify-between">
             <p className="text-sm font-semibold">{periodLabel}</p>
             <span className={cn(
@@ -546,7 +546,7 @@ function ZieleSection({ creator, deals }: { creator: Creator | null; deals: Deal
       <h3 className="text-sm font-semibold">Interne Ziele</h3>
       <div className="grid grid-cols-2 gap-4">
         {hasKoopGoal && (
-          <Card className="p-4 rounded-2xl flex flex-col gap-3">
+          <Card className="p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Kooperationen</span>
               <span className="text-xs text-muted-foreground tabular-nums">{doneDeals} von {goal_value} Deals</span>
@@ -560,7 +560,7 @@ function ZieleSection({ creator, deals }: { creator: Creator | null; deals: Deal
           </Card>
         )}
         {hasPostGoal && (
-          <Card className="p-4 rounded-2xl flex flex-col gap-3">
+          <Card className="p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Posts</span>
               <span className="text-xs text-muted-foreground">Ziel: {goal_value} Posts</span>
@@ -571,7 +571,7 @@ function ZieleSection({ creator, deals }: { creator: Creator | null; deals: Deal
           </Card>
         )}
         {weitere_ziele && (
-          <Card className="p-4 rounded-2xl">
+          <Card className="p-4">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Weitere Ziele</p>
             <p className="text-sm text-foreground whitespace-pre-wrap">{weitere_ziele}</p>
           </Card>

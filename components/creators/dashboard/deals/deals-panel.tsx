@@ -70,7 +70,7 @@ export function DealsPanel({ deals, creator }: DealsPanelProps) {
 
   return (
     <>
-      <Card className="p-5 gap-0 rounded-2xl">
+      <Card className="p-5 gap-0">
         <h3 className="text-sm font-semibold mb-3">Deals</h3>
 
         <Auflister

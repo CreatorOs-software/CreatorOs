@@ -53,7 +53,7 @@ function StatCard({
   sub: string | null;
 }) {
   return (
-    <Card className="rounded-2xl p-5 gap-0">
+    <Card className="p-5 gap-0">
       <CardHeader className="flex flex-row items-center justify-between p-0 mb-3 gap-0">
         <CardTitle className="text-sm font-semibold text-foreground">
           {label}
@@ -201,7 +201,7 @@ export function DealsTab({
       </div>
 
       {/* Laufende Deals */}
-      <Card className="p-5 gap-0 rounded-2xl">
+      <Card className="p-5 gap-0">
         <h3 className="text-sm font-semibold mb-3">Deals</h3>
         <Auflister
           data={showAlt ? alt : laufend}
