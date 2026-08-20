@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { QueryKeys } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
@@ -64,7 +65,7 @@ interface DealsCardProps {
 
 export function DealsCard({ creatorId, className }: DealsCardProps) {
   const { data, isPending } = useQuery<{ deals: Deal[] }>({
-    queryKey: ["creator-deals", creatorId],
+    queryKey: QueryKeys.creators.deals(creatorId),
     queryFn: () =>
       fetch(`/api/creators/${creatorId}/deals`).then((r) => r.json()),
     staleTime: 5 * 60_000,

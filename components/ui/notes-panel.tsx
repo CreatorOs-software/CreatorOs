@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { QueryKeys } from "@/lib/query-keys";
 import { Calendar, Edit3, Plus, Search, StickyNote, Trash2 } from "lucide-react";
 import { FloatingWindow } from "@/components/ui/floating-window";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
@@ -47,10 +49,22 @@ export function NotesPanel() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [creators, setCreators] = useState<Creator[]>([]);
-  const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+
+  const { data: creatorsData } = useQuery<{ creators: Creator[] }>({
+    queryKey: QueryKeys.creators.list(),
+    queryFn: () => fetch("/api/creators/list").then((r) => r.json()),
+    staleTime: 5 * 60_000,
+  });
+  const creators = creatorsData?.creators ?? [];
+
+  const { data: brandsData } = useQuery<{ brands: Brand[] }>({
+    queryKey: QueryKeys.brands.list(),
+    queryFn: () => fetch("/api/brands").then((r) => r.json()),
+    staleTime: 5 * 60_000,
+  });
+  const brands = brandsData?.brands ?? [];
 
   // Debounce PATCH: track a timer per note id
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -76,14 +90,6 @@ export function NotesPanel() {
 
   useEffect(() => {
     fetchNotes();
-    fetch("/api/creators/list")
-      .then((r) => r.json())
-      .then((d: { creators?: Creator[] }) => setCreators(d.creators ?? []))
-      .catch(() => {});
-    fetch("/api/brands")
-      .then((r) => r.json())
-      .then((d: { brands?: Brand[] }) => setBrands(d.brands ?? []))
-      .catch(() => {});
   }, [fetchNotes]);
 
   const filtered = notes.filter(
@@ -111,14 +117,14 @@ export function NotesPanel() {
   }
 
   async function deleteNote(note: Note) {
-    await fetch(`/api/notes/${note.id}`, { method: "DELETE" });
+    const previous = notes;
     setNotes((prev) => {
       const next = prev.filter((n) => n.id !== note.id);
-      if (activeNote?.id === note.id) {
-        setActiveNote(next[0] ?? null);
-      }
+      if (activeNote?.id === note.id) setActiveNote(next[0] ?? null);
       return next;
     });
+    const res = await fetch(`/api/notes/${note.id}`, { method: "DELETE" });
+    if (!res.ok) setNotes(previous);
   }
 
   function updateNote(patch: Partial<Pick<Note, "title" | "content" | "creator_id" | "brand_id">>) {

@@ -1119,8 +1119,6 @@ export function EventManager() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [draggedEvent, setDraggedEvent] = useState<CalEvent | null>(null)
-  const [creators, setCreators] = useState<Creator[]>([])
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [filterType, setFilterType] = useState<EventType | "all">("all")
   const [filterCreator, setFilterCreator] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
@@ -1138,19 +1136,19 @@ export function EventManager() {
     staleTime: 2 * 60_000,
   })
 
-  useEffect(() => {
-    fetch("/api/creators/list")
-      .then((r) => r.json())
-      .then((d: { creators?: Creator[] }) => setCreators(d.creators ?? []))
-      .catch(() => {})
-    fetch("/api/agency/users")
-      .then(async (r) => {
-        const d = await r.json()
-        if (!r.ok) { console.error("[agency/users]", d); return }
-        setTeamMembers(d.users ?? [])
-      })
-      .catch((e) => console.error("[agency/users] fetch failed", e))
-  }, [])
+  const { data: creatorsData } = useQuery<{ creators: Creator[] }>({
+    queryKey: QueryKeys.creators.list(),
+    queryFn: () => fetch("/api/creators/list").then((r) => r.json()),
+    staleTime: 5 * 60_000,
+  })
+  const creators = creatorsData?.creators ?? []
+
+  const { data: membersData } = useQuery<{ users: TeamMember[] }>({
+    queryKey: QueryKeys.members.list(),
+    queryFn: () => fetch("/api/agency/users").then((r) => r.json()),
+    staleTime: 5 * 60_000,
+  })
+  const teamMembers = membersData?.users ?? []
 
   const allEvents = useMemo(() => (data?.events ?? []).map(toCalEvent), [data])
 

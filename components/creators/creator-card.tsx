@@ -5,6 +5,7 @@ import { Eye, Puzzle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Creator } from "./creator-sheet";
 import { Button } from "../ui/button";
+import { AvatarCreator } from "../ui/avatar-creator";
 
 const STATUS_DOT: Record<string, "online" | "away" | "offline"> = {
   active: "online",
@@ -63,19 +64,14 @@ export function CreatorCard({
       {/* Initials avatar */}
       <div className="mb-5 flex justify-center relative z-10">
         <div className="relative">
-          <div
-            className="h-24 w-24 rounded-full  ring-1 ring-border
-              transition-all border-4 border-black duration-200 group-hover:scale-105"
-          >
-            <div
-              className="h-full w-full rounded-full flex items-center justify-center text-2xl font-bold text-white"
-              style={{ background: c.color }}
-            >
-              {c.initials}
-            </div>
-          </div>
+          <AvatarCreator
+            initials={c.initials}
+            color={c.color}
+            size="2xl"
+            className="ring-1 ring-border transition-all duration-200 group-hover:scale-105"
+          />
           {/* Glow ring */}
-          <div className="absolute inset-0 rounded-full border-2 border-foreground/20 opacity-0 group-hover:opacity-100 transition-all duration-200" />
+          <div className="absolute inset-0 rounded-xl border-2 border-foreground/20 opacity-0 group-hover:opacity-100 transition-all duration-200" />
         </div>
       </div>
 

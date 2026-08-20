@@ -149,7 +149,7 @@ export function IntegrationsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ creator_id: creatorId }),
     });
-    queryClient.setQueryData<{ integrations: Integration[] }>(["integrations"], (prev) => {
+    queryClient.setQueryData<{ integrations: Integration[] }>(QueryKeys.integrations.list(), (prev) => {
       if (!prev) return prev;
       return {
         integrations: prev.integrations.map((i) =>

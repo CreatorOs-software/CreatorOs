@@ -33,12 +33,13 @@ import {
 import { VertraegeTab } from "@/components/creators/dashboard/vertraege-tab";
 import { DealsTab } from "@/components/creators/dashboard/deals/deals-tab";
 import { UebersichtTab } from "@/components/creators/dashboard/uebersicht-tab";
+import type { DocEntry } from "@/components/ui/file-upload";
+import { AvatarCreator } from "@/components/ui/avatar-creator";
 
 export default function CreatorDashboardPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { setConfig } = usePageHeader();
-
   // ── Queries ──────────────────────────────────────────────────────────────────
 
   const { data: creatorData, isPending: creatorPending } = useQuery<{
@@ -76,6 +77,12 @@ export default function CreatorDashboardPage() {
     staleTime: 5 * 60_000,
   });
 
+  const { data: documentsData } = useQuery<{ documents: DocEntry[] }>({
+    queryKey: ["creator-documents", id],
+    queryFn: () => fetch(`/api/creators/${id}/documents`).then((r) => r.json()),
+    staleTime: 5 * 60_000,
+  });
+
   // ── Derived state ─────────────────────────────────────────────────────────────
 
   const creator = creatorData?.creator ?? null;
@@ -84,6 +91,7 @@ export default function CreatorDashboardPage() {
   const deals = dealsData?.deals ?? [];
   const invoices = invoicesData?.invoices ?? [];
   const anfragen = anfragenData?.anfragen ?? [];
+  const documents = documentsData?.documents ?? [];
 
   const activeAccounts = accounts.filter(
     (a) => a.sync_status !== "disconnected",
@@ -132,12 +140,7 @@ export default function CreatorDashboardPage() {
       onBack: () => router.back(),
       title: (
         <div className="flex items-center gap-2">
-          <span
-            className="w-8 h-8 rounded-xl inline-flex items-center justify-center font-bold text-white text-xs shrink-0"
-            style={{ background: creator.color }}
-          >
-            {creator.initials}
-          </span>
+          <AvatarCreator initials={creator.initials} color={creator.color} size="sm" />
           <span className="text-sm font-semibold">
             {creator.handle ?? creator.full_name}
           </span>
@@ -177,12 +180,7 @@ export default function CreatorDashboardPage() {
           <Button variant="ghost" size="icon-sm" onClick={() => router.back()}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span
-            className="w-10 h-10 rounded-xl shrink-0 inline-flex items-center justify-center font-bold text-white text-sm"
-            style={{ background: creator.color }}
-          >
-            {creator.initials}
-          </span>
+          <AvatarCreator initials={creator.initials} color={creator.color} size="md" />
           <div>
             <h2 className="text-lg font-semibold leading-tight">{creator.full_name}</h2>
             {creator.handle && (
@@ -339,7 +337,7 @@ export default function CreatorDashboardPage() {
 
           {/* Verträge */}
           <TabsContent value="vertraege">
-            <VertraegeTab invoices={invoices} creatorId={id} />
+            <VertraegeTab invoices={invoices} documents={documents} creatorId={id} />
           </TabsContent>
         </div>
       </Tabs>

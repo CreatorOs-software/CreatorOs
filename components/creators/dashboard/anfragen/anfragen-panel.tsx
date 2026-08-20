@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
@@ -28,6 +29,7 @@ export function AnfragenPanel({
   creatorId: string;
 }) {
   "use no memo";
+  const router = useRouter();
   const [selected, setSelected] = useState<Anfrage | null>(null);
   const [neueOpen, setNeueOpen] = useState(false);
   const [showClosed, setShowClosed] = useState(false);
@@ -75,7 +77,16 @@ export function AnfragenPanel({
     const targetId = deleteTarget.id;
     setDeleteTarget(null);
     handleDeleted(targetId);
-    fetch(`/api/anfragen/${targetId}`, { method: "DELETE" });
+    try {
+      await fetch(`/api/anfragen/${targetId}`, { method: "DELETE" });
+      router.refresh();
+    } catch {
+      setDeletedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(targetId);
+        return next;
+      });
+    }
   }
 
   return (

@@ -100,7 +100,6 @@ const SORT_LABELS: Record<SortKey, string> = {
 
 export function TodoPanel() {
   const queryClient = useQueryClient();
-  const [creators, setCreators] = useState<Creator[]>([]);
   const [view, setView] = useState<"list" | "form">("list");
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
@@ -116,12 +115,12 @@ export function TodoPanel() {
 
   const rawItems = useMemo(() => data?.todos ?? [], [data]);
 
-  useEffect(() => {
-    fetch("/api/creators/list")
-      .then((r) => r.json())
-      .then((d: { creators?: Creator[] }) => setCreators(d.creators ?? []))
-      .catch(() => {});
-  }, []);
+  const { data: creatorsData } = useQuery<{ creators: Creator[] }>({
+    queryKey: QueryKeys.creators.list(),
+    queryFn: () => fetch("/api/creators/list").then((r) => r.json()),
+    staleTime: 5 * 60_000,
+  });
+  const creators = creatorsData?.creators ?? [];
 
   const allDone = useMemo(
     () => rawItems.length > 0 && rawItems.every((i) => i.done),

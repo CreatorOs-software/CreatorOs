@@ -1345,6 +1345,7 @@ function GeldTab({
   deal: DealFull;
   patchLocal: (patch: Partial<LocalState>) => void;
 }) {
+  const router = useRouter();
   const [payLoading, setPayLoading] = useState<number | null>(null);
 
   function patchPayItem(index: number, patch: Partial<PaymentItem>) {
@@ -1369,6 +1370,7 @@ function GeldTab({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ payment_items: updated }),
       });
+      router.refresh();
     } finally {
       setPayLoading(null);
     }
