@@ -506,7 +506,7 @@ function RevenueSection({
             <p className="text-sm font-semibold">{periodLabel}</p>
             <span className={cn(
               "text-xs font-semibold px-2 py-0.5 rounded-full",
-              progressPct >= 100 ? "bg-green-100 text-green-700" : "bg-blue-50 text-blue-600",
+              progressPct >= 100 ? "bg-green-100 text-green-700" : "bg-amber-50 text-amber-600",
             )}>
               ● {Math.round(progressPct)} %
             </span>
@@ -515,7 +515,7 @@ function RevenueSection({
           <p className="mt-1 text-xs text-muted-foreground text-right">Ziel {fmtMoney(goalValue)}</p>
           <div className="mt-3 h-1.5 rounded-full bg-muted overflow-hidden">
             <div
-              className={cn("h-full rounded-full transition-all", progressPct >= 100 ? "bg-green-500" : "bg-blue-500")}
+              className={cn("h-full rounded-full transition-all", progressPct >= 100 ? "bg-green-500" : "bg-amber-500")}
               style={{ width: `${progressPct}%` }}
             />
           </div>
@@ -553,7 +553,7 @@ function ZieleSection({ creator, deals }: { creator: Creator | null; deals: Deal
             </div>
             <div className="h-1.5 rounded-full bg-muted overflow-hidden">
               <div
-                className="h-full rounded-full bg-blue-500"
+                className="h-full rounded-full bg-amber-500"
                 style={{ width: `${Math.min(100, (doneDeals / goal_value!) * 100)}%` }}
               />
             </div>

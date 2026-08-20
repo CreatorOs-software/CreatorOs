@@ -1,6 +1,7 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -150,10 +151,9 @@ function PaymentCard({ item, index, canRemove, onUpdate, onRemove }: PaymentCard
             </Label>
           </div>
           {invoiced && (
-            <Input
-              type="date"
-              value={item.invoice_date}
-              onChange={(e) => onUpdate({ invoice_date: e.target.value })}
+            <DatePicker
+              value={item.invoice_date || null}
+              onChange={(v) => onUpdate({ invoice_date: v ?? "" })}
             />
           )}
         </div>

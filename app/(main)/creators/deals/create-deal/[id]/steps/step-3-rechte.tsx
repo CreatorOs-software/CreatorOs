@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Check } from "lucide-react";
@@ -197,11 +198,10 @@ export function Step3Rechte({ form, errors: _errors, onNext, onPrev }: Step3Rech
                         labels={{ live_gang: "ab Live-Gang", kampagnenstart: "ab Kampagnenstart" }}
                       />
                       {r.duration_start_type === "live_gang" && (
-                        <Input
-                          type="date"
-                          value={r.live_gang_date ?? ""}
-                          onChange={(e) => set({ live_gang_date: e.target.value || null })}
-                          className="mt-1 h-8 text-xs w-fit"
+                        <DatePicker
+                          value={r.live_gang_date ?? null}
+                          onChange={(v) => set({ live_gang_date: v })}
+                          className="mt-1"
                         />
                       )}
                     </div>
@@ -308,11 +308,9 @@ export function Step3Rechte({ form, errors: _errors, onNext, onPrev }: Step3Rech
                       </div>
                       <div className="flex flex-col gap-1">
                         <span className="text-[10px] text-muted-foreground">Deadline Ausübung</span>
-                        <Input
-                          type="date"
-                          value={r.extension?.deadline ?? ""}
-                          onChange={(e) => set({ extension: { ...r.extension, deadline: e.target.value || null } })}
-                          className="h-8 text-xs"
+                        <DatePicker
+                          value={r.extension?.deadline ?? null}
+                          onChange={(v) => set({ extension: { ...r.extension, deadline: v } })}
                         />
                       </div>
                     </div>
@@ -358,11 +356,9 @@ export function Step3Rechte({ form, errors: _errors, onNext, onPrev }: Step3Rech
                       </div>
                       <div className="flex flex-col gap-1">
                         <Label className="text-[10px] text-muted-foreground">Bis</Label>
-                        <Input
-                          type="date"
-                          value={ei.end_date ?? ""}
-                          onChange={(e) => set({ end_date: e.target.value || null })}
-                          className="h-8 text-xs"
+                        <DatePicker
+                          value={ei.end_date ?? null}
+                          onChange={(v) => set({ end_date: v })}
                         />
                       </div>
                       <div className="flex flex-col gap-1">
@@ -393,11 +389,9 @@ export function Step3Rechte({ form, errors: _errors, onNext, onPrev }: Step3Rech
                     <div className="flex flex-col gap-3">
                       <div className="flex flex-col gap-1">
                         <Label className="text-[10px] text-muted-foreground">Posten ab</Label>
-                        <Input
-                          type="date"
-                          value={em.date ?? ""}
-                          onChange={(e) => set({ date: e.target.value || null })}
-                          className="h-8 text-xs"
+                        <DatePicker
+                          value={em.date ?? null}
+                          onChange={(v) => set({ date: v })}
                         />
                       </div>
                       <div className="flex flex-col gap-1">
@@ -438,20 +432,18 @@ export function Step3Rechte({ form, errors: _errors, onNext, onPrev }: Step3Rech
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1">
                     <Label className="text-sm font-medium">TikTok Spark Ablauf</Label>
-                    <Input
-                      type="date"
-                      value={wl.spark_expiry ?? ""}
-                      onChange={(e) => set({ spark_expiry: e.target.value || null })}
-                      className="mt-2 h-9"
+                    <DatePicker
+                      value={wl.spark_expiry ?? null}
+                      onChange={(v) => set({ spark_expiry: v })}
+                      className="mt-2"
                     />
                   </div>
                   <div className="flex flex-col gap-1">
                     <Label className="text-sm font-medium">Meta Business Manager Ablauf</Label>
-                    <Input
-                      type="date"
-                      value={wl.meta_expiry ?? ""}
-                      onChange={(e) => set({ meta_expiry: e.target.value || null })}
-                      className="mt-2 h-9"
+                    <DatePicker
+                      value={wl.meta_expiry ?? null}
+                      onChange={(v) => set({ meta_expiry: v })}
+                      className="mt-2"
                     />
                   </div>
                 </div>
@@ -494,10 +486,9 @@ export function Step3Rechte({ form, errors: _errors, onNext, onPrev }: Step3Rech
               <Label className="text-sm font-medium">Vertragsdatum</Label>
               <form.Field name="contract_date">
                 {(field) => (
-                  <Input
-                    type="date"
-                    value={(field.state.value as string) ?? ""}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                  <DatePicker
+                    value={(field.state.value as string) || null}
+                    onChange={(v) => field.handleChange(v ?? "")}
                     className="mt-2"
                   />
                 )}

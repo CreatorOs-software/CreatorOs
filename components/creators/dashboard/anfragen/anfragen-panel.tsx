@@ -95,7 +95,7 @@ export function AnfragenPanel({
         <div className="flex items-center gap-2 mb-3">
           <h3 className="text-sm font-semibold">Anfragen</h3>
           {!showClosed && activeAnfragen.length > 0 && (
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/15 text-blue-600 text-[9px] font-medium">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/15 text-amber-600 text-[9px] font-medium">
               {activeAnfragen.length}
             </span>
           )}

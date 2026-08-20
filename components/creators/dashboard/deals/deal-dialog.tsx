@@ -1448,13 +1448,11 @@ function GeldTab({
                           }}
                         />
                         {item.invoice_date && (
-                          <input
-                            type="date"
-                            value={item.invoice_date}
-                            onChange={(e) =>
-                              patchPayItem(i, { invoice_date: e.target.value })
+                          <DatePicker
+                            value={item.invoice_date || null}
+                            onChange={(v) =>
+                              patchPayItem(i, { invoice_date: v ?? "" })
                             }
-                            className="h-7 bg-muted rounded-lg px-2 text-xs outline-none"
                           />
                         )}
                       </div>

@@ -6,6 +6,7 @@ import { QueryKeys } from "@/lib/query-keys";
 import { ArrowUpDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { FloatingWindow } from "@/components/ui/floating-window";
 import {
   Select,
@@ -88,7 +89,11 @@ function formatDate(iso: string) {
 type SortKey = "due_date" | "priority" | "title";
 type FilterPriority = "all" | Priority;
 
-const PRIORITY_ORDER: Record<Priority, number> = { hoch: 0, mittel: 1, niedrig: 2 };
+const PRIORITY_ORDER: Record<Priority, number> = {
+  hoch: 0,
+  mittel: 1,
+  niedrig: 2,
+};
 
 const SORT_LABELS: Record<SortKey, string> = {
   due_date: "Fälligkeit",
@@ -169,20 +174,23 @@ export function TodoPanel() {
   }, [allDone]);
 
   function patchCache(updater: (t: TodoItem) => TodoItem) {
-    queryClient.setQueryData<{ todos: TodoItem[] }>(QueryKeys.todos.all(), (old) => ({
-      todos: (old?.todos ?? []).map(updater),
-    }));
+    queryClient.setQueryData<{ todos: TodoItem[] }>(
+      QueryKeys.todos.all(),
+      (old) => ({
+        todos: (old?.todos ?? []).map(updater),
+      }),
+    );
   }
 
   async function toggleItem(item: TodoItem) {
-    patchCache((t) => t.id === item.id ? { ...t, done: !t.done } : t);
+    patchCache((t) => (t.id === item.id ? { ...t, done: !t.done } : t));
     const res = await fetch(`/api/todos/${item.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ done: !item.done }),
     });
     if (!res.ok) {
-      patchCache((t) => t.id === item.id ? { ...t, done: item.done } : t);
+      patchCache((t) => (t.id === item.id ? { ...t, done: item.done } : t));
     }
   }
 
@@ -202,9 +210,12 @@ export function TodoPanel() {
       });
       if (!res.ok) return;
       const { todo } = await res.json();
-      queryClient.setQueryData<{ todos: TodoItem[] }>(QueryKeys.todos.all(), (old) => ({
-        todos: [...(old?.todos ?? []), todo],
-      }));
+      queryClient.setQueryData<{ todos: TodoItem[] }>(
+        QueryKeys.todos.all(),
+        (old) => ({
+          todos: [...(old?.todos ?? []), todo],
+        }),
+      );
       setForm(EMPTY_FORM);
       setView("list");
     } finally {
@@ -238,14 +249,10 @@ export function TodoPanel() {
             <span className="text-xs font-medium text-muted-foreground">
               Fällig am
             </span>
-            <input
-              type="date"
-              value={form.due_date}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, due_date: e.target.value }))
-              }
-              className="h-9 w-full rounded-full px-4 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-              style={{ backgroundColor: "var(--input)" }}
+            <DatePicker
+              value={form.due_date || null}
+              onChange={(v) => setForm((f) => ({ ...f, due_date: v ?? "" }))}
+              placeholder="Datum wählen"
             />
           </div>
 
@@ -259,10 +266,7 @@ export function TodoPanel() {
                 setForm((f) => ({ ...f, assignee_id: v ?? "" }))
               }
             >
-              <SelectTrigger
-                className="w-full rounded-full border-0 px-4"
-                style={{ backgroundColor: "var(--input)" }}
-              >
+              <SelectTrigger className="w-full px-4">
                 {form.assignee_id ? (
                   (() => {
                     const c = creators.find((x) => x.id === form.assignee_id);
@@ -277,11 +281,15 @@ export function TodoPanel() {
                         {c.full_name}
                       </span>
                     ) : (
-                      <span className="text-muted-foreground">Creator auswählen…</span>
+                      <span className="text-muted-foreground">
+                        Creator auswählen…
+                      </span>
                     );
                   })()
                 ) : (
-                  <span className="text-muted-foreground">Creator auswählen…</span>
+                  <span className="text-muted-foreground">
+                    Creator auswählen…
+                  </span>
                 )}
               </SelectTrigger>
               <SelectContent>
@@ -349,14 +357,14 @@ export function TodoPanel() {
   return (
     <>
       <FloatingWindow.Header title="Todos" className={cn("border-b-0")}>
-        <button
-          type="button"
+        <Button
+          variant={"secondary"}
           onClick={() => setView("form")}
-          className="flex items-center gap-1 rounded-md bg-black/10 px-2 py-1 text-xs font-semibold text-gray-900 transition-colors hover:bg-black/15"
+          className="flex items-center gap-1 "
         >
           <Plus className="size-3" />
           Neu
-        </button>
+        </Button>
       </FloatingWindow.Header>
 
       {/* ── Sort / Filter toolbar ── */}
@@ -378,7 +386,10 @@ export function TodoPanel() {
         <div className="mx-1 h-3.5 w-px bg-border" />
 
         {/* Creator filter */}
-        <Select value={filterCreator} onValueChange={(v) => setFilterCreator(v ?? "all")}>
+        <Select
+          value={filterCreator}
+          onValueChange={(v) => setFilterCreator(v ?? "all")}
+        >
           <SelectTrigger className="h-6 w-auto max-w-30 gap-1 rounded-md border-0 bg-transparent px-1.5 text-xs font-medium shadow-none focus:ring-0">
             {filterCreator === "all" ? (
               <span className="text-muted-foreground">Creator</span>
@@ -420,22 +431,37 @@ export function TodoPanel() {
         </Select>
 
         {/* Priority filter */}
-        <Select value={filterPriority} onValueChange={(v) => setFilterPriority(v as FilterPriority)}>
+        <Select
+          value={filterPriority}
+          onValueChange={(v) => setFilterPriority(v as FilterPriority)}
+        >
           <SelectTrigger className="h-6 w-auto gap-1 rounded-md border-0 bg-transparent px-1.5 text-xs font-medium shadow-none focus:ring-0">
             {filterPriority === "all" ? (
               <span className="text-muted-foreground">Priorität</span>
             ) : (
               <span className="flex items-center gap-1">
-                <span className={cn("size-2 rounded-full", PRIORITY_CONFIG[filterPriority].dotClass)} />
+                <span
+                  className={cn(
+                    "size-2 rounded-full",
+                    PRIORITY_CONFIG[filterPriority].dotClass,
+                  )}
+                />
                 {PRIORITY_CONFIG[filterPriority].label}
               </span>
             )}
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="text-xs">Alle</SelectItem>
+            <SelectItem value="all" className="text-xs">
+              Alle
+            </SelectItem>
             {(["hoch", "mittel", "niedrig"] as Priority[]).map((p) => (
               <SelectItem key={p} value={p} className="text-xs">
-                <span className={cn("mr-1 inline-block size-2 rounded-full", PRIORITY_CONFIG[p].dotClass)} />
+                <span
+                  className={cn(
+                    "mr-1 inline-block size-2 rounded-full",
+                    PRIORITY_CONFIG[p].dotClass,
+                  )}
+                />
                 {PRIORITY_CONFIG[p].label}
               </SelectItem>
             ))}

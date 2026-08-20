@@ -22,24 +22,28 @@
   --primary-foreground: oklch(100% 0 0);
   --primary-muted: oklch(25% 0 0);
 
-  /* Secondary — light gray chip/badge bg */
-  --secondary: oklch(96.5% 0 0);
+  /* Secondary — #F0F0F0 slightly visible gray (chips, esc-button bg) */
+  --secondary: oklch(95.5% 0 0);
   --secondary-foreground: oklch(9% 0 0);
 
   /* Accent — shadcn convention: hover bg (light gray), not brand color */
-  --accent: oklch(96.5% 0 0);
+  --accent: oklch(95.5% 0 0);
   --accent-foreground: oklch(9% 0 0);
   --accent-yellow: oklch(9% 0 0);
   --accent-gold: oklch(9% 0 0);
 
-  /* Muted — content panel bg + placeholder text */
-  --muted: oklch(98% 0 0); /* very light, barely-there gray for main panel */
-  --muted-foreground: oklch(45% 0 0); /* #737373 mid-gray */
+  /* Muted — #FAFAFA content panel bg + #8C8C8C placeholder/secondary text */
+  --muted: oklch(98.8% 0 0);
+  --muted-foreground: oklch(60% 0 0); /* #8C8C8C */
 
   /* UI Elements */
-  --border: oklch(89% 0 0); /* #E5E5E5 */
-  --border-light: oklch(93% 0 0);
-  --input: oklch(93.5% 0 0); /* clearly visible gray input background */
+  --border: oklch(91.5% 0 0); /* #E7E7E7 */
+  --border-light: oklch(94% 0 0);
+
+  /* Brand — amber accent (#F59E0D), used for unread badges + primary links */
+  --brand: oklch(77% 0.168 70);
+  --brand-foreground: oklch(9% 0 0);
+  --input: oklch(98.8% 0 0); /* clearly visible gray input background */
   --ring: oklch(9% 0 0);
 
   /* Chart — monochrome scale */
@@ -99,7 +103,7 @@
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--foreground);
   --sidebar-primary-foreground: oklch(100% 0 0);
-  --sidebar-accent: oklch(13.441% 0.00002 271.152);
+  --sidebar-accent: var(--brand);
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
@@ -141,6 +145,8 @@
   --color-chart-muted: var(--chart-muted);
   --color-chart-light: var(--chart-light);
   --color-chart-green: var(--chart-green);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
