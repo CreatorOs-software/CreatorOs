@@ -44,7 +44,6 @@ type CreatorMin = {
   id: string;
   full_name: string;
   initials: string;
-  color: string;
 };
 
 type DealRow = {
@@ -177,10 +176,7 @@ function BrandAvatar({
 
 function CreatorAvatar({ creator }: { creator: CreatorMin }) {
   return (
-    <span
-      className="w-8 h-8 rounded-full shrink-0 inline-flex items-center justify-center text-white text-[10px] font-bold"
-      style={{ background: creator.color }}
-    >
+    <span className="w-8 h-8 rounded-full shrink-0 inline-flex items-center justify-center text-white text-[10px] font-bold bg-neutral-800">
       {creator.initials}
     </span>
   );
@@ -866,10 +862,7 @@ function GapSection({ creators }: { creators: CreatorMin[] }) {
             href={`/creators/dashboard/${c.id}`}
             className="inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-full border border-border bg-background hover:bg-muted transition-colors text-xs font-medium"
           >
-            <span
-              className="w-5 h-5 rounded-full inline-flex items-center justify-center text-white text-[9px] font-bold shrink-0"
-              style={{ background: c.color }}
-            >
+            <span className="w-5 h-5 rounded-full inline-flex items-center justify-center text-white text-[9px] font-bold shrink-0 bg-neutral-800">
               {c.initials}
             </span>
             {c.full_name}

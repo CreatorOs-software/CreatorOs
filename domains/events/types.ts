@@ -14,7 +14,7 @@ export type CalendarEvent = {
   attendee_ids: string[];
   all_day: boolean;
   recurrence: Recurrence;
-  creators: { full_name: string; initials: string; color: string } | null;
+  creators: { full_name: string; initials: string } | null;
 };
 
 export type EventCreateInput = {

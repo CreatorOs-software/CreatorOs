@@ -48,28 +48,16 @@ export function CreatorCard({
           <div
             className={cn(
               "h-3 w-3 rounded-full border-2 border-white transition-all duration-300 group-hover:scale-125",
-              dot === "online"
-                ? "bg-green-500 group-hover:shadow-[0_0_14px_rgba(34,197,94,0.7)]"
-                : dot === "away"
-                  ? "bg-amber-500"
-                  : "bg-gray-400",
+              dot === "online" ? "bg-brand " : "bg-gray-400",
             )}
           />
-          {dot === "online" && (
-            <div className="absolute inset-0 h-3 w-3 rounded-full bg-green-500 animate-ping opacity-30" />
-          )}
         </div>
       </div>
 
       {/* Initials avatar */}
       <div className="mb-5 flex justify-center relative z-10">
         <div className="relative">
-          <AvatarCreator
-            initials={c.initials}
-            color={c.color}
-            size="2xl"
-            className="ring-1 ring-border transition-all duration-200 group-hover:scale-105"
-          />
+          <AvatarCreator initials={c.initials} size="2xl" />
           {/* Glow ring */}
           <div className="absolute inset-0 rounded-xl border-2 border-foreground/20 opacity-0 group-hover:opacity-100 transition-all duration-200" />
         </div>
@@ -100,9 +88,7 @@ export function CreatorCard({
         </div>
         <div className="text-center">
           <div className="text-[10px] text-muted-foreground mb-0.5">Todos</div>
-          <div className="text-sm font-semibold tabular-nums">
-            {todoCount}
-          </div>
+          <div className="text-sm font-semibold tabular-nums">{todoCount}</div>
         </div>
       </div>
 

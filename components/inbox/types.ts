@@ -18,3 +18,4 @@ export type Category = {
 };
 
 export type Folder = "inbox" | "drafts" | "sent" | "archive" | "spam" | "bin";
+

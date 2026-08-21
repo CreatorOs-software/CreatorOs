@@ -140,7 +140,7 @@ export default function CreatorDashboardPage() {
       onBack: () => router.back(),
       title: (
         <div className="flex items-center gap-2">
-          <AvatarCreator initials={creator.initials} color={creator.color} size="sm" />
+          <AvatarCreator initials={creator.initials} size="sm" />
           <span className="text-sm font-semibold">
             {creator.handle ?? creator.full_name}
           </span>
@@ -180,7 +180,7 @@ export default function CreatorDashboardPage() {
           <Button variant="ghost" size="icon-sm" onClick={() => router.back()}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <AvatarCreator initials={creator.initials} color={creator.color} size="md" />
+          <AvatarCreator initials={creator.initials} size="md" />
           <div>
             <h2 className="text-lg font-semibold leading-tight">{creator.full_name}</h2>
             {creator.handle && (

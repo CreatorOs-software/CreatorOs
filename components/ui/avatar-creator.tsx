@@ -2,7 +2,6 @@ import { cn } from "@/lib/utils";
 
 interface AvatarCreatorProps {
   initials: string;
-  color: string;
   size?: "sm" | "md" | "lg" | "xl" | "2xl";
   className?: string;
 }
@@ -17,18 +16,16 @@ const SIZE_CLASS = {
 
 export function AvatarCreator({
   initials,
-  color,
   size = "md",
   className,
 }: AvatarCreatorProps) {
   return (
     <span
       className={cn(
-        "rounded-xl inline-flex items-center justify-center font-bold text-white shrink-0",
+        "rounded-xl inline-flex items-center justify-center font-bold text-brand shrink-0 bg-orange-100",
         SIZE_CLASS[size],
         className,
       )}
-      style={{ background: color }}
     >
       {initials}
     </span>

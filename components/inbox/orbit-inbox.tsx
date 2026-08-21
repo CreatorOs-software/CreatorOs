@@ -3,7 +3,7 @@
 import { Inbox, Loader2, RefreshCcw, Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { WorkPanel } from "./work-panel";
+import { WorkPanel } from "./workpanel/work-panel";
 import { InboxSidebar } from "./inbox-sidebar";
 import { CategorySelect } from "./category-select";
 import { ThreadItem } from "./thread-item";
@@ -11,6 +11,7 @@ import { EmailDetailPanel, EmptyState } from "./email-detail-panel";
 import { ComposeEmailDialog } from "./compose-email-dialog";
 
 import type { Folder, InboxData, Thread, ThreadPatch } from "./types";
+import type { WorkPanelState } from "./workpanel/types";
 import { QueryKeys } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 
@@ -63,6 +64,7 @@ export function OrbitInbox() {
   const threads = data?.threads ?? [];
   const integrations = data?.integrations ?? [];
   const labels = data?.labels ?? [];
+  const creators = data?.creators ?? [];
 
   // Sync all integrations once on first successful load
   useEffect(() => {
@@ -81,6 +83,7 @@ export function OrbitInbox() {
   const [autoLabel, setAutoLabel] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const [activeLabelId, setActiveLabelId] = useState<string | null>(null);
+  const [workStates, setWorkStates] = useState<Record<string, WorkPanelState>>({});
 
   // Initialize selected integration when data first loads
   useEffect(() => {
@@ -412,7 +415,14 @@ export function OrbitInbox() {
         selected={selected}
         open={workPanelOpen}
         integrations={integrations}
+        creators={creators}
+        workState={selected ? (workStates[selected.id] ?? { phase: "idle" }) : { phase: "idle" }}
+        analyseCount={Object.values(workStates).filter((s) => s.phase === "extracted" || s.phase === "vorgang").length}
+        vorgangCount={Object.values(workStates).filter((s) => s.phase === "vorgang").length}
         onToggle={() => setWorkPanelOpen((v) => !v)}
+        onSetWorkState={(state) => {
+          if (selected) setWorkStates((prev) => ({ ...prev, [selected.id]: state }));
+        }}
         onPatch={handlePatch}
       />
     </div>

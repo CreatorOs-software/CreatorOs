@@ -272,10 +272,7 @@ export function TodoPanel() {
                     const c = creators.find((x) => x.id === form.assignee_id);
                     return c ? (
                       <span className="flex items-center gap-2 text-sm">
-                        <span
-                          className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                          style={{ backgroundColor: c.color }}
-                        >
+                        <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white bg-neutral-800">
                           {c.initials}
                         </span>
                         {c.full_name}
@@ -295,10 +292,7 @@ export function TodoPanel() {
               <SelectContent>
                 {creators.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
-                    <span
-                      className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                      style={{ backgroundColor: c.color }}
-                    >
+                    <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white bg-neutral-800">
                       {c.initials}
                     </span>
                     {c.full_name}
@@ -398,10 +392,7 @@ export function TodoPanel() {
                 const c = creators.find((x) => x.id === filterCreator);
                 return c ? (
                   <span className="flex items-center gap-1.5 truncate">
-                    <span
-                      className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
-                      style={{ backgroundColor: c.color }}
-                    >
+                    <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white bg-neutral-800">
                       {c.initials}
                     </span>
                     <span className="truncate">{c.full_name}</span>
@@ -419,8 +410,7 @@ export function TodoPanel() {
             {creators.map((c) => (
               <SelectItem key={c.id} value={c.id} className="text-xs">
                 <span
-                  className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
-                  style={{ backgroundColor: c.color }}
+                  className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white bg-neutral-800"
                 >
                   {c.initials}
                 </span>

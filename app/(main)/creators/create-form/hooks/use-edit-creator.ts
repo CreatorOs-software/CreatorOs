@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/lib/query-keys";
 import type { CreatorFormValues } from "../creator-form.schema";
-import { getInitials, pickColor, fullName } from "../creator-form.helpers";
+import { getInitials, fullName } from "../creator-form.helpers";
 
 export function useEditCreator(creatorId: string) {
   const queryClient = useQueryClient();
@@ -32,7 +32,6 @@ export function useEditCreator(creatorId: string) {
           monthly_revenue: Number(values.monthly_revenue) || 0,
           status: values.status,
           platforms: values.platforms,
-          color: pickColor(name),
           initials: getInitials(name),
         }),
       });
@@ -73,7 +72,6 @@ export function useEditCreator(creatorId: string) {
             monthly_revenue: Number(values.monthly_revenue) || 0,
             status: values.status,
             platforms: values.platforms,
-            color: pickColor(name),
             initials: getInitials(name),
           },
         };

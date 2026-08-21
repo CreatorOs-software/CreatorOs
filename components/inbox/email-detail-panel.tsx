@@ -153,7 +153,12 @@ type ReplyComposerProps = {
   onAfterSend: () => void;
 };
 
-function ReplyComposer({ thread, cc, onClose, onAfterSend }: ReplyComposerProps) {
+function ReplyComposer({
+  thread,
+  cc,
+  onClose,
+  onAfterSend,
+}: ReplyComposerProps) {
   const [reply, setReply] = useState("");
   const [usedChip, setUsedChip] = useState(false);
   const [sending, setSending] = useState(false);
@@ -292,7 +297,12 @@ type EmailDetailPanelProps = {
   onDelete: () => void;
   onAfterSend: () => void;
   onToggleLabel: (threadId: string, labelId: string, assign: boolean) => void;
-  onToggleCategoryLabel: (threadId: string, name: string, color: string, assign: boolean) => void;
+  onToggleCategoryLabel: (
+    threadId: string,
+    name: string,
+    color: string,
+    assign: boolean,
+  ) => void;
 };
 
 export function EmailDetailPanel({
@@ -376,39 +386,72 @@ export function EmailDetailPanel({
             </PopoverTrigger>
             <PopoverContent align="end" sideOffset={6} className="w-52 p-1">
               {/* System categories */}
-              <p className="px-2 pb-1 pt-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">Kategorien</p>
+              <p className="px-2 pb-1 pt-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
+                Kategorien
+              </p>
               {SYSTEM_LABELS.map((sys) => {
                 const assigned = thread.labels.some((l) => l.name === sys.name);
                 return (
                   <button
                     key={sys.name}
-                    onClick={() => onToggleCategoryLabel(thread.id, sys.name, sys.color, !assigned)}
+                    onClick={() =>
+                      onToggleCategoryLabel(
+                        thread.id,
+                        sys.name,
+                        sys.color,
+                        !assigned,
+                      )
+                    }
                     className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted"
                   >
-                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: sys.color }} />
-                    <span className="flex-1 truncate text-left">{sys.name}</span>
-                    {assigned && <Check className="h-3.5 w-3.5 shrink-0 text-foreground" />}
+                    <span
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: sys.color }}
+                    />
+                    <span className="flex-1 truncate text-left">
+                      {sys.name}
+                    </span>
+                    {assigned && (
+                      <Check className="h-3.5 w-3.5 shrink-0 text-foreground" />
+                    )}
                   </button>
                 );
               })}
               {/* User labels */}
-              {allLabels.filter((l) => !SYSTEM_LABELS.some((s) => s.name === l.name)).length > 0 && (
+              {allLabels.filter(
+                (l) => !SYSTEM_LABELS.some((s) => s.name === l.name),
+              ).length > 0 && (
                 <>
                   <div className="my-1 border-t border-[#E7E7E7]" />
-                  <p className="px-2 pb-1 pt-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">Labels</p>
+                  <p className="px-2 pb-1 pt-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
+                    Labels
+                  </p>
                   {allLabels
-                    .filter((l) => !SYSTEM_LABELS.some((s) => s.name === l.name))
+                    .filter(
+                      (l) => !SYSTEM_LABELS.some((s) => s.name === l.name),
+                    )
                     .map((label) => {
-                      const assigned = thread.labels.some((l2) => l2.id === label.id);
+                      const assigned = thread.labels.some(
+                        (l2) => l2.id === label.id,
+                      );
                       return (
                         <button
                           key={label.id}
-                          onClick={() => onToggleLabel(thread.id, label.id, !assigned)}
+                          onClick={() =>
+                            onToggleLabel(thread.id, label.id, !assigned)
+                          }
                           className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted"
                         >
-                          <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: label.color }} />
-                          <span className="flex-1 truncate text-left">{label.name}</span>
-                          {assigned && <Check className="h-3.5 w-3.5 shrink-0 text-foreground" />}
+                          <span
+                            className="h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: label.color }}
+                          />
+                          <span className="flex-1 truncate text-left">
+                            {label.name}
+                          </span>
+                          {assigned && (
+                            <Check className="h-3.5 w-3.5 shrink-0 text-foreground" />
+                          )}
                         </button>
                       );
                     })}
@@ -505,7 +548,9 @@ export function EmailDetailPanel({
                   {formatDate(thread.received_at)}
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-muted-foreground">An: {recipientLabel}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                An: {recipientLabel}
+              </p>
             </div>
           </div>
 
@@ -514,7 +559,9 @@ export function EmailDetailPanel({
             {thread.body_html ? (
               <div
                 className="prose prose-sm max-w-none overflow-hidden text-foreground [&_a]:text-[#006FFE] [&_a]:underline [&_img]:max-w-full [&_table]:max-w-full [&_pre]:overflow-x-auto"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(thread.body_html) }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(thread.body_html),
+                }}
               />
             ) : (
               <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">
@@ -554,7 +601,7 @@ export function EmailDetailPanel({
               <button
                 key={label}
                 onClick={action}
-                className="flex items-center gap-2 rounded-lg border border-[#E7E7E7] bg-white px-3 py-2 text-sm hover:bg-muted"
+                className="flex items-center gap-2 rounded-lg border border-[#E7E7E7]  px-3 py-2 text-sm hover:bg-muted"
               >
                 {icon}
                 <span>{label}</span>
@@ -567,7 +614,11 @@ export function EmailDetailPanel({
         ) : (
           <ReplyComposer
             thread={thread}
-            cc={replyMode === "replyAll" && thread.recipient_email ? [thread.recipient_email] : undefined}
+            cc={
+              replyMode === "replyAll" && thread.recipient_email
+                ? [thread.recipient_email]
+                : undefined
+            }
             onClose={() => setReplyMode(null)}
             onAfterSend={onAfterSend}
           />
@@ -590,7 +641,9 @@ export function EmptyState({ onCompose }: { onCompose?: () => void }) {
           height={200}
         />
         <div className="mt-4">
-          <p className="text-base font-medium text-foreground">Hier ist es leer</p>
+          <p className="text-base font-medium text-foreground">
+            Hier ist es leer
+          </p>
           <p className="mt-1 text-sm text-muted-foreground">
             Wähle eine E-Mail aus oder
           </p>

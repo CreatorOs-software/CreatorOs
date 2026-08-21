@@ -28,6 +28,5 @@ export type BrandOption = {
 export type CreatorOption = {
   id: string;
   full_name: string;
-  color: string;
   initials: string;
 };

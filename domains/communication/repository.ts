@@ -30,7 +30,7 @@ export const CommunicationRepository = {
         .eq("status", "connected"),
       supabase
         .from("creators")
-        .select("id, full_name, initials, color")
+        .select("id, full_name, initials")
         .eq("agency_id", agencyId),
       supabase
         .from("email_labels")

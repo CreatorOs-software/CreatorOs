@@ -33,7 +33,6 @@ export async function POST(req: Request) {
       monthly_revenue,
       status,
       platforms,
-      color,
       initials,
     } = body;
 
@@ -57,7 +56,6 @@ export async function POST(req: Request) {
       monthly_revenue: monthly_revenue || 0,
       status: status || "active",
       platforms: platforms || [],
-      color,
       initials,
       rates: [],
       dream_brands: [],

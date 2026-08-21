@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/lib/query-keys";
 import type { CreatorFormValues } from "../creator-form.schema";
-import { getInitials, pickColor, fullName } from "../creator-form.helpers";
+import { getInitials, fullName } from "../creator-form.helpers";
 
 export function useCreateCreator() {
   const queryClient = useQueryClient();
@@ -32,7 +32,6 @@ export function useCreateCreator() {
           monthly_revenue: Number(values.monthly_revenue) || 0,
           status: values.status,
           platforms: values.platforms,
-          color: pickColor(name),
           initials: getInitials(name),
         }),
       });

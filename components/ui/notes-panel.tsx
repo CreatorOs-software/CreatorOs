@@ -215,8 +215,7 @@ export function NotesPanel() {
                     <div className="flex items-center gap-1">
                       {creator && (
                         <span
-                          className="inline-flex size-4 items-center justify-center rounded-full text-[9px] font-bold text-white"
-                          style={{ backgroundColor: creator.color ?? undefined }}
+                          className="inline-flex size-4 items-center justify-center rounded-full text-[9px] font-bold text-white bg-neutral-800"
                           title={creator.full_name}
                         >
                           {creator.initials}
@@ -267,10 +266,7 @@ export function NotesPanel() {
                       <SelectValue>
                         {assignedCreator ? (
                           <span className="flex items-center gap-1.5">
-                            <span
-                              className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white"
-                              style={{ backgroundColor: assignedCreator.color ?? undefined }}
-                            >
+                            <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white bg-neutral-800">
                               {assignedCreator.initials}
                             </span>
                             {assignedCreator.full_name}
@@ -286,10 +282,7 @@ export function NotesPanel() {
                       </SelectItem>
                       {creators.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
-                          <span
-                            className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                            style={{ backgroundColor: c.color ?? undefined }}
-                          >
+                          <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white bg-neutral-800">
                             {c.initials}
                           </span>
                           {c.full_name}

@@ -71,7 +71,7 @@ type DbEvent = {
   attendee_ids: string[]
   all_day: boolean
   recurrence: string
-  creators: { full_name: string; initials: string; color: string } | null
+  creators: { full_name: string; initials: string } | null
 }
 
 type CalEvent = {
@@ -86,7 +86,7 @@ type CalEvent = {
   attendeeIds: string[]
   allDay: boolean
   recurrence: Recurrence
-  creator: { full_name: string; initials: string; color: string } | null
+  creator: { full_name: string; initials: string } | null
 }
 
 type FormState = {
@@ -625,8 +625,7 @@ function ListView({
                   <div className="flex shrink-0 items-center gap-2">
                     {ev.creator && (
                       <span
-                        className="inline-flex size-7 items-center justify-center rounded-full text-[11px] font-semibold text-white"
-                        style={{ backgroundColor: ev.creator.color }}
+                        className="inline-flex size-7 items-center justify-center rounded-full text-[11px] font-semibold text-white bg-neutral-800"
                         title={ev.creator.full_name}
                       >
                         {ev.creator.initials}
@@ -1027,10 +1026,7 @@ function EventDialog({
                     <SelectTrigger>
                       {displayCreator ? (
                         <span className="flex items-center gap-2 text-sm">
-                          <span
-                            className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
-                            style={{ backgroundColor: displayCreator.color }}
-                          >
+                          <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white bg-neutral-800">
                             {displayCreator.initials}
                           </span>
                           {displayCreator.full_name}

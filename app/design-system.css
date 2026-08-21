@@ -23,8 +23,8 @@
   --primary-muted: oklch(25% 0 0);
 
   /* Secondary — #F0F0F0 slightly visible gray (chips, esc-button bg) */
-  --secondary: oklch(95.5% 0 0);
-  --secondary-foreground: oklch(9% 0 0);
+  --secondary: oklch(70.5% 0.213 47.604);
+  --secondary-foreground: oklch(100% 0.00011 271.152);
 
   /* Accent — shadcn convention: hover bg (light gray), not brand color */
   --accent: oklch(95.5% 0 0);
@@ -41,7 +41,7 @@
   --border-light: oklch(94% 0 0);
 
   /* Brand — amber accent (#F59E0D), used for unread badges + primary links */
-  --brand: oklch(77% 0.168 70);
+  --brand: oklch(70.5% 0.213 47.604);
   --brand-foreground: oklch(9% 0 0);
   --input: oklch(98.8% 0 0); /* clearly visible gray input background */
   --ring: oklch(9% 0 0);
@@ -103,7 +103,7 @@
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--foreground);
   --sidebar-primary-foreground: oklch(100% 0 0);
-  --sidebar-accent: var(--brand);
+  --sidebar-accent: var(--primary);
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);

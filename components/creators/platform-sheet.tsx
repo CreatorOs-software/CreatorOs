@@ -154,7 +154,6 @@ export function PlatformSheet({
             <div className="flex items-center gap-3">
               <AvatarCreator
                 initials={creator.initials}
-                color={creator.color}
                 size="md"
               />
               <div>

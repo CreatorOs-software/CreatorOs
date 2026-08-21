@@ -114,7 +114,7 @@ export function CreatorSheet({
             </div>
 
             <div className="flex items-start gap-4">
-              <AvatarCreator initials={creator.initials} color={creator.color} size="xl" />
+              <AvatarCreator initials={creator.initials} size="xl" />
               <div className="flex-1 min-w-0">
                 <SheetTitle className="text-xl font-semibold tracking-tight">
                   {creator.full_name}

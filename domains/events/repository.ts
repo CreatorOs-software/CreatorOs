@@ -3,7 +3,7 @@ import type { CalendarEvent, EventCreateInput, EventFilters, EventPatch } from "
 
 const EVENT_SELECT = `
   id, title, notes, start_at, end_at, type, location, creator_id, attendee_ids, all_day, recurrence,
-  creators:creator_id (full_name, initials, color)
+  creators:creator_id (full_name, initials)
 `;
 
 export const EventRepository = {

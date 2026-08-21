@@ -34,16 +34,6 @@ export const NICHE_OPTIONS = [
   "Sports",
 ];
 
-export const CREATOR_COLORS = [
-  "oklch(0.62 0.18 25)",
-  "oklch(0.60 0.18 145)",
-  "oklch(0.60 0.18 230)",
-  "oklch(0.62 0.18 270)",
-  "oklch(0.65 0.18 50)",
-  "oklch(0.62 0.18 190)",
-  "oklch(0.62 0.18 310)",
-  "oklch(0.62 0.18 100)",
-];
 
 export const INITIAL_VALUES: CreatorFormValues = {
   vorname: "",
