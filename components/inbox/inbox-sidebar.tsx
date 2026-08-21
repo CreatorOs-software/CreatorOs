@@ -4,9 +4,11 @@ import {
   Archive,
   Check,
   ChevronDown,
+  Columns2,
   Inbox,
   Mail,
   MessageSquare,
+  PanelLeft,
   Pencil,
   Plus,
   Send,
@@ -27,7 +29,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { Folder, Integration } from "./types";
+import type { Creator, Folder, Integration } from "./types";
 import type { EmailLabel } from "@/domains/communication";
 import { AddMailboxDialog } from "./add-mailbox-dialog";
 
@@ -251,11 +253,14 @@ function IntegrationAvatar({
 type AccountSwitcherProps = {
   integrations: Integration[];
   selectedId: string | null;
+  creators: Creator[];
   onSelect: (id: string) => void;
 };
 
-function AccountSwitcher({ integrations, selectedId, onSelect }: AccountSwitcherProps) {
+function AccountSwitcher({ integrations, selectedId, creators, onSelect }: AccountSwitcherProps) {
   const selected = integrations.find((i) => i.id === selectedId) ?? integrations[0];
+  const creatorName = (integ: Integration) =>
+    integ.creator_id ? (creators.find((c) => c.id === integ.creator_id)?.full_name ?? null) : null;
 
   return (
     <Popover>
@@ -270,7 +275,7 @@ function AccountSwitcher({ integrations, selectedId, onSelect }: AccountSwitcher
             <IntegrationAvatar integration={selected} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-medium leading-none text-foreground">
-                {selected.display_name ?? selected.email}
+                {creatorName(selected) ?? selected.display_name ?? selected.email}
               </p>
               <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                 {selected.email}
@@ -306,7 +311,7 @@ function AccountSwitcher({ integrations, selectedId, onSelect }: AccountSwitcher
               <IntegrationAvatar integration={integ} size="sm" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-medium leading-none text-foreground">
-                  {integ.display_name ?? integ.email}
+                  {creatorName(integ) ?? integ.display_name ?? integ.email}
                 </p>
                 <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                   {integ.email}
@@ -330,6 +335,7 @@ type InboxSidebarProps = {
   unreadCount: number;
   integrations: Integration[];
   selectedIntegrationId: string | null;
+  creators: Creator[];
   labels: EmailLabel[];
   activeLabelId: string | null;
   onFolderChange: (f: Folder) => void;
@@ -338,6 +344,8 @@ type InboxSidebarProps = {
   onLabelClick: (id: string) => void;
   onCreateLabel: (name: string, color: string) => Promise<void>;
   onDeleteLabel: (id: string) => Promise<void>;
+  merged?: boolean;
+  onMergedChange?: (v: boolean) => void;
 };
 
 export function InboxSidebar({
@@ -345,6 +353,7 @@ export function InboxSidebar({
   unreadCount,
   integrations,
   selectedIntegrationId,
+  creators,
   labels,
   activeLabelId,
   onFolderChange,
@@ -353,14 +362,17 @@ export function InboxSidebar({
   onLabelClick,
   onCreateLabel,
   onDeleteLabel,
+  merged = false,
+  onMergedChange,
 }: InboxSidebarProps) {
   return (
-    <div className="flex h-full w-52 shrink-0 select-none flex-col overflow-hidden border-r border-[#E7E7E7] bg-white py-3">
+    <div className={cn("flex h-full select-none flex-col overflow-hidden bg-white py-3", merged ? "w-full" : "w-52 shrink-0 border-r border-[#E7E7E7]")}>
       {/* Account row */}
       <div className="flex items-center gap-1 px-2 pb-3">
         <AccountSwitcher
           integrations={integrations}
           selectedId={selectedIntegrationId}
+          creators={creators}
           onSelect={onIntegrationChange}
         />
         <AddMailboxDialog />
@@ -431,6 +443,24 @@ export function InboxSidebar({
           <Settings2 className="h-4 w-4 shrink-0" />
           Settings
         </button>
+        {onMergedChange && (
+          <button
+            onClick={() => onMergedChange(!merged)}
+            className={cn(
+              "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] transition-colors",
+              merged
+                ? "bg-muted font-medium text-foreground"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+            )}
+          >
+            {merged ? (
+              <Columns2 className="h-4 w-4 shrink-0" />
+            ) : (
+              <PanelLeft className="h-4 w-4 shrink-0" />
+            )}
+            {merged ? "Panels trennen" : "Panels zusammenführen"}
+          </button>
+        )}
       </div>
     </div>
   );

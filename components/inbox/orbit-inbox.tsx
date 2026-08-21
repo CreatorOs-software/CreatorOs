@@ -1,6 +1,6 @@
 "use client";
 
-import { Inbox, Loader2, RefreshCcw, Search } from "lucide-react";
+import { ChevronLeft, Inbox, Loader2, RefreshCcw, Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { WorkPanel } from "./workpanel/work-panel";
@@ -79,6 +79,8 @@ export function OrbitInbox() {
   const [folder, setFolder] = useState<Folder>("inbox");
   const [search, setSearch] = useState("");
   const [workPanelOpen, setWorkPanelOpen] = useState(true);
+  const [mergedMode, setMergedMode] = useState(false);
+  const [mergedView, setMergedView] = useState<"sidebar" | "threads">("sidebar");
   const [syncing, setSyncing] = useState(false);
   const [autoLabel, setAutoLabel] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
@@ -288,29 +290,53 @@ export function OrbitInbox() {
       {/* Main inbox card: sidebar + thread list + email detail */}
       <div className="flex flex-1 min-w-0 overflow-hidden rounded-2xl border border-[#E7E7E7] bg-white shadow-sm">
 
-        {/* Sidebar */}
-        <InboxSidebar
-          folder={folder}
-          unreadCount={inboxUnread}
-          integrations={integrations}
-          selectedIntegrationId={selectedIntegrationId}
-          labels={labels}
-          activeLabelId={activeLabelId}
-          onFolderChange={handleFolderChange}
-          onIntegrationChange={(id) => {
-            setSelectedIntegrationId(id);
-            setSelectedId(null);
-          }}
-          onCompose={() => setComposeOpen(true)}
-          onLabelClick={(id) => setActiveLabelId((prev) => (prev === id ? null : id))}
-          onCreateLabel={handleCreateLabel}
-          onDeleteLabel={handleDeleteLabel}
-        />
+        {/* Sidebar — hidden in merged+threads mode */}
+        {(!mergedMode || mergedView === "sidebar") && (
+          <div className={mergedMode ? "flex w-72 shrink-0 flex-col overflow-hidden border-r border-[#E7E7E7]" : "contents"}>
+            <InboxSidebar
+              folder={folder}
+              unreadCount={inboxUnread}
+              integrations={integrations}
+              selectedIntegrationId={selectedIntegrationId}
+              labels={labels}
+              activeLabelId={activeLabelId}
+              onFolderChange={(f) => {
+                handleFolderChange(f);
+                if (mergedMode) setMergedView("threads");
+              }}
+              onIntegrationChange={(id) => {
+                setSelectedIntegrationId(id);
+                setSelectedId(null);
+              }}
+              onCompose={() => setComposeOpen(true)}
+              onLabelClick={(id) => setActiveLabelId((prev) => (prev === id ? null : id))}
+              onCreateLabel={handleCreateLabel}
+              onDeleteLabel={handleDeleteLabel}
+              creators={creators}
+              merged={mergedMode}
+              onMergedChange={(v) => {
+                setMergedMode(v);
+                if (!v) setMergedView("sidebar");
+              }}
+            />
+          </div>
+        )}
 
-        {/* Thread list */}
-        <div className="flex w-80 shrink-0 flex-col overflow-hidden border-x border-[#E7E7E7]">
+        {/* Thread list — hidden in merged+sidebar mode */}
+        {(!mergedMode || mergedView === "threads") && (
+        <div className={cn("flex shrink-0 flex-col overflow-hidden", mergedMode ? "w-72 border-r border-[#E7E7E7]" : "w-80 border-x border-[#E7E7E7]")}>
           <div className="flex items-center justify-between border-b border-[#E7E7E7] px-4 py-3">
-            <span className="text-sm font-semibold capitalize">{folder}</span>
+            <div className="flex items-center gap-1.5">
+              {mergedMode && (
+                <button
+                  onClick={() => setMergedView("sidebar")}
+                  className="flex h-6 w-6 items-center justify-center rounded hover:bg-muted"
+                >
+                  <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+                </button>
+              )}
+              <span className="text-sm font-semibold capitalize">{folder}</span>
+            </div>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setAutoLabel((v) => !v)}
@@ -379,6 +405,7 @@ export function OrbitInbox() {
             )}
           </div>
         </div>
+        )}
 
         {/* Email detail */}
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
