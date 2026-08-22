@@ -1,6 +1,12 @@
 "use client";
 
-import { ChevronLeft, Inbox, Loader2, RefreshCcw, Search } from "lucide-react";
+import { ChevronLeft, Eye, Inbox, Loader2, MoreVertical, RefreshCcw, Search } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useCallback, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { WorkPanel } from "./workpanel/work-panel";
@@ -59,6 +65,11 @@ export function OrbitInbox() {
   const { data, isLoading, isError } = useQuery<InboxData>({
     queryKey: QueryKeys.inbox.all(),
     queryFn: fetchInboxData,
+    // Poll every 4 seconds while any thread is being labeled
+    refetchInterval: (query) => {
+      const threads = query.state.data?.threads ?? [];
+      return threads.some((t) => t.label_status === "processing") ? 4000 : false;
+    },
   });
 
   const threads = data?.threads ?? [];
@@ -69,7 +80,10 @@ export function OrbitInbox() {
   // Sync all integrations once on first successful load
   useEffect(() => {
     if (!integrations.length) return;
-    void Promise.allSettled(integrations.map((i) => syncIntegration(i.id)));
+    const hasAutoLabel = integrations.some((i) => i.auto_label);
+    void Promise.allSettled(integrations.map((i) => syncIntegration(i.id))).then(() => {
+      if (hasAutoLabel) void fetch("/api/inbox/label-batch", { method: "POST" }).catch(() => {});
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [integrations.length]);
 
@@ -82,24 +96,35 @@ export function OrbitInbox() {
   const [mergedMode, setMergedMode] = useState(false);
   const [mergedView, setMergedView] = useState<"sidebar" | "threads">("sidebar");
   const [syncing, setSyncing] = useState(false);
-  const [autoLabel, setAutoLabel] = useState(false);
+  const [filterUnread, setFilterUnread] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const [activeLabelId, setActiveLabelId] = useState<string | null>(null);
   const [workStates, setWorkStates] = useState<Record<string, WorkPanelState>>({});
 
-  // Initialize selected integration when data first loads
-  useEffect(() => {
-    if (integrations.length > 0 && !selectedIntegrationId) {
-      setSelectedIntegrationId(integrations[0]!.id);
-    }
-  }, [integrations, selectedIntegrationId]);
+  // Derive effective integration: user pick → first available → null
+  const effectiveIntegrationId = (
+    integrations.some((i) => i.id === selectedIntegrationId)
+      ? selectedIntegrationId
+      : integrations[0]?.id ?? null
+  );
+  const selectedIntegration = integrations.find((i) => i.id === effectiveIntegrationId) ?? null;
+  const autoLabel = selectedIntegration?.auto_label ?? false;
 
   // ── Derived ──────────────────────────────────────────────────────────────────
 
+  const SYSTEM_LABEL_MAP: Record<string, import("@/domains/communication").SystemLabel> = {
+    anfrage: "ANFRAGE",
+    laufend: "LAUFEND",
+    promotions: "PROMOTIONS",
+    rechnung: "RECHNUNG",
+    anderes: "ANDERES",
+  };
+
   const filtered = threads.filter((t) => {
-    if (selectedIntegrationId && t.integration_id !== selectedIntegrationId) return false;
+    if (effectiveIntegrationId && t.integration_id !== effectiveIntegrationId) return false;
     if (!matchesFolder(t, folder)) return false;
     if (activeLabelId && !t.labels.some((l) => l.id === activeLabelId)) return false;
+    if (filterUnread && !t.unread) return false;
 
     if (search) {
       const q = search.toLowerCase();
@@ -112,17 +137,17 @@ export function OrbitInbox() {
     }
 
     if (category === "all") return true;
-    if (category === "unread") return t.unread;
     if (category === "important") return t.starred;
-    // personal / updates / promotions → match by label name
-    return t.labels.some((l) => l.name.toLowerCase() === category);
+    const systemLabel = SYSTEM_LABEL_MAP[category];
+    if (systemLabel) return t.system_labels.includes(systemLabel);
+    return true;
   });
 
   const inboxUnread = threads.filter(
     (t) =>
       (t.folder ?? "INBOX").toUpperCase() === "INBOX" &&
       t.unread &&
-      (!selectedIntegrationId || t.integration_id === selectedIntegrationId),
+      (!effectiveIntegrationId || t.integration_id === effectiveIntegrationId),
   ).length;
 
   const selectedIndex = filtered.findIndex((t) => t.id === selectedId);
@@ -232,6 +257,38 @@ export function OrbitInbox() {
     await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() });
   }
 
+  async function handleToggleAutoLabel() {
+    if (!effectiveIntegrationId) return;
+    const next = !autoLabel;
+    // Optimistic update in cache
+    queryClient.setQueryData<InboxData>(QueryKeys.inbox.all(), (old) => {
+      if (!old) return old;
+      return {
+        ...old,
+        integrations: old.integrations.map((i) =>
+          i.id === effectiveIntegrationId ? { ...i, auto_label: next } : i,
+        ),
+      };
+    });
+    const res = await fetch(`/api/integrations/${effectiveIntegrationId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ auto_label: next }),
+    });
+    if (!res.ok) {
+      // Rollback
+      queryClient.setQueryData<InboxData>(QueryKeys.inbox.all(), (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          integrations: old.integrations.map((i) =>
+            i.id === effectiveIntegrationId ? { ...i, auto_label: !next } : i,
+          ),
+        };
+      });
+    }
+  }
+
   async function handleToggleCategoryLabel(threadId: string, name: string, color: string, assign: boolean) {
     // Find label by name in local list, or create it first
     let label = labels.find((l) => l.name === name);
@@ -249,11 +306,32 @@ export function OrbitInbox() {
     void handleToggleLabel(threadId, label.id, assign);
   }
 
+  async function handleLabelThread(threadId: string) {
+    queryClient.setQueryData<InboxData>(QueryKeys.inbox.all(), (old) => {
+      if (!old) return old;
+      return {
+        ...old,
+        threads: old.threads.map((t) =>
+          t.id === threadId ? { ...t, label_status: "processing" as const } : t,
+        ),
+      };
+    });
+    try {
+      await fetch(`/api/inbox/${threadId}/label`, { method: "POST" });
+    } finally {
+      await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() });
+    }
+  }
+
   async function handleSync() {
     setSyncing(true);
     try {
       await Promise.allSettled(integrations.map((i) => syncIntegration(i.id)));
       await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() });
+      // Kick off AI labeling — polling (refetchInterval) picks up results automatically
+      if (autoLabel) {
+        void fetch("/api/inbox/label-batch", { method: "POST" }).catch(() => {});
+      }
     } finally {
       setSyncing(false);
     }
@@ -297,7 +375,7 @@ export function OrbitInbox() {
               folder={folder}
               unreadCount={inboxUnread}
               integrations={integrations}
-              selectedIntegrationId={selectedIntegrationId}
+              selectedIntegrationId={effectiveIntegrationId}
               labels={labels}
               activeLabelId={activeLabelId}
               onFolderChange={(f) => {
@@ -339,7 +417,7 @@ export function OrbitInbox() {
             </div>
             <div className="flex items-center gap-1">
               <button
-                onClick={() => setAutoLabel((v) => !v)}
+                onClick={() => void handleToggleAutoLabel()}
                 className={cn(
                   "flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-medium uppercase transition-colors",
                   autoLabel
@@ -357,6 +435,20 @@ export function OrbitInbox() {
               >
                 <RefreshCcw className={`h-4 w-4 text-muted-foreground ${syncing ? "animate-spin" : ""}`} />
               </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted outline-none">
+                  <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuCheckboxItem
+                    checked={filterUnread}
+                    onCheckedChange={setFilterUnread}
+                  >
+                    <Eye className="mr-2 h-3.5 w-3.5" />
+                    Nur Ungelesen
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
@@ -428,6 +520,7 @@ export function OrbitInbox() {
               onAfterSend={() => void queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() })}
               onToggleLabel={(threadId, labelId, assign) => void handleToggleLabel(threadId, labelId, assign)}
               onToggleCategoryLabel={(threadId, name, color, assign) => void handleToggleCategoryLabel(threadId, name, color, assign)}
+              onLabelThread={handleLabelThread}
             />
           ) : (
             <EmptyState onCompose={() => setComposeOpen(true)} />
@@ -435,7 +528,7 @@ export function OrbitInbox() {
         </div>
       </div>
 
-      <ComposeEmailDialog open={composeOpen} onOpenChange={setComposeOpen} integrationId={selectedIntegrationId} />
+      <ComposeEmailDialog open={composeOpen} onOpenChange={setComposeOpen} integrationId={effectiveIntegrationId} />
 
       {/* Work panel */}
       <WorkPanel

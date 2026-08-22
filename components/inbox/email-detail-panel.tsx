@@ -15,6 +15,7 @@ import {
   Paperclip,
   Reply,
   ReplyAll,
+  Sparkles,
   Star,
   Tag,
   Trash2,
@@ -303,6 +304,7 @@ type EmailDetailPanelProps = {
     color: string,
     assign: boolean,
   ) => void;
+  onLabelThread: (threadId: string) => Promise<void>;
 };
 
 export function EmailDetailPanel({
@@ -320,8 +322,10 @@ export function EmailDetailPanel({
   onAfterSend,
   onToggleLabel,
   onToggleCategoryLabel,
+  onLabelThread,
 }: EmailDetailPanelProps) {
   const [replyMode, setReplyMode] = useState<"reply" | "replyAll" | null>(null);
+  const [labeling, setLabeling] = useState(false);
 
   const displayName = getDisplayName(thread.sender_name, thread.sender_email);
   const initial = getInitial(thread.sender_name, thread.sender_email);
@@ -375,6 +379,18 @@ export function EmailDetailPanel({
                   : "text-muted-foreground",
               )}
             />
+          </button>
+          <button
+            onClick={() => {
+              if (labeling) return;
+              setLabeling(true);
+              void onLabelThread(thread.id).finally(() => setLabeling(false));
+            }}
+            disabled={labeling || thread.label_status === "processing"}
+            title="Diese E-Mail labeln"
+            className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted disabled:opacity-40"
+          >
+            <Sparkles className={cn("h-4 w-4 text-muted-foreground", labeling && "animate-pulse")} />
           </button>
           {/* Label picker */}
           <Popover>
@@ -653,12 +669,6 @@ export function EmptyState({ onCompose }: { onCompose?: () => void }) {
               className="rounded-lg border border-[#E7E7E7] bg-white px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted"
             >
               E-Mail senden
-            </button>
-            <button
-              disabled
-              className="cursor-not-allowed rounded-lg border border-[#E7E7E7] bg-white px-4 py-2 text-sm text-muted-foreground opacity-50"
-            >
-              Letzte 50 E-Mails labeln
             </button>
           </div>
         </div>

@@ -5,7 +5,6 @@ import { EmailAnalysisContext } from "./context.ts";
 // mini: strukturierte Extraktion + Reply-Entwurf — ausgewogenes Preis-Leistungs-Verhältnis.
 // gpt-5 wäre nur nötig wenn Reply-Qualität oder Extraktion deutlich verbessert werden muss.
 const outputSchema = z.object({
-  label: z.enum(["REQUEST", "INFO", "SPAM", "PERSONAL", "OTHER"]),
   is_request: z.boolean(),
   information_complete: z.boolean(),
   missing_information: z.array(z.string()),
@@ -19,7 +18,7 @@ export const incomingEmailAnalysisPrompt: PromptDefinition<
   EmailAnalysisContext,
   EmailAnalysisOutput
 > = {
-  version: "INCOMING_EMAIL_v1.0",
+  version: "INCOMING_EMAIL_v1.1",
   provider: "openai",
   model: "gpt-5-mini",
   maxTokens: 1024,
@@ -38,6 +37,15 @@ Absender: ${ctx.email.sender_name ?? ctx.email.sender_email} <${ctx.email.sender
 Betreff: ${ctx.email.subject}
 
 ${ctx.email.body}
+
+## Konversations-Kontext
+${
+  ctx.conversation.has_linked_anfrage
+    ? `Diese E-Mail gehört zu einer laufenden Konversation die bereits mit einer Anfrage verknüpft ist. Das Label "LAUFEND" wurde automatisch vergeben — du kannst bis zu 2 WEITERE Labels aus [ANFRAGE, PROMOTIONS, RECHNUNG, ANDERES] vergeben (oder ein leeres Array wenn keine weiteren passen).`
+    : ctx.conversation.is_follow_up
+      ? `Diese E-Mail ist Teil einer laufenden Konversation (${ctx.conversation.prior_emails_count} vorherige E-Mail(s)). Vergib 1–3 passende Labels.`
+      : "Diese E-Mail ist der erste Kontakt. Vergib 1–3 passende Labels."
+}
 
 ## Bekannte Brands dieser Agentur
 ${
@@ -64,7 +72,6 @@ ${
 
 Analysiere die E-Mail und antworte mit folgendem JSON:
 {
-  "label": "ANFRAGE" | "LAUFENDE ANFRAGE" | "PROMOTIONS" | "RECHNUNG" | "ANDERES",
   "is_request": boolean,
   "information_complete": boolean,
   "missing_information": string[],
@@ -73,8 +80,7 @@ Analysiere die E-Mail und antworte mit folgendem JSON:
 }
 
 Regeln:
-- label "REQUEST": Kooperationsanfrage oder Buchungsanfrage
-- label "LAUFEND": Anfrage, Nachfrage, Gegenangebot oder sonstige Nachricht zu einer bereits laufenden Anfrage oder Deal
+- is_request: true wenn es sich um eine Kooperations- oder Buchungsanfrage handelt
 - information_complete: true nur wenn Budget, Deadline und Format bekannt sind
 - missing_information: nur Felder die tatsächlich fehlen
 - suggested_reply: nur wenn information_complete=false und is_request=true, sonst null

@@ -18,14 +18,14 @@ export const CommunicationRepository = {
       supabase
         .from("email_threads")
         .select(
-          "id, agency_id, sender_email, sender_name, recipient_email, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id, thread_labels:email_thread_labels(label:email_labels(id, name, color))",
+          "id, agency_id, sender_email, sender_name, recipient_email, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id, system_labels, label_status, conversation_id, message_id, in_reply_to, references_header, thread_labels:email_thread_labels(label:email_labels(id, name, color))",
         )
         .eq("agency_id", agencyId)
         .order("received_at", { ascending: false })
         .limit(100),
       supabase
         .from("email_integrations")
-        .select("id, email, display_name, provider, status, creator_id")
+        .select("id, email, display_name, provider, status, creator_id, auto_label")
         .eq("agency_id", agencyId)
         .eq("status", "connected"),
       supabase
