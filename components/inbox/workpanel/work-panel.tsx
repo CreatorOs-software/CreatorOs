@@ -23,21 +23,32 @@ async function runAnalyse(threadId: string): Promise<WorkPanelState> {
   }
   const data = await res.json() as AnalyseResult;
 
+  const aiDeliverables = (data.deliverables ?? []).map((d) => ({
+    count:             d.count,
+    content_type:      d.content_type,
+    platform:          d.platform,
+    draft_deadline:    "",
+    freigabe_deadline: "",
+    live_date:         "",
+  }));
+
   const extractedData = {
     brand:             data.brand_name ?? "",
     contact:           data.contact ?? "",
     creatorId:         data.creator_id,
     creatorConfidence: data.creator_confidence,
-    format:            data.format ?? "",
     product:           data.product ?? "",
     budget:            data.budget,
     period:            data.period ?? "",
+    campaign_start:    "",
+    campaign_end:      "",
+    deliverables:      aiDeliverables,
     uncertainFields:   [
-      ...(!data.creator_id ? ["creatorId"] : []),
-      ...(!data.format     ? ["format"]    : []),
-      ...(!data.product    ? ["product"]   : []),
-      ...(!data.budget     ? ["budget"]    : []),
-      ...(!data.period     ? ["period"]    : []),
+      ...(!data.creator_id                ? ["creatorId"]    : []),
+      ...(!data.product                   ? ["product"]      : []),
+      ...(!data.budget                    ? ["budget"]       : []),
+      ...(!data.period                    ? ["period"]       : []),
+      ...(aiDeliverables.length === 0     ? ["deliverables"] : []),
     ],
   };
 
@@ -176,10 +187,12 @@ export function WorkPanel({
                     contact: "",
                     creatorId: null,
                     creatorConfidence: 0,
-                    format: "",
                     product: "",
                     budget: null,
                     period: "",
+                    campaign_start: "",
+                    campaign_end: "",
+                    deliverables: [],
                     uncertainFields: [],
                   },
                 })

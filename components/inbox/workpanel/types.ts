@@ -1,12 +1,23 @@
+export type ExtractedDeliverable = {
+  count: number;
+  content_type: string;
+  platform: string;
+  draft_deadline: string;
+  freigabe_deadline: string;
+  live_date: string;
+};
+
 export type ExtractedEmailData = {
   brand: string;
   contact: string;
   creatorId: string | null;
   creatorConfidence: number;
-  format: string;
   product: string;
   budget: number | null;
   period: string;
+  campaign_start: string;
+  campaign_end: string;
+  deliverables: ExtractedDeliverable[];
   uncertainFields: string[];
 };
 

@@ -113,15 +113,31 @@ export const anfrageColumns: ColumnDef<Anfrage>[] = [
     size: 180,
   },
   {
-    id: "format",
-    header: "Format",
-    accessorKey: "format",
-    cell: ({ row }) => (
-      <p className="text-xs text-muted-foreground truncate">
-        {row.original.format ?? "—"}
-      </p>
-    ),
-    size: 160,
+    id: "deliverables",
+    header: "Deliverables",
+    cell: ({ row }) => {
+      const { deliverables, format } = row.original;
+      if (deliverables && deliverables.length > 0) {
+        return (
+          <div className="flex flex-col gap-0.5">
+            {deliverables.slice(0, 2).map((d, i) => (
+              <p key={i} className="text-xs text-muted-foreground truncate">
+                {d.count}x {d.content_type} · {d.platform}
+              </p>
+            ))}
+            {deliverables.length > 2 && (
+              <p className="text-[10px] text-muted-foreground">+{deliverables.length - 2} weitere</p>
+            )}
+          </div>
+        );
+      }
+      return (
+        <p className="text-xs text-muted-foreground truncate">
+          {format ?? "—"}
+        </p>
+      );
+    },
+    size: 180,
   },
   {
     id: "budget",

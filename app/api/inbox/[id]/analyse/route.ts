@@ -2,11 +2,17 @@ import { getAuthContext } from "@/domains/auth";
 import { createClient } from "@/lib/supabase/server";
 import { toErrorResponse } from "@/lib/auth-context";
 
+type AiDeliverable = {
+  count: number;
+  content_type: string;
+  platform: string;
+};
+
 type AiResult = {
   creator_id: string | null;
   creator_confidence: number;
   contact: string | null;
-  format: string | null;
+  deliverables: AiDeliverable[];
   product: string | null;
   budget: number | null;
   period: string | null;

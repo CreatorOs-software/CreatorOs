@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
         creator_id:         parsed.creator_id,
         creator_confidence: parsed.creator_confidence,
         contact:            parsed.contact,
-        format:             parsed.format,
+        deliverables:       parsed.deliverables,
         product:            parsed.product,
         budget:             parsed.budget,
         period:             parsed.period,

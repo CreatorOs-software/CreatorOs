@@ -46,7 +46,7 @@ export const BrandRepository = {
       supabase
         .from("deals")
         .select(
-          "id, title, budget, status, deadline, campaign_type, usage_rights, exclusivity, payment_items, created_at, creator_id, creators(id, full_name, initials, color)",
+          "id, title, budget, status, deadline, campaign_type, usage_rights, exclusivity, payment_items, created_at, creator_id, creators(id, full_name, initials)",
         )
         .eq("brand_id", id)
         .eq("agency_id", agencyId)
@@ -54,14 +54,14 @@ export const BrandRepository = {
       supabase
         .from("anfragen")
         .select(
-          "id, format, budget_requested, status, rejection_reason, notes, created_at, creator_id, creators(id, full_name, initials, color)",
+          "id, format, budget_requested, status, rejection_reason, notes, created_at, creator_id, creators(id, full_name, initials)",
         )
         .eq("brand_id", id)
         .eq("agency_id", agencyId)
         .order("created_at", { ascending: false }),
       supabase
         .from("creators")
-        .select("id, full_name, initials, color")
+        .select("id, full_name, initials")
         .eq("agency_id", agencyId)
         .order("full_name"),
     ]);

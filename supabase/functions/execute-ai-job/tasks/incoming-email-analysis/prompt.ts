@@ -2,6 +2,12 @@ import { z } from "npm:zod@3";
 import { PromptDefinition } from "../../registry.ts";
 import { EmailAnalysisContext } from "./context.ts";
 
+const deliverableSchema = z.object({
+  count: z.number().int().min(1),
+  content_type: z.string(),
+  platform: z.string(),
+});
+
 const outputSchema = z.object({
   is_request: z.boolean(),
   information_complete: z.boolean(),
@@ -10,7 +16,7 @@ const outputSchema = z.object({
   creator_id: z.string().nullable(),
   creator_confidence: z.number().int().min(0).max(100),
   contact: z.string().nullable(),
-  format: z.string().nullable(),
+  deliverables: z.array(deliverableSchema),
   product: z.string().nullable(),
   budget: z.number().nullable(),
   period: z.string().nullable(),
@@ -22,7 +28,7 @@ export const incomingEmailAnalysisPrompt: PromptDefinition<
   EmailAnalysisContext,
   EmailAnalysisOutput
 > = {
-  version: "INCOMING_EMAIL_v2.0",
+  version: "INCOMING_EMAIL_v3.0",
   provider: "openai",
   model: "gpt-5-mini",
   maxTokens: 5024,
@@ -63,7 +69,7 @@ Analysiere die E-Mail und antworte mit folgendem JSON:
   "creator_id": string | null,
   "creator_confidence": number,
   "contact": string | null,
-  "format": string | null,
+  "deliverables": [{ "count": number, "content_type": string, "platform": string }],
   "product": string | null,
   "budget": number | null,
   "period": string | null
@@ -71,13 +77,18 @@ Analysiere die E-Mail und antworte mit folgendem JSON:
 
 Regeln:
 - is_request: true wenn es sich um eine Kooperations- oder Buchungsanfrage handelt
-- information_complete: true nur wenn Budget, Deadline und Format bekannt sind
+- information_complete: true nur wenn Budget, Deadline und mindestens ein Deliverable bekannt sind
 - missing_information: nur Felder die tatsächlich fehlen (z.B. ["Budget", "Zeitraum"])
 - suggested_reply: kurzer Antwort-Entwurf auf Deutsch wenn is_request=true und information_complete=false, sonst null
 - creator_id: die exakte UUID aus der Creator-Liste oben wenn ein Creator namentlich erwähnt wird (auch bei Tippfehlern oder ähnlichen Namen), sonst null
 - creator_confidence: 0–100 wie sicher du beim Creator-Match bist (0 wenn creator_id=null)
 - contact: Name der Kontaktperson aus der E-Mail
-- format: angefordertes Format/Leistung (z.B. "1x Reel + 3x Story")
+- deliverables: Liste der angefragten Leistungen, jede als eigenes Objekt. Beispiele:
+    "1x Reel + 3x Story" → [{"count":1,"content_type":"Reel","platform":"Instagram"},{"count":3,"content_type":"Story","platform":"Instagram"}]
+    "YouTube Video + TikTok Clip" → [{"count":1,"content_type":"Video","platform":"YouTube"},{"count":1,"content_type":"Video","platform":"TikTok"}]
+  Erlaubte content_type-Werte: Video, Reel, Story, Post, Shorts, Podcast, Blog, Newsletter
+  Erlaubte platform-Werte: Instagram, YouTube, TikTok, X / Twitter, LinkedIn, Podcast, Blog
+  Wenn keine konkreten Leistungen genannt werden: leeres Array []
 - product: beworbenes Produkt oder Dienstleistung
 - budget: Budgetbetrag als Zahl in Euro (nur Zahl, kein €-Zeichen), null wenn nicht genannt
 - period: gewünschter Zeitraum als Text (z.B. "September 2026"), null wenn nicht genannt

@@ -3,6 +3,8 @@ import type { Anfrage, AnfrageCreateInput, AnfragePatch } from "./types";
 
 const ANFRAGE_SELECT = `
   id, creator_id, brand_id, brand_name, contact_person,
+  title, product, campaign_start, campaign_end,
+  deliverables, payment_items, fee, guidelines, tracking_assets,
   format, budget_requested, budget_offer, source, status,
   rejection_reason, notes, linked_deal_id, created_at, updated_at,
   brands(company_name, color, short_code, contact_name, contact_email)
