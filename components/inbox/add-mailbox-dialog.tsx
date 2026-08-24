@@ -23,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { QueryKeys } from "@/lib/query-keys";
 import { GOOGLE_PATHS } from "./constants";
-import type { CreatorRef as Creator } from "@/domains/brands";
+import type { Creator } from "@/domains/creators";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -438,10 +438,7 @@ function CreatorStep({ integrationEmail, creators, assigning, onAssign }: Creato
                     : "border-[#E7E7E7] hover:bg-muted/50",
                 )}
               >
-                <span
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold text-white"
-                  style={{ background: c.color }}
-                >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-800 text-[11px] font-bold text-white">
                   {c.initials}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-xs font-medium">{c.full_name}</span>
