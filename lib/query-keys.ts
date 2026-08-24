@@ -4,6 +4,7 @@ export const QueryKeys = {
     list: () => ["inbox", "list"] as const,
     light: () => ["inbox", "light"] as const,
     detail: (id: string) => ["inbox", "detail", id] as const,
+    conversation: (id: string) => ["inbox", "conversation", id] as const,
   },
   creators: {
     all: () => ["creators"] as const,

@@ -29,9 +29,6 @@ async function fetchInboxData(): Promise<InboxData> {
   return res.json() as Promise<InboxData>;
 }
 
-async function syncIntegration(id: string): Promise<void> {
-  await fetch(`/api/integrations/${id}/sync`, { method: "POST" });
-}
 
 async function patchThread(id: string, patch: ThreadPatch): Promise<void> {
   const res = await fetch(`/api/inbox/${id}`, {
@@ -77,18 +74,19 @@ export function OrbitInbox() {
   const labels = data?.labels ?? [];
   const creators = data?.creators ?? [];
 
-  // Sync all integrations once on first successful load
+  // Kick off label-batch once on load so any pending threads get labeled
   useEffect(() => {
     if (!integrations.length) return;
-    const hasAutoLabel = integrations.some((i) => i.auto_label);
-    void Promise.allSettled(integrations.map((i) => syncIntegration(i.id))).then(() => {
-      if (hasAutoLabel) void fetch("/api/inbox/label-batch", { method: "POST" }).catch(() => {});
-    });
+    if (integrations.some((i) => i.auto_label)) {
+      void fetch("/api/inbox/label-batch", { method: "POST" }).catch(() => {});
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [integrations.length]);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [selectedIntegrationId, setSelectedIntegrationId] = useState<string | null>(null);
+  const [selectedIntegrationId, setSelectedIntegrationId] = useState<string | null>(
+    () => localStorage.getItem("inbox:selectedIntegrationId"),
+  );
   const [category, setCategory] = useState("all");
   const [folder, setFolder] = useState<Folder>("inbox");
   const [search, setSearch] = useState("");
@@ -326,12 +324,7 @@ export function OrbitInbox() {
   async function handleSync() {
     setSyncing(true);
     try {
-      await Promise.allSettled(integrations.map((i) => syncIntegration(i.id)));
       await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() });
-      // Kick off AI labeling — polling (refetchInterval) picks up results automatically
-      if (autoLabel) {
-        void fetch("/api/inbox/label-batch", { method: "POST" }).catch(() => {});
-      }
     } finally {
       setSyncing(false);
     }
@@ -384,6 +377,7 @@ export function OrbitInbox() {
               }}
               onIntegrationChange={(id) => {
                 setSelectedIntegrationId(id);
+                localStorage.setItem("inbox:selectedIntegrationId", id);
                 setSelectedId(null);
               }}
               onCompose={() => setComposeOpen(true)}

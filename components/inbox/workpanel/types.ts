@@ -26,9 +26,16 @@ export type LocalVorgang = {
   }>;
 };
 
+export type NewBrandData = {
+  brand_name: string;
+  industry: string | null;
+  extractedData: ExtractedEmailData;
+};
+
 export type WorkPanelState =
   | { phase: "idle" }
   | { phase: "scanning" }
   | { phase: "not-coop" }
+  | { phase: "new-brand"; newBrand: NewBrandData }
   | { phase: "extracted"; data: ExtractedEmailData }
   | { phase: "vorgang"; vorgang: LocalVorgang };

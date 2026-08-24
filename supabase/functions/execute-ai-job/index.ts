@@ -7,6 +7,7 @@ import { buildEmailAnalysisContext } from "./tasks/incoming-email-analysis/conte
 type Payload = {
   email_thread_id: string;
   agency_id: string;
+  mode?: "label" | "analyse";
 };
 
 type ThreadRow = {
@@ -22,7 +23,7 @@ type ThreadRow = {
 
 Deno.serve(async (req) => {
   try {
-    const { email_thread_id, agency_id } = (await req.json()) as Payload;
+    const { email_thread_id, agency_id, mode = "label" } = (await req.json()) as Payload;
     if (!email_thread_id || !agency_id) {
       return json({ error: "email_thread_id and agency_id required" }, 400);
     }
@@ -31,6 +32,30 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
+
+    // ── Analyse mode: extract WorkPanel fields from email, no DB writes ──────
+    if (mode === "analyse") {
+      const analyseDef = PROMPT_REGISTRY.INCOMING_EMAIL_ANALYSIS;
+      const ctx = await buildEmailAnalysisContext({ email_thread_id }, agency_id, db);
+      const adapter = getAdapter(analyseDef.provider);
+      const response = await adapter.execute({
+        system: analyseDef.system,
+        messages: analyseDef.buildMessages(ctx),
+        model: analyseDef.model,
+        maxTokens: analyseDef.maxTokens,
+      });
+      const parsed = analyseDef.outputSchema.parse(JSON.parse(response.content));
+
+      return json({
+        creator_id:         parsed.creator_id,
+        creator_confidence: parsed.creator_confidence,
+        contact:            parsed.contact,
+        format:             parsed.format,
+        product:            parsed.product,
+        budget:             parsed.budget,
+        period:             parsed.period,
+      });
+    }
 
     // 1. Load thread
     const { data: thread, error: threadErr } = await db

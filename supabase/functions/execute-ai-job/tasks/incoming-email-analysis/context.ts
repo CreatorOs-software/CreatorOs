@@ -1,4 +1,4 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import { SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 export type EmailAnalysisContext = {
   email: {
@@ -14,7 +14,7 @@ export type EmailAnalysisContext = {
   };
   agency: {
     known_brands: { company_name: string; industry: string | null }[];
-    creators:     { full_name: string; niche: string[]; min_budget: number | null }[];
+    creators:     { id: string; full_name: string; niche: string[]; min_budget: number | null }[];
   };
 };
 
@@ -36,7 +36,7 @@ export async function buildEmailAnalysisContext(
       .limit(40),
     db
       .from("creators")
-      .select("full_name, niche, min_kooperation_betrag")
+      .select("id, full_name, niche, min_kooperation_betrag")
       .eq("agency_id", agencyId)
       .eq("status", "active")
       .limit(20),
@@ -83,6 +83,7 @@ export async function buildEmailAnalysisContext(
         industry:     b.industry ?? null,
       })),
       creators: (creatorsRes.data ?? []).map((c) => ({
+        id:         c.id,
         full_name:  c.full_name,
         niche:      Array.isArray(c.niche) ? c.niche : [],
         min_budget: c.min_kooperation_betrag ?? null,

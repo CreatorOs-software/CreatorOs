@@ -1,4 +1,4 @@
-import { ZodSchema } from "zod";
+import { ZodSchema } from "npm:zod@3";
 import { AIProviderAdapter, AIRequest } from "./adapters/types.ts";
 import { AnthropicAdapter } from "./adapters/anthropic.ts";
 import { OpenAIAdapter } from "./adapters/openai.ts";

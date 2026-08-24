@@ -1,6 +1,7 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,15 @@ type Props = {
 };
 
 export function ExtractedPanel({ data, creators, onSetWorkState }: Props) {
+  const { data: brandsData } = useQuery({
+    queryKey: ["brands"],
+    queryFn: async () => {
+      const res = await fetch("/api/brands");
+      return res.json() as Promise<{ brands: { id: string; company_name: string }[] }>;
+    },
+  });
+  const brands = brandsData?.brands ?? [];
+
   const uncertain = (f: string) =>
     data.uncertainFields.includes(f) &&
     !(data as Record<string, unknown>)[f];
@@ -69,11 +79,26 @@ export function ExtractedPanel({ data, creators, onSetWorkState }: Props) {
       </div>
 
       <FormField label="Brand" uncertain={uncertain("brand")}>
-        <Input
-          value={data.brand}
-          className={cn(uncertain("brand") && "border-dashed border-amber-300 bg-amber-50")}
-          onChange={(e) => patch({ brand: e.target.value })}
-        />
+        <Select
+          value={data.brand || undefined}
+          onValueChange={(v) => { if (v !== null) patch({ brand: v }); }}
+        >
+          <SelectTrigger
+            className={cn(
+              "w-full",
+              uncertain("brand") && "border-dashed border-amber-300 bg-amber-50",
+            )}
+          >
+            <SelectValue placeholder="— Brand auswählen —" />
+          </SelectTrigger>
+          <SelectContent>
+            {brands.map((b) => (
+              <SelectItem key={b.id} value={b.company_name}>
+                {b.company_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </FormField>
 
       <FormField label="Ansprechpartner" uncertain={uncertain("contact")}>

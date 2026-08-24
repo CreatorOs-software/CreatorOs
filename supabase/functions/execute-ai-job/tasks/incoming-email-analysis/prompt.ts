@@ -1,15 +1,19 @@
-import { z } from "zod";
+import { z } from "npm:zod@3";
 import { PromptDefinition } from "../../registry.ts";
 import { EmailAnalysisContext } from "./context.ts";
 
-// mini: strukturierte Extraktion + Reply-Entwurf — ausgewogenes Preis-Leistungs-Verhältnis.
-// gpt-5 wäre nur nötig wenn Reply-Qualität oder Extraktion deutlich verbessert werden muss.
 const outputSchema = z.object({
   is_request: z.boolean(),
   information_complete: z.boolean(),
   missing_information: z.array(z.string()),
   suggested_reply: z.string().nullable(),
-  matched_brand_name: z.string().nullable(),
+  creator_id: z.string().nullable(),
+  creator_confidence: z.number().int().min(0).max(100),
+  contact: z.string().nullable(),
+  format: z.string().nullable(),
+  product: z.string().nullable(),
+  budget: z.number().nullable(),
+  period: z.string().nullable(),
 });
 
 export type EmailAnalysisOutput = z.infer<typeof outputSchema>;
@@ -18,14 +22,14 @@ export const incomingEmailAnalysisPrompt: PromptDefinition<
   EmailAnalysisContext,
   EmailAnalysisOutput
 > = {
-  version: "INCOMING_EMAIL_v1.1",
+  version: "INCOMING_EMAIL_v2.0",
   provider: "openai",
   model: "gpt-5-mini",
-  maxTokens: 1024,
+  maxTokens: 5024,
   estimatedCredits: 5,
 
   system: `Du bist ein KI-Assistent für eine Creator-Agentur.
-Deine Aufgabe ist es, eingehende E-Mails zu analysieren.
+Deine Aufgabe ist es, eingehende E-Mails zu analysieren und strukturierte Daten zu extrahieren.
 Antworte ausschließlich als valides JSON ohne Markdown, Codeblöcke oder zusätzlichen Text.`,
 
   buildMessages: (ctx: EmailAnalysisContext) => [
@@ -38,33 +42,13 @@ Betreff: ${ctx.email.subject}
 
 ${ctx.email.body}
 
-## Konversations-Kontext
-${
-  ctx.conversation.has_linked_anfrage
-    ? `Diese E-Mail gehört zu einer laufenden Konversation die bereits mit einer Anfrage verknüpft ist. Das Label "LAUFEND" wurde automatisch vergeben — du kannst bis zu 2 WEITERE Labels aus [ANFRAGE, PROMOTIONS, RECHNUNG, ANDERES] vergeben (oder ein leeres Array wenn keine weiteren passen).`
-    : ctx.conversation.is_follow_up
-      ? `Diese E-Mail ist Teil einer laufenden Konversation (${ctx.conversation.prior_emails_count} vorherige E-Mail(s)). Vergib 1–3 passende Labels.`
-      : "Diese E-Mail ist der erste Kontakt. Vergib 1–3 passende Labels."
-}
-
-## Bekannte Brands dieser Agentur
-${
-  ctx.agency.known_brands.length > 0
-    ? ctx.agency.known_brands
-        .map(
-          (b) => `- ${b.company_name}${b.industry ? ` (${b.industry})` : ""}`,
-        )
-        .join("\n")
-    : "Keine Brands vorhanden."
-}
-
-## Aktive Creators
+## Aktive Creators dieser Agentur (mit ID)
 ${
   ctx.agency.creators.length > 0
     ? ctx.agency.creators
         .map(
           (c) =>
-            `- ${c.full_name}: ${c.niche.join(", ")}${c.min_budget ? `, Mindestbudget €${c.min_budget}` : ""}`,
+            `- ID: ${c.id} | Name: ${c.full_name} | Nischen: ${c.niche.join(", ")}${c.min_budget ? ` | Mindestbudget: €${c.min_budget}` : ""}`,
         )
         .join("\n")
     : "Keine Creators vorhanden."
@@ -76,15 +60,27 @@ Analysiere die E-Mail und antworte mit folgendem JSON:
   "information_complete": boolean,
   "missing_information": string[],
   "suggested_reply": string | null,
-  "matched_brand_name": string | null
+  "creator_id": string | null,
+  "creator_confidence": number,
+  "contact": string | null,
+  "format": string | null,
+  "product": string | null,
+  "budget": number | null,
+  "period": string | null
 }
 
 Regeln:
 - is_request: true wenn es sich um eine Kooperations- oder Buchungsanfrage handelt
 - information_complete: true nur wenn Budget, Deadline und Format bekannt sind
-- missing_information: nur Felder die tatsächlich fehlen
-- suggested_reply: nur wenn information_complete=false und is_request=true, sonst null
-- matched_brand_name: Company-Name aus der Liste oben wenn Absender erkannt, sonst null
+- missing_information: nur Felder die tatsächlich fehlen (z.B. ["Budget", "Zeitraum"])
+- suggested_reply: kurzer Antwort-Entwurf auf Deutsch wenn is_request=true und information_complete=false, sonst null
+- creator_id: die exakte UUID aus der Creator-Liste oben wenn ein Creator namentlich erwähnt wird (auch bei Tippfehlern oder ähnlichen Namen), sonst null
+- creator_confidence: 0–100 wie sicher du beim Creator-Match bist (0 wenn creator_id=null)
+- contact: Name der Kontaktperson aus der E-Mail
+- format: angefordertes Format/Leistung (z.B. "1x Reel + 3x Story")
+- product: beworbenes Produkt oder Dienstleistung
+- budget: Budgetbetrag als Zahl in Euro (nur Zahl, kein €-Zeichen), null wenn nicht genannt
+- period: gewünschter Zeitraum als Text (z.B. "September 2026"), null wenn nicht genannt
 `.trim(),
     },
   ],
