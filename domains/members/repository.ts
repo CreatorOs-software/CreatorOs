@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizePermissions } from "@/domains/auth/permissions";
-import type { AgencyMember, AgencyInvitation, CreateInvitationInput } from "./types";
+import type { AgencyMember, AgencyInvitation, AgencyUser, CreateInvitationInput } from "./types";
 import type { Role } from "@/domains/auth/types";
 
 export const MemberRepository = {
@@ -16,6 +16,16 @@ export const MemberRepository = {
       role: (row.role === "admin" ? "admin" : "member") as Role,
       permissions: normalizePermissions((row.permissions as Record<string, unknown>) ?? {}),
     }));
+  },
+
+  async findUsers(supabase: SupabaseClient, agencyId: string): Promise<AgencyUser[]> {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, display_name, initials, color, role")
+      .eq("agency_id", agencyId)
+      .order("display_name");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as AgencyUser[];
   },
 
   async updateMember(

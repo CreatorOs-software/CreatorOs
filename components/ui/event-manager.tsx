@@ -50,13 +50,12 @@ import {
   FileText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import type { Creator } from "@/domains/creators"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type EventType = "shoot" | "travel" | "deadline" | "brand" | "internal" | "posting"
 type Recurrence = "none" | "daily" | "weekly" | "monthly" | "yearly"
-
-type Creator = { id: string; full_name: string; initials: string; color: string }
 
 type TeamMember = { id: string; display_name: string | null; initials: string | null; color: string | null; role: string }
 
@@ -72,7 +71,7 @@ type DbEvent = {
   attendee_ids: string[]
   all_day: boolean
   recurrence: string
-  creators: { full_name: string; initials: string; color: string } | null
+  creators: { full_name: string; initials: string } | null
 }
 
 type CalEvent = {
@@ -87,7 +86,7 @@ type CalEvent = {
   attendeeIds: string[]
   allDay: boolean
   recurrence: Recurrence
-  creator: { full_name: string; initials: string; color: string } | null
+  creator: { full_name: string; initials: string } | null
 }
 
 type FormState = {
@@ -626,8 +625,7 @@ function ListView({
                   <div className="flex shrink-0 items-center gap-2">
                     {ev.creator && (
                       <span
-                        className="inline-flex size-7 items-center justify-center rounded-full text-[11px] font-semibold text-white"
-                        style={{ backgroundColor: ev.creator.color }}
+                        className="inline-flex size-7 items-center justify-center rounded-full text-[11px] font-semibold text-white bg-neutral-800"
                         title={ev.creator.full_name}
                       >
                         {ev.creator.initials}
@@ -1028,10 +1026,7 @@ function EventDialog({
                     <SelectTrigger>
                       {displayCreator ? (
                         <span className="flex items-center gap-2 text-sm">
-                          <span
-                            className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
-                            style={{ backgroundColor: displayCreator.color }}
-                          >
+                          <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white bg-neutral-800">
                             {displayCreator.initials}
                           </span>
                           {displayCreator.full_name}
@@ -1045,10 +1040,7 @@ function EventDialog({
                       {creators.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           <span className="flex items-center gap-2">
-                            <span
-                              className="inline-flex size-4 items-center justify-center rounded-full text-[9px] font-semibold text-white"
-                              style={{ backgroundColor: c.color }}
-                            >
+                            <span className="inline-flex size-4 items-center justify-center rounded-full bg-neutral-800 text-[9px] font-semibold text-white">
                               {c.initials}
                             </span>
                             {c.full_name}
@@ -1120,8 +1112,6 @@ export function EventManager() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [draggedEvent, setDraggedEvent] = useState<CalEvent | null>(null)
-  const [creators, setCreators] = useState<Creator[]>([])
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [filterType, setFilterType] = useState<EventType | "all">("all")
   const [filterCreator, setFilterCreator] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
@@ -1139,19 +1129,19 @@ export function EventManager() {
     staleTime: 2 * 60_000,
   })
 
-  useEffect(() => {
-    fetch("/api/creators/list")
-      .then((r) => r.json())
-      .then((d: { creators?: Creator[] }) => setCreators(d.creators ?? []))
-      .catch(() => {})
-    fetch("/api/agency/users")
-      .then(async (r) => {
-        const d = await r.json()
-        if (!r.ok) { console.error("[agency/users]", d); return }
-        setTeamMembers(d.users ?? [])
-      })
-      .catch((e) => console.error("[agency/users] fetch failed", e))
-  }, [])
+  const { data: creatorsData } = useQuery<{ creators: Creator[] }>({
+    queryKey: QueryKeys.creators.list(),
+    queryFn: () => fetch("/api/creators/list").then((r) => r.json()),
+    staleTime: 5 * 60_000,
+  })
+  const creators = creatorsData?.creators ?? []
+
+  const { data: membersData } = useQuery<{ users: TeamMember[] }>({
+    queryKey: QueryKeys.members.list(),
+    queryFn: () => fetch("/api/agency/users").then((r) => r.json()),
+    staleTime: 5 * 60_000,
+  })
+  const teamMembers = membersData?.users ?? []
 
   const allEvents = useMemo(() => (data?.events ?? []).map(toCalEvent), [data])
 
@@ -1384,7 +1374,7 @@ export function EventManager() {
                 const c = creators.find((x) => x.id === filterCreator)
                 return c ? (
                   <span className="flex items-center gap-2">
-                    <span className="inline-flex size-4 items-center justify-center rounded-full text-[9px] font-semibold text-white" style={{ backgroundColor: c.color }}>
+                    <span className="inline-flex size-4 items-center justify-center rounded-full bg-neutral-800 text-[9px] font-semibold text-white">
                       {c.initials}
                     </span>
                     {c.full_name}
@@ -1398,7 +1388,7 @@ export function EventManager() {
             {creators.map((c) => (
               <SelectItem key={c.id} value={c.id}>
                 <span className="flex items-center gap-2">
-                  <span className="inline-flex size-4 items-center justify-center rounded-full text-[9px] font-semibold text-white" style={{ backgroundColor: c.color }}>
+                  <span className="inline-flex size-4 items-center justify-center rounded-full bg-neutral-800 text-[9px] font-semibold text-white">
                     {c.initials}
                   </span>
                   {c.full_name}

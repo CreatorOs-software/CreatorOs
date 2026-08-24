@@ -1,6 +1,6 @@
 import { UserRound } from "lucide-react";
 import type { CreatorForm } from "../creator-form.types";
-import { fullName, getInitials, pickColor } from "../creator-form.helpers";
+import { fullName, getInitials } from "../creator-form.helpers";
 import { StepNav } from "./step-nav";
 
 const STATUS_LABEL = {
@@ -70,10 +70,7 @@ export function Step4({ form, saving, error, onPrev, onSubmit, submitLabel }: St
         <div className="sm:col-span-2 flex flex-col gap-4">
           {/* Avatar preview */}
           <div className="flex items-center gap-3 p-4 bg-muted/40 rounded-xl border border-border-light">
-            <span
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0"
-              style={{ background: name ? pickColor(name) : "#6b7280" }}
-            >
+            <span className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0 bg-neutral-800">
               {name ? getInitials(name) : <UserRound className="w-5 h-5" />}
             </span>
             <div>

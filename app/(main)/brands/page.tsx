@@ -182,7 +182,6 @@ function NeueBrandDialog({
                   setShortCode(e.target.value.toUpperCase().slice(0, 4))
                 }
                 placeholder="NI"
-                className="font-mono"
               />
             </div>
             <div>
@@ -325,9 +324,7 @@ const brandColumns: ColumnDef<BrandListItem>[] = [
     accessorKey: "last_activity",
     cell: ({ row }) => (
       <span className="text-xs text-muted-foreground">
-        {row.original.last_activity
-          ? fmtDate(row.original.last_activity)
-          : "—"}
+        {row.original.last_activity ? fmtDate(row.original.last_activity) : "—"}
       </span>
     ),
     size: 128,
@@ -371,9 +368,7 @@ export default function BrandsPage() {
   ];
 
   const availableIndustries = [
-    ...new Set(
-      allBrands.map((b) => b.industry).filter(Boolean) as string[],
-    ),
+    ...new Set(allBrands.map((b) => b.industry).filter(Boolean) as string[]),
   ].sort();
 
   const filtered = allBrands

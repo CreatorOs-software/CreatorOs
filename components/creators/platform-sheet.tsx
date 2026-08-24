@@ -152,11 +152,7 @@ export function PlatformSheet({
         >
           <SheetHeader className="border-b border-border pb-4">
             <div className="flex items-center gap-3">
-              <AvatarCreator
-                initials={creator.initials}
-                color={creator.color}
-                size="md"
-              />
+              <AvatarCreator initials={creator.initials} size="md" />
               <div>
                 <SheetTitle>{creator.full_name}</SheetTitle>
                 {creator.handle && (
@@ -308,9 +304,7 @@ export function PlatformSheet({
                           )
                         ) : OAUTH_SUPPORTED.has(key) ? (
                           <Button
-                            variant="outline"
-                            size="sm"
-                            className="shrink-0 h-7 text-xs gap-1"
+                            className="rounded-sm"
                             disabled={inviteLoading === key}
                             onClick={() => handleCreateInvite(key)}
                           >

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { getAuthContext, toErrorResponse } from "@/lib/auth-context";
+import { toErrorResponse } from "@/lib/auth-context";
+import { DealService } from "@/domains/deals";
 
 const patchSchema = z.object({
   status: z.string().optional(),
@@ -20,7 +21,7 @@ const patchSchema = z.object({
   campaign_start: z.string().nullable().optional(),
   campaign_end: z.string().nullable().optional(),
   assignee_id: z.string().nullable().optional(),
-  contract_status: z.string().nullable().optional(),
+  contract_status: z.enum(["offen", "versendet", "unterschrieben"]).nullable().optional(),
   contract_date: z.string().nullable().optional(),
   contract_url: z.string().nullable().optional(),
   rights: z.record(z.string(), z.any()).nullable().optional(),
@@ -38,17 +39,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id: dealId } = await params;
-    const { supabase, agencyId } = await getAuthContext();
-
-    const { error } = await supabase
-      .from("deals")
-      .delete()
-      .eq("id", dealId)
-      .eq("agency_id", agencyId);
-
-    if (error) throw error;
-
+    const { id } = await params;
+    await DealService.deleteDeal(id);
     return new Response(null, { status: 204 });
   } catch (e) {
     return toErrorResponse(e);
@@ -60,25 +52,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id: dealId } = await params;
-    const { supabase, agencyId } = await getAuthContext();
-
+    const { id } = await params;
     const body = await req.json();
     const parsed = patchSchema.safeParse(body);
     if (!parsed.success) {
       return Response.json({ error: "Ungültige Daten" }, { status: 400 });
     }
-
-    const { data: deal, error } = await supabase
-      .from("deals")
-      .update(parsed.data)
-      .eq("id", dealId)
-      .eq("agency_id", agencyId)
-      .select("id, status")
-      .single();
-
-    if (error) throw error;
-
+    const deal = await DealService.updateDeal(id, parsed.data);
     return Response.json({ deal });
   } catch (e) {
     return toErrorResponse(e);

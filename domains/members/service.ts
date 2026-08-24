@@ -4,6 +4,12 @@ import { MemberRepository } from "./repository";
 import type { CreateInvitationInput } from "./types";
 
 export const MemberService = {
+  async listUsers() {
+    const supabase = await createClient();
+    const { agencyId } = await getAuthContext(supabase);
+    return MemberRepository.findUsers(supabase, agencyId);
+  },
+
   async getMembers() {
     const supabase = await createClient();
     const { agencyId } = await getAuthContext(supabase);

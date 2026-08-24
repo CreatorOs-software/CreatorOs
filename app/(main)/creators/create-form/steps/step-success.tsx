@@ -76,7 +76,7 @@ function InviteCard({ creatorId, platform, platformLabel }: InviteCardProps) {
 
       {inviteUrl && (
         <div className="flex items-center gap-2">
-          <code className="flex-1 truncate text-xs bg-background rounded-lg px-3 py-1.5 border border-border-light text-muted-foreground font-mono">
+          <code className="flex-1 truncate text-xs bg-background rounded-lg px-3 py-1.5 border border-border-light text-muted-foreground ">
             {inviteUrl}
           </code>
           <button
@@ -114,10 +114,18 @@ interface StepSuccessProps {
   onGoBack: () => void;
 }
 
-export function StepSuccess({ creatorId, platforms, onReset, onGoBack }: StepSuccessProps) {
+export function StepSuccess({
+  creatorId,
+  platforms,
+  onReset,
+  onGoBack,
+}: StepSuccessProps) {
   const oauthPlatforms = platforms
     .map((p) => ({ key: p.toLowerCase(), label: oauthLabel(p), display: p }))
-    .filter((p): p is { key: string; label: string; display: string } => p.label !== null);
+    .filter(
+      (p): p is { key: string; label: string; display: string } =>
+        p.label !== null,
+    );
 
   return (
     <div className="flex flex-col items-center gap-6 py-8">
@@ -140,8 +148,9 @@ export function StepSuccess({ creatorId, platforms, onReset, onGoBack }: StepSuc
           <div>
             <p className="text-sm font-semibold">Plattform verbinden</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Erstelle einen Einladungslink und schicke ihn dem Creator.
-              Er verbindet sein Konto direkt, ohne einen Account bei euch zu benötigen.
+              Erstelle einen Einladungslink und schicke ihn dem Creator. Er
+              verbindet sein Konto direkt, ohne einen Account bei euch zu
+              benötigen.
             </p>
           </div>
           {oauthPlatforms.map((p) => (

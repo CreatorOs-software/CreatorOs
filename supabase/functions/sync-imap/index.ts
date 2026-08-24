@@ -1,11 +1,19 @@
 // sync-imap – Supabase Edge Function
-// Pulls new messages from IMAP/Gmail/Outlook integrations into email_threads.
+// Pulls messages from IMAP/Gmail/Outlook integrations into email_threads.
+// Syncs all standard folders: INBOX, SENT, DRAFTS, SPAM, TRASH.
 // Triggered by: cron (all connected integrations) or POST { integration_id } (single).
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const MAX_FETCH = 25;
+
+// Max messages to fetch per folder per sync run
+const MAX_INBOX = 25;
+const MAX_OTHER = 15;
+
+// Lookback window for non-INBOX folders (days)
+const LOOKBACK_DAYS = 90;
+const SPAM_TRASH_DAYS = 30;
 
 function getJwtRole(authHeader: string): string | null {
   try {
@@ -21,6 +29,63 @@ function getJwtRole(authHeader: string): string | null {
 const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
+
+// ---- IMAP folder normalization ----------------------------------------
+
+type FolderInfo = {
+  rawName: string;    // actual IMAP name to SELECT
+  folder: string;     // DB value: INBOX | SENT | DRAFTS | SPAM | TRASH
+  lookbackDays: number;
+};
+
+/**
+ * Normalize a raw IMAP folder name to our standard folder values.
+ * Returns null for folders we don't want to sync (e.g. All Mail which duplicates INBOX).
+ */
+function normalizeFolder(raw: string): { folder: string; lookbackDays: number } | null {
+  const r = raw.toLowerCase().trim();
+
+  if (r === "inbox") return { folder: "INBOX", lookbackDays: 0 }; // uses last_uid
+
+  if (
+    r === "sent" ||
+    r === "sent items" ||
+    r === "sent messages" ||
+    r.endsWith("/sent mail") || // [Gmail]/Sent Mail
+    r.endsWith("/sent")
+  ) return { folder: "SENT", lookbackDays: LOOKBACK_DAYS };
+
+  if (
+    r === "drafts" ||
+    r.endsWith("/drafts")
+  ) return { folder: "DRAFTS", lookbackDays: LOOKBACK_DAYS };
+
+  if (
+    r === "spam" ||
+    r === "junk" ||
+    r === "junk email" ||
+    r === "junk e-mail" ||
+    r.endsWith("/spam") ||
+    r.endsWith("/junk")
+  ) return { folder: "SPAM", lookbackDays: SPAM_TRASH_DAYS };
+
+  if (
+    r === "trash" ||
+    r === "deleted" ||
+    r === "deleted items" ||
+    r === "deleted messages" ||
+    r.endsWith("/trash")
+  ) return { folder: "TRASH", lookbackDays: SPAM_TRASH_DAYS };
+
+  // Skip: All Mail, Archive, Flagged, Important, etc. — would create duplicates
+  return null;
+}
+
+function imapDateStr(daysAgo: number): string {
+  const d = new Date(Date.now() - daysAgo * 86_400_000);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${d.getDate().toString().padStart(2, "0")}-${months[d.getMonth()]}-${d.getFullYear()}`;
+}
 
 // ---- Deno-native IMAP client ----------------------------------------
 
@@ -61,9 +126,27 @@ class ImapClient {
     if (!ok) throw new ImapError(`LOGIN failed: ${info}`);
   }
 
-  async selectInbox(): Promise<number> {
-    const { ok, info, untagged } = await this.command("SELECT INBOX");
-    if (!ok) throw new ImapError(`SELECT INBOX failed: ${info}`);
+  /** Returns list of all folder names on the server. */
+  async listMailboxes(): Promise<string[]> {
+    const { ok, untagged } = await this.command('LIST "" "*"');
+    if (!ok) return ["INBOX"];
+    const folders: string[] = [];
+    for (const line of untagged) {
+      // * LIST (\flags) "delimiter" "FolderName"
+      // * LIST (\flags) NIL INBOX
+      const m = line.match(/^\* LIST\s+\([^)]*\)\s+(?:NIL|"[^"]+")\s+(.+)$/i);
+      if (!m) continue;
+      const raw = m[1].trim().replace(/^"(.+)"$/, "$1");
+      folders.push(raw);
+    }
+    return folders.length > 0 ? folders : ["INBOX"];
+  }
+
+  /** Returns total message count in the selected mailbox. */
+  async selectMailbox(name: string): Promise<number> {
+    const quoted = name.includes(" ") ? `"${name.replace(/"/g, '\\"')}"` : name;
+    const { ok, info, untagged } = await this.command(`SELECT ${quoted}`);
+    if (!ok) throw new ImapError(`SELECT ${name} failed: ${info}`);
     let exists = 0;
     for (const line of untagged) {
       const m = line.match(/^\* (\d+) EXISTS/);
@@ -72,20 +155,18 @@ class ImapClient {
     return exists;
   }
 
+  /** Search all UIDs in the currently selected mailbox. */
   async searchAllUids(): Promise<number[]> {
     const { ok, info, untagged } = await this.command("UID SEARCH ALL");
     if (!ok) throw new ImapError(`UID SEARCH failed: ${info}`);
-    const uids: number[] = [];
-    for (const line of untagged) {
-      const m = line.match(/^\* SEARCH(.*)$/);
-      if (m) {
-        for (const s of m[1].trim().split(/\s+/)) {
-          const n = parseInt(s, 10);
-          if (s && Number.isFinite(n)) uids.push(n);
-        }
-      }
-    }
-    return uids.sort((a, b) => a - b);
+    return parseUidList(untagged);
+  }
+
+  /** Search UIDs for messages received on or after the given date string (e.g. "01-Jan-2024"). */
+  async searchSinceUids(dateStr: string): Promise<number[]> {
+    const { ok, untagged } = await this.command(`UID SEARCH SINCE ${dateStr}`);
+    if (!ok) return []; // server may not support, fallback to empty = dedup will handle
+    return parseUidList(untagged);
   }
 
   async fetchMessage(uid: number): Promise<{
@@ -111,8 +192,6 @@ class ImapClient {
         if (!rest.startsWith("OK")) throw new ImapError(`FETCH ${uid} failed: ${rest}`);
         break;
       }
-      // Do NOT skip non-"*" lines — BODY[TEXT] continuation arrives on a line
-      // that starts with a space, not "*", and must be parsed for its literal.
       const uidM = line.match(/UID (\d+)/);
       if (uidM) realUid = parseInt(uidM[1], 10);
       const sizeM = line.match(/RFC822\.SIZE (\d+)/);
@@ -139,9 +218,7 @@ class ImapClient {
   }
 
   async logout(): Promise<void> {
-    try {
-      await this.command("LOGOUT");
-    } catch { /* ignore */ }
+    try { await this.command("LOGOUT"); } catch { /* ignore */ }
   }
 
   close(): void {
@@ -160,9 +237,7 @@ class ImapClient {
     await this.writer.write(this.enc.encode(s));
   }
 
-  private async command(
-    cmd: string,
-  ): Promise<{ ok: boolean; info: string; untagged: string[] }> {
+  private async command(cmd: string): Promise<{ ok: boolean; info: string; untagged: string[] }> {
     const tag = this.nextTag();
     await this.write(`${tag} ${cmd}\r\n`);
     const untagged: string[] = [];
@@ -213,6 +288,20 @@ class ImapClient {
   }
 }
 
+function parseUidList(untagged: string[]): number[] {
+  const uids: number[] = [];
+  for (const line of untagged) {
+    const m = line.match(/^\* SEARCH(.*)$/);
+    if (m) {
+      for (const s of m[1].trim().split(/\s+/)) {
+        const n = parseInt(s, 10);
+        if (s && Number.isFinite(n)) uids.push(n);
+      }
+    }
+  }
+  return uids.sort((a, b) => a - b);
+}
+
 // ---- Header / body parsing ----------------------------------------
 
 function parseHeaders(raw: string): Record<string, string> {
@@ -248,9 +337,7 @@ function decodeMime(s: string): string {
         return new TextDecoder("utf-8").decode(Uint8Array.from(out, (c) => c.charCodeAt(0)));
       }
       return out;
-    } catch {
-      return data;
-    }
+    } catch { return data; }
   });
 }
 
@@ -281,10 +368,7 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function extractBodyParts(
-  headers: Record<string, string>,
-  body: string,
-): { text: string; html: string | null } {
+function extractBodyParts(headers: Record<string, string>, body: string): { text: string; html: string | null } {
   const ct = headers["content-type"] ?? "text/plain";
   const cte = (headers["content-transfer-encoding"] ?? "7bit").toLowerCase();
   const result = extractFromPart(ct, cte, body);
@@ -294,11 +378,7 @@ function extractBodyParts(
   };
 }
 
-function extractFromPart(
-  ct: string,
-  cte: string,
-  content: string,
-): { plain: string | null; html: string | null } {
+function extractFromPart(ct: string, cte: string, content: string): { plain: string | null; html: string | null } {
   const bm = ct.match(/boundary="?([^";]+)"?/i);
   if (bm) {
     const parts = content.split(new RegExp(`--${escapeRegex(bm[1])}(?:--)?\\r?\\n?`));
@@ -336,9 +416,7 @@ function decodePart(data: string, cte: string, ct: string): string {
       const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
       const charsetM = ct.match(/charset="?([^";]+)"?/i);
       return new TextDecoder(charsetM ? charsetM[1] : "utf-8").decode(bytes);
-    } catch {
-      return data;
-    }
+    } catch { return data; }
   }
   if (cte === "quoted-printable") {
     const out = data
@@ -346,9 +424,7 @@ function decodePart(data: string, cte: string, ct: string): string {
       .replace(/=([0-9A-Fa-f]{2})/g, (_m, h) => String.fromCharCode(parseInt(h, 16)));
     try {
       return new TextDecoder("utf-8").decode(Uint8Array.from(out, (c) => c.charCodeAt(0)));
-    } catch {
-      return out;
-    }
+    } catch { return out; }
   }
   return data;
 }
@@ -367,85 +443,162 @@ type IntegrationRow = {
   last_uid: number | null;
 };
 
+async function syncFolder(
+  client: ImapClient,
+  row: IntegrationRow,
+  info: FolderInfo,
+  isFirstRun: boolean,
+): Promise<{ pulled: number; skipped: number; newHighestUid: number }> {
+  let pulled = 0;
+  let skipped = 0;
+  let newHighestUid = 0;
+
+  try {
+    await client.selectMailbox(info.rawName);
+  } catch (e) {
+    console.error(`[sync-imap] SELECT ${info.rawName} failed:`, e);
+    return { pulled, skipped, newHighestUid };
+  }
+
+  let allUids: number[];
+
+  if (info.folder === "INBOX") {
+    const effectiveLastUid = isFirstRun ? 0 : (row.last_uid ?? 0);
+    allUids = await client.searchAllUids();
+    allUids = allUids.filter((u) => u > effectiveLastUid).slice(-MAX_INBOX);
+  } else {
+    const dateStr = imapDateStr(info.lookbackDays);
+    try {
+      allUids = await client.searchSinceUids(dateStr);
+    } catch {
+      allUids = await client.searchAllUids();
+    }
+    allUids = allUids.slice(-MAX_OTHER);
+  }
+
+  for (const uid of allUids) {
+    const msg = await client.fetchMessage(uid).catch((e) => {
+      console.error(`[sync-imap] fetch uid=${uid} in ${info.rawName} failed`, e);
+      return null;
+    });
+    if (!msg) { skipped++; continue; }
+    if (msg.uid > newHighestUid) newHighestUid = msg.uid;
+
+    const { name, email } = parseFromAddress(msg.headers["from"] ?? "");
+    const { text: body, html: bodyHtml } = extractBodyParts(msg.headers, msg.body);
+    const preview = body.slice(0, 240).replace(/\s+/g, " ").trim();
+    const received_at = msg.headers["date"] ? safeDate(msg.headers["date"]) : new Date().toISOString();
+    const messageId = msg.headers["message-id"];
+
+    if (messageId) {
+      const { data: dup } = await db
+        .from("email_threads")
+        .select("id, body, folder")
+        .eq("agency_id", row.agency_id)
+        .eq("gmail_thread_id", messageId)
+        .maybeSingle();
+
+      if (dup) {
+        const patch: Record<string, unknown> = { integration_id: row.id };
+        if (!dup.body && body) {
+          patch.body = body || preview;
+          patch.body_html = bodyHtml;
+          patch.preview = preview || (msg.headers["subject"] ?? "");
+        }
+        // Promote folder if INBOX takes priority over others
+        if (info.folder === "INBOX" && dup.folder !== "INBOX") {
+          patch.folder = "INBOX";
+        }
+        await db.from("email_threads").update(patch).eq("id", dup.id);
+        skipped++;
+        continue;
+      }
+    }
+
+    const { data: inserted, error } = await db.from("email_threads").insert({
+      agency_id: row.agency_id,
+      integration_id: row.id,
+      gmail_thread_id: messageId ?? `imap-${row.id}-${info.folder.toLowerCase()}-${msg.uid}`,
+      folder: info.folder,
+      sender_email: email,
+      sender_name: name,
+      subject: msg.headers["subject"] ?? "(no subject)",
+      preview: preview || (msg.headers["subject"] ?? ""),
+      body: body || preview,
+      body_html: bodyHtml,
+      received_at,
+      unread: info.folder === "INBOX", // only mark inbox messages as unread
+      starred: false,
+      priority: "med",
+    }).select("id").single();
+    if (error) { console.error("[sync-imap] insert failed", error); continue; }
+    pulled++;
+
+    // Trigger AI labeling for new INBOX messages.
+    // waitUntil ensures the fetch survives after sync-imap returns its response.
+    if (info.folder === "INBOX") {
+      const labelFetch = fetch(`${SUPABASE_URL}/functions/v1/execute-ai-job`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({ email_thread_id: inserted.id, agency_id: row.agency_id }),
+      }).catch((e) => console.error("[sync-imap] execute-ai-job trigger failed", e));
+      EdgeRuntime.waitUntil(labelFetch);
+    }
+  }
+
+  return { pulled, skipped, newHighestUid };
+}
+
 async function pullImap(row: IntegrationRow): Promise<{ pulled: number; skipped: number }> {
   const { count: threadCount } = await db
     .from("email_threads")
     .select("id", { count: "exact", head: true })
-    .eq("agency_id", row.agency_id);
-  const effectiveLastUid = (threadCount === 0) ? 0 : (row.last_uid ?? 0);
+    .eq("agency_id", row.agency_id)
+    .eq("integration_id", row.id);
 
-  const client = new ImapClient(
-    row.imap_host,
-    row.imap_port,
-    row.imap_secure,
-    row.imap_username,
-    row.imap_password,
-  );
-  let pulled = 0;
-  let skipped = 0;
-  let highestUid = effectiveLastUid;
+  const isFirstRun = threadCount === 0;
+
+  const client = new ImapClient(row.imap_host, row.imap_port, row.imap_secure, row.imap_username, row.imap_password);
+  let totalPulled = 0;
+  let totalSkipped = 0;
+  let newInboxHighestUid = row.last_uid ?? 0;
 
   try {
     await client.connect();
     await client.login();
-    await client.selectInbox();
-    const allUids = await client.searchAllUids();
-    const candidates = allUids.filter((u) => u > effectiveLastUid).slice(-MAX_FETCH);
 
-    for (const uid of candidates) {
-      const msg = await client.fetchMessage(uid).catch((e) => {
-        console.error(`fetch uid=${uid} failed`, e);
-        return null;
-      });
-      if (!msg) { skipped++; continue; }
-      if (msg.uid > highestUid) highestUid = msg.uid;
+    // Discover all folders on this account
+    const rawFolders = await client.listMailboxes();
 
-      const { name, email } = parseFromAddress(msg.headers["from"] ?? "");
-      const { text: body, html: bodyHtml } = extractBodyParts(msg.headers, msg.body);
-      const preview = body.slice(0, 240).replace(/\s+/g, " ").trim();
-      const received_at = msg.headers["date"]
-        ? safeDate(msg.headers["date"])
-        : new Date().toISOString();
-      const messageId = msg.headers["message-id"];
+    // Build the list of folders we want to sync, in priority order
+    const foldersToSync: FolderInfo[] = [];
+    const seenTypes = new Set<string>();
 
-      if (messageId) {
-        const { data: dup } = await db
-          .from("email_threads")
-          .select("id, body")
-          .eq("agency_id", row.agency_id)
-          .eq("gmail_thread_id", messageId)
-          .maybeSingle();
-        if (dup) {
-          // Always tag integration_id so mailbox filtering works after re-sync
-          const patch: Record<string, unknown> = { integration_id: row.id };
-          if (!dup.body && body) {
-            patch.body = body || preview;
-            patch.body_html = bodyHtml;
-            patch.preview = preview || (msg.headers["subject"] ?? "");
-          }
-          await db.from("email_threads").update(patch).eq("id", dup.id);
-          skipped++;
-          continue;
-        }
+    // Always ensure INBOX is first
+    foldersToSync.push({ rawName: "INBOX", folder: "INBOX", lookbackDays: 0 });
+    seenTypes.add("INBOX");
+
+    for (const raw of rawFolders) {
+      const normalized = normalizeFolder(raw);
+      if (!normalized) continue;
+      if (seenTypes.has(normalized.folder)) continue;
+      seenTypes.add(normalized.folder);
+      foldersToSync.push({ rawName: raw, ...normalized });
+    }
+
+    console.log(`[sync-imap] ${row.email}: syncing folders: ${foldersToSync.map(f => f.rawName).join(", ")}`);
+
+    for (const folderInfo of foldersToSync) {
+      const { pulled, skipped, newHighestUid } = await syncFolder(client, row, folderInfo, isFirstRun);
+      totalPulled += pulled;
+      totalSkipped += skipped;
+      if (folderInfo.folder === "INBOX" && newHighestUid > newInboxHighestUid) {
+        newInboxHighestUid = newHighestUid;
       }
-
-      const { error } = await db.from("email_threads").insert({
-        agency_id: row.agency_id,
-        integration_id: row.id,
-        gmail_thread_id: messageId ?? `imap-${row.id}-${msg.uid}`,
-        sender_email: email,
-        sender_name: name,
-        subject: msg.headers["subject"] ?? "(no subject)",
-        preview: preview || (msg.headers["subject"] ?? ""),
-        body: body || preview,
-        body_html: bodyHtml,
-        received_at,
-        unread: true,
-        starred: false,
-        priority: "med",
-      });
-      if (error) { console.error("insert failed", error); continue; }
-      pulled++;
+      console.log(`[sync-imap] ${row.email} / ${folderInfo.rawName}: +${pulled} pulled, ${skipped} skipped`);
     }
   } finally {
     try { await client.logout(); } catch { /* ignore */ }
@@ -456,10 +609,10 @@ async function pullImap(row: IntegrationRow): Promise<{ pulled: number; skipped:
     last_sync_at: new Date().toISOString(),
     status: "connected",
     last_sync_error: null,
-    last_uid: highestUid,
+    last_uid: newInboxHighestUid,
   }).eq("id", row.id);
 
-  return { pulled, skipped };
+  return { pulled: totalPulled, skipped: totalSkipped };
 }
 
 // ---- Entry point ----------------------------------------
@@ -477,7 +630,6 @@ Deno.serve(async (req) => {
   const auth = req.headers.get("authorization") ?? "";
   const role = getJwtRole(auth);
   if (role !== "service_role") {
-    // Fallback: direct key comparison (for local dev / non-JWT callers)
     if (!auth.startsWith("Bearer ") || auth.slice(7) !== SERVICE_ROLE_KEY) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
@@ -488,9 +640,7 @@ Deno.serve(async (req) => {
 
   let query = db
     .from("email_integrations")
-    .select(
-      "id, agency_id, email, imap_host, imap_port, imap_secure, imap_username, imap_password, last_uid",
-    )
+    .select("id, agency_id, email, imap_host, imap_port, imap_secure, imap_username, imap_password, last_uid")
     .eq("status", "connected")
     .in("provider", ["imap", "gmail", "outlook"])
     .not("imap_host", "is", null)

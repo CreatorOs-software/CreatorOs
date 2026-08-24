@@ -5,6 +5,7 @@ import { Eye, Puzzle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Creator } from "./creator-sheet";
 import { Button } from "../ui/button";
+import { AvatarCreator } from "../ui/avatar-creator";
 
 const STATUS_DOT: Record<string, "online" | "away" | "offline"> = {
   active: "online",
@@ -14,33 +15,6 @@ const STATUS_DOT: Record<string, "online" | "away" | "offline"> = {
 
 export function formatMoney(n: number) {
   return `$${(n / 1000).toFixed(1)}k`;
-}
-
-// ─── Avatar (small inline version used in other components) ───────────────────
-
-export function Avatar({
-  c,
-  size = "md",
-}: {
-  c: Creator;
-  size?: "sm" | "md" | "lg";
-}) {
-  const cls = {
-    sm: "w-7 h-7 text-[10px]",
-    md: "w-9 h-9 text-xs",
-    lg: "w-11 h-11 text-sm",
-  }[size];
-  return (
-    <span
-      className={cn(
-        "rounded-xl inline-flex items-center justify-center font-bold text-white shrink-0",
-        cls,
-      )}
-      style={{ background: c.color }}
-    >
-      {c.initials}
-    </span>
-  );
 }
 
 // ─── Creator Card ─────────────────────────────────────────────────────────────
@@ -74,35 +48,18 @@ export function CreatorCard({
           <div
             className={cn(
               "h-3 w-3 rounded-full border-2 border-white transition-all duration-300 group-hover:scale-125",
-              dot === "online"
-                ? "bg-green-500 group-hover:shadow-[0_0_14px_rgba(34,197,94,0.7)]"
-                : dot === "away"
-                  ? "bg-amber-500"
-                  : "bg-gray-400",
+              dot === "online" ? "bg-brand " : "bg-gray-400",
             )}
           />
-          {dot === "online" && (
-            <div className="absolute inset-0 h-3 w-3 rounded-full bg-green-500 animate-ping opacity-30" />
-          )}
         </div>
       </div>
 
       {/* Initials avatar */}
       <div className="mb-5 flex justify-center relative z-10">
         <div className="relative">
-          <div
-            className="h-24 w-24 rounded-full  ring-1 ring-border
-              transition-all border-4 border-black duration-200 group-hover:scale-105"
-          >
-            <div
-              className="h-full w-full rounded-full flex items-center justify-center text-2xl font-bold text-white"
-              style={{ background: c.color }}
-            >
-              {c.initials}
-            </div>
-          </div>
+          <AvatarCreator initials={c.initials} size="2xl" />
           {/* Glow ring */}
-          <div className="absolute inset-0 rounded-full border-2 border-foreground/20 opacity-0 group-hover:opacity-100 transition-all duration-200" />
+          <div className="absolute inset-0 rounded-xl border-2 border-foreground/20 opacity-0 group-hover:opacity-100 transition-all duration-200" />
         </div>
       </div>
 
@@ -131,9 +88,7 @@ export function CreatorCard({
         </div>
         <div className="text-center">
           <div className="text-[10px] text-muted-foreground mb-0.5">Todos</div>
-          <div className="text-sm font-semibold tabular-nums">
-            {todoCount}
-          </div>
+          <div className="text-sm font-semibold tabular-nums">{todoCount}</div>
         </div>
       </div>
 

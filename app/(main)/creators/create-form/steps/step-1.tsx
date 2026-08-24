@@ -80,7 +80,10 @@ export function Step1({
                         className="mt-2"
                       />
                       {errors.vorname && (
-                        <p data-field-error className="mt-1.5 text-xs text-destructive">
+                        <p
+                          data-field-error
+                          className="mt-1.5 text-xs text-destructive"
+                        >
                           {errors.vorname}
                         </p>
                       )}
@@ -146,7 +149,10 @@ export function Step1({
                         className="mt-2"
                       />
                       {errors.email && (
-                        <p data-field-error className="mt-1.5 text-xs text-destructive">
+                        <p
+                          data-field-error
+                          className="mt-1.5 text-xs text-destructive"
+                        >
                           {errors.email}
                         </p>
                       )}
@@ -196,7 +202,7 @@ export function Step1({
                 <p className="text-[10px] text-muted-foreground">Max. 1 MB</p>
               </div>
               <Button
-                variant={"secondary"}
+                variant={"outline"}
                 onClick={() => imageInputRef.current?.click()}
               >
                 Auswählen

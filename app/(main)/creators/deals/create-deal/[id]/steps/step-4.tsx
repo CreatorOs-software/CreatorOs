@@ -197,10 +197,7 @@ export function Step4({
           <Row label="Creator">
             {creator ? (
               <span className="flex items-center gap-2">
-                <span
-                  className="w-5 h-5 rounded-md shrink-0 inline-flex items-center justify-center text-[10px] font-bold text-white"
-                  style={{ background: creator.color }}
-                >
+                <span className="w-5 h-5 rounded-md shrink-0 inline-flex items-center justify-center text-[10px] font-bold text-white bg-neutral-800">
                   {creator.initials}
                 </span>
                 {creator.full_name}

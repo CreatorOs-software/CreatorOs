@@ -2,7 +2,7 @@ import { getAuthContext } from "@/domains/auth";
 import { createClient } from "@/lib/supabase/server";
 import { serviceClient } from "@/lib/supabase/service";
 import { CommunicationRepository } from "./repository";
-import type { InboxPageData, ThreadPatch } from "./types";
+import type { EmailLabel, InboxPageData, ThreadPatch } from "./types";
 
 export class CommunicationError extends Error {}
 
@@ -19,14 +19,110 @@ export const CommunicationService = {
     return CommunicationRepository.patchThread(supabase, id, patch);
   },
 
-  async replyToThread(threadId: string, body: string): Promise<void> {
+  async createLabel(name: string, color: string): Promise<EmailLabel> {
+    const supabase = await createClient();
+    const { agencyId } = await getAuthContext(supabase);
+    return CommunicationRepository.createLabel(supabase, agencyId, name, color);
+  },
+
+  async findOrCreateLabel(name: string, color: string): Promise<EmailLabel> {
+    const supabase = await createClient();
+    const { agencyId } = await getAuthContext(supabase);
+    return CommunicationRepository.findOrCreateLabel(supabase, agencyId, name, color);
+  },
+
+  async deleteLabel(id: string): Promise<void> {
+    const supabase = await createClient();
+    await getAuthContext(supabase);
+    return CommunicationRepository.deleteLabel(supabase, id);
+  },
+
+  async assignLabel(threadId: string, labelId: string): Promise<void> {
+    const supabase = await createClient();
+    await getAuthContext(supabase);
+    return CommunicationRepository.assignLabel(supabase, threadId, labelId);
+  },
+
+  async removeLabel(threadId: string, labelId: string): Promise<void> {
+    const supabase = await createClient();
+    await getAuthContext(supabase);
+    return CommunicationRepository.removeLabel(supabase, threadId, labelId);
+  },
+
+  async composeEmail(input: {
+    to: string;
+    subject: string;
+    body: string;
+    cc?: string;
+    bcc?: string;
+    integrationId?: string | null;
+  }): Promise<void> {
+    const supabase = await createClient();
+    const { agencyId, displayName } = await getAuthContext(supabase);
+
+    const integ = await CommunicationRepository.findSmtpIntegration(serviceClient, agencyId, input.integrationId);
+    if (!integ?.smtp_host || !integ.smtp_port)
+      throw new CommunicationError("Kein Postfach mit SMTP konfiguriert.");
+    if (!integ.imap_password)
+      throw new CommunicationError("Postfach-Passwort fehlt.");
+
+    const { SmtpClient } = await import("@/lib/smtp-client.server");
+    const client = new SmtpClient({
+      host: integ.smtp_host,
+      port: integ.smtp_port,
+      secure: integ.smtp_secure ?? true,
+      username: integ.imap_username ?? integ.email,
+      password: integ.imap_password,
+    });
+
+    const toList = input.to.split(",").map((e) => e.trim()).filter(Boolean);
+    const ccList = input.cc?.split(",").map((e) => e.trim()).filter(Boolean) ?? [];
+    const bccList = input.bcc?.split(",").map((e) => e.trim()).filter(Boolean) ?? [];
+
+    try {
+      await client.connect();
+      await client.login();
+      await client.send({
+        from: { name: integ.display_name ?? displayName ?? null, email: integ.email },
+        to: toList,
+        cc: ccList.length ? ccList : undefined,
+        bcc: bccList.length ? bccList : undefined,
+        subject: input.subject,
+        text: input.body,
+      });
+      await client.quit();
+    } finally {
+      await client.close();
+    }
+
+    // best-effort — email is already delivered; a DB failure here must not cause the caller to retry and resend
+    try {
+      await CommunicationRepository.insertSentThread(serviceClient, {
+        agency_id: agencyId,
+        integration_id: integ.id,
+        folder: "SENT",
+        sender_email: integ.email,
+        sender_name: integ.display_name ?? displayName ?? null,
+        recipient_email: toList[0] ?? null,
+        subject: input.subject,
+        preview: input.body.slice(0, 240).replace(/\s+/g, " ").trim(),
+        body: input.body,
+        received_at: new Date().toISOString(),
+        unread: false,
+        starred: false,
+        priority: "med",
+      });
+    } catch {}
+  },
+
+  async replyToThread(threadId: string, body: string, cc?: string[]): Promise<void> {
     const supabase = await createClient();
     const { agencyId, displayName } = await getAuthContext(supabase);
 
     const thread = await CommunicationRepository.findThread(supabase, threadId);
     if (!thread) throw new CommunicationError("Thread not found");
 
-    const integ = await CommunicationRepository.findSmtpIntegration(serviceClient, agencyId);
+    const integ = await CommunicationRepository.findSmtpIntegration(serviceClient, agencyId, thread.integration_id);
     if (!integ?.smtp_host || !integ.smtp_port)
       throw new CommunicationError("Kein Postfach mit SMTP konfiguriert.");
     if (!integ.imap_password)
@@ -45,6 +141,7 @@ export const CommunicationService = {
       ? thread.subject
       : `Re: ${thread.subject}`;
     const inReplyTo = thread.gmail_thread_id?.startsWith("<") ? thread.gmail_thread_id : null;
+    const ccList = cc?.filter(Boolean) ?? [];
 
     try {
       await client.connect();
@@ -52,6 +149,7 @@ export const CommunicationService = {
       await client.send({
         from: { name: integ.display_name ?? displayName ?? null, email: integ.email },
         to: [thread.sender_email],
+        cc: ccList.length ? ccList : undefined,
         subject,
         text: body,
         inReplyTo,
@@ -64,19 +162,24 @@ export const CommunicationService = {
 
     await CommunicationRepository.patchThread(supabase, threadId, { unread: false });
 
-    await CommunicationRepository.insertSentThread(serviceClient, {
-      agency_id: thread.agency_id,
-      integration_id: integ.id,
-      folder: "sent",
-      sender_email: integ.email,
-      sender_name: integ.display_name ?? displayName ?? null,
-      subject,
-      preview: body.slice(0, 240).replace(/\s+/g, " ").trim(),
-      body,
-      received_at: new Date().toISOString(),
-      unread: false,
-      starred: false,
-      priority: "med",
-    });
+    // best-effort — email is already delivered; a DB failure here must not cause the caller to retry and resend
+    try {
+      await CommunicationRepository.insertSentThread(serviceClient, {
+        agency_id: thread.agency_id,
+        integration_id: integ.id,
+        folder: "SENT",
+        sender_email: integ.email,
+        sender_name: integ.display_name ?? displayName ?? null,
+        recipient_email: thread.sender_email,
+        subject,
+        preview: body.slice(0, 240).replace(/\s+/g, " ").trim(),
+        body,
+        received_at: new Date().toISOString(),
+        unread: false,
+        starred: false,
+        priority: "med",
+        conversation_id: thread.conversation_id ?? null,
+      });
+    } catch {}
   },
 };

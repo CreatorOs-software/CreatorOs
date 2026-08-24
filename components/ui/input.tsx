@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 function Input({
   className,
   type,
-  style,
   ...props
 }: React.ComponentProps<"input">) {
   return (
@@ -12,14 +11,13 @@ function Input({
       type={type}
       data-slot="input"
       className={cn(
-        "h-9 w-full min-w-0 rounded-md border-0 px-4 py-2 text-sm outline-none transition-colors",
+        "h-9 w-full min-w-0 rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition-colors",
         "placeholder:text-muted-foreground",
         "focus-visible:ring-2 focus-visible:ring-ring/40",
         "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
         "aria-invalid:ring-2 aria-invalid:ring-destructive/40",
         className,
       )}
-      style={{ backgroundColor: "var(--input)", ...style }}
       {...props}
     />
   );

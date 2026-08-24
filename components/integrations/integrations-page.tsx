@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { Creator } from "@/domains/creators";
 
 type Provider = "gmail" | "outlook" | "imap";
 
@@ -25,13 +26,6 @@ type Integration = {
   status: string;
   last_sync_at: string | null;
   creator_id: string | null;
-};
-
-type Creator = {
-  id: string;
-  full_name: string;
-  initials: string;
-  color: string;
 };
 
 const PROVIDERS: {
@@ -155,7 +149,7 @@ export function IntegrationsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ creator_id: creatorId }),
     });
-    queryClient.setQueryData<{ integrations: Integration[] }>(["integrations"], (prev) => {
+    queryClient.setQueryData<{ integrations: Integration[] }>(QueryKeys.integrations.list(), (prev) => {
       if (!prev) return prev;
       return {
         integrations: prev.integrations.map((i) =>
@@ -344,8 +338,7 @@ export function IntegrationsPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     {assignedCreator && (
                       <span
-                        className="w-6 h-6 rounded-lg inline-flex items-center justify-center text-[10px] font-bold text-white"
-                        style={{ background: assignedCreator.color }}
+                        className="w-6 h-6 rounded-lg bg-neutral-800 inline-flex items-center justify-center text-[10px] font-bold text-white"
                         title={assignedCreator.full_name}
                       >
                         {assignedCreator.initials}

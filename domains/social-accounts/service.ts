@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { SocialAccountRepository } from "./repository";
 import { getAdapter, isSupported } from "@/lib/platforms/registry";
 import type { Platform } from "@/lib/platforms/types";
-import type { CreatorAccount, IntegrationInvite } from "./types";
+import type { CreatorAccount, IntegrationInvite, MetricsCurrent, MetricsDaily } from "./types";
 
 export class SocialAccountService {
   private repo: SocialAccountRepository;
@@ -127,6 +127,36 @@ export class SocialAccountService {
 
   async getAccountsForCreator(creatorId: string): Promise<CreatorAccount[]> {
     return this.repo.findByCreator(creatorId);
+  }
+
+  async getMetricsForCreator(
+    creatorId: string,
+    fromDate: string,
+    toDate: string,
+  ): Promise<{
+    accounts: CreatorAccount[];
+    metrics: Record<string, { current: MetricsCurrent | null; daily: MetricsDaily[] }>;
+  }> {
+    const [accounts, allCurrent] = await Promise.all([
+      this.repo.findByCreator(creatorId),
+      this.repo.findCurrentMetrics(creatorId),
+    ]);
+
+    const currentByAccount = new Map(allCurrent.map((m) => [m.creator_account_id, m]));
+
+    const dailyResults = await Promise.all(
+      accounts.map(async (account) => ({
+        accountId: account.id,
+        daily: await this.repo.findDailyMetrics(account.id, fromDate, toDate),
+      })),
+    );
+
+    const metrics: Record<string, { current: MetricsCurrent | null; daily: MetricsDaily[] }> = {};
+    for (const { accountId, daily } of dailyResults) {
+      metrics[accountId] = { current: currentByAccount.get(accountId) ?? null, daily };
+    }
+
+    return { accounts, metrics };
   }
 
   async disconnectAccount(accountId: string): Promise<void> {

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { getAuthContext, toErrorResponse } from "@/lib/auth-context";
+import { toErrorResponse } from "@/lib/auth-context";
+import { BrandService } from "@/domains/brands";
 
 const patchSchema = z.object({
   name: z.string().min(1).optional(),
@@ -15,22 +16,12 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { supabase, agencyId } = await getAuthContext();
-
     const body = await req.json();
     const parsed = patchSchema.safeParse(body);
     if (!parsed.success)
       return Response.json({ error: "Ungültige Daten" }, { status: 400 });
 
-    const { data: contact, error } = await supabase
-      .from("brand_contacts")
-      .update(parsed.data)
-      .eq("id", id)
-      .eq("agency_id", agencyId)
-      .select("*")
-      .single();
-
-    if (error) throw error;
+    const contact = await BrandService.updateContact(id, parsed.data);
     return Response.json({ contact });
   } catch (e) {
     return toErrorResponse(e);
@@ -43,15 +34,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const { supabase, agencyId } = await getAuthContext();
-
-    const { error } = await supabase
-      .from("brand_contacts")
-      .delete()
-      .eq("id", id)
-      .eq("agency_id", agencyId);
-
-    if (error) throw error;
+    await BrandService.deleteContact(id);
     return Response.json({ ok: true });
   } catch (e) {
     return toErrorResponse(e);

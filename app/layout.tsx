@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
+import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/components/context/auth-provider";
 import { QueryProvider } from "@/components/context/query-provider";
@@ -51,6 +52,7 @@ export default function RootLayout({
             <TooltipProvider>{children}</TooltipProvider>
           </AuthProvider>
         </QueryProvider>
+        <Toaster position="bottom-right" richColors />
         {/*process.env.NODE_ENV === "production" && <Analytics />*/}
       </body>
     </html>

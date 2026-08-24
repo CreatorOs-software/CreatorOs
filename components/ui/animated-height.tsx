@@ -21,7 +21,7 @@ export function AnimatedHeight({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{ height: height !== undefined ? `${height}px` : undefined }}
-      className="overflow-hidden transition-[height] duration-300 ease-in-out"
+      className="overflow-hidden transition-[height] duration-300 ease-in-out "
     >
       <div ref={contentRef}>{children}</div>
     </div>

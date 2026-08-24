@@ -20,7 +20,6 @@ export type Creator = {
   monthly_revenue: number;
   status: "active" | "on-break" | "inactive";
   platforms: string[];
-  color: string;
   initials: string;
   rates: CreatorRate[];
   dream_brands: string[];

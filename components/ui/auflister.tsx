@@ -158,7 +158,7 @@ export function Auflister<T>({
 
   return (
     <AnimatedHeight>
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 ">
         {/* ── Filter bar ──────────────────────────────────────────────── */}
         {hasFilterBar && (
           <div className="flex items-center gap-2">

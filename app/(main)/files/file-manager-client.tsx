@@ -145,7 +145,7 @@ function PinnedCard({
         className="relative h-36 flex items-center justify-center"
         style={{ background: `linear-gradient(135deg, ${grad.from} 0%, ${grad.to} 100%)` }}
       >
-        <div className="absolute top-3 left-3 w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center shadow-sm">
+        <div className="absolute top-3 left-3 w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center shadow-sm">
           <Star className="w-3.5 h-3.5 text-white fill-white" />
         </div>
         <button
@@ -549,7 +549,7 @@ export function FileManagerClient({ initialFiles }: { initialFiles: FMFile[] }) 
         <div ref={uploadMenuRef} className="relative">
           <button
             onClick={() => setUploadMenuOpen((v) => !v)}
-            className="flex items-center gap-2 h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors shadow-sm"
+            className="flex items-center gap-2 h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium transition-colors shadow-sm"
           >
             <Upload className="w-4 h-4" />
             Upload

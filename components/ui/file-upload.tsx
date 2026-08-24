@@ -306,9 +306,7 @@ const isRealFile = (f: unknown): f is File =>
 
 const getName = (e: UploadEntry) => e.file.name
 const getType = (e: UploadEntry) => (isRealFile(e.file) ? e.file.type : e.file.type || "")
-const getSize = (e: UploadEntry) => (isRealFile(e.file) ? e.file.size : e.file.size ?? 0)
 const getExt = (name: string) => { const d = name.lastIndexOf("."); return d > -1 ? name.slice(d + 1).toLowerCase() : "" }
-const getPreviewUrl = (e: UploadEntry) => e.preview || (e as unknown as { url?: string }).url || ""
 const niceSubtype = (mime: string) => {
   if (!mime) return "UNBEKANNT"
   const p = mime.split("/")
@@ -423,13 +421,21 @@ function ImageThumb({ file, onRemove }: { file: File; onRemove: () => void }) {
 }
 
 // ---------- Document Entry (API shape) ----------
-type DocEntry = {
+export type DocEntry = {
   id: string
   name: string
   size: number
   type: string
   url: string
   path: string
+}
+
+export type DocumentUploadProps = {
+  documents: DocEntry[]
+  onUpload: (file: File) => Promise<DocEntry>
+  onDelete: (doc: DocEntry) => Promise<void>
+  maxFiles?: number
+  maxSize?: number
 }
 
 const docToUploadEntry = (d: DocEntry): UploadEntry => ({
@@ -439,13 +445,16 @@ const docToUploadEntry = (d: DocEntry): UploadEntry => ({
 })
 
 // ---------- Main Document Upload Component ----------
-export function DocumentUpload({ creatorId }: { creatorId: string }) {
-  const maxSize = 20 * 1024 * 1024
-  const maxFiles = 20
+export function DocumentUpload({
+  documents: initialDocuments,
+  onUpload,
+  onDelete,
+  maxFiles = 20,
+  maxSize = 20 * 1024 * 1024,
+}: DocumentUploadProps) {
 
   // -- Server state --
-  const [documents, setDocuments] = React.useState<DocEntry[]>([])
-  const [loading, setLoading] = React.useState(true)
+  const [documents, setDocuments] = React.useState<DocEntry[]>(initialDocuments)
   const [uploading, setUploading] = React.useState<Set<string>>(new Set())
   const [deleting, setDeleting] = React.useState<Set<string>>(new Set())
   const [apiError, setApiError] = React.useState<string | null>(null)
@@ -457,14 +466,6 @@ export function DocumentUpload({ creatorId }: { creatorId: string }) {
   const [sortDir, setSortDir] = React.useState<"asc" | "desc">("asc")
   const [selected, setSelected] = React.useState<Set<string>>(new Set())
   const [copied, setCopied] = React.useState<string | null>(null)
-
-  // Load documents on mount
-  React.useEffect(() => {
-    fetch(`/api/creators/${creatorId}/documents`)
-      .then((r) => r.json())
-      .then((data) => { setDocuments(data.documents ?? []); setLoading(false) })
-      .catch(() => { setApiError("Fehler beim Laden der Dokumente"); setLoading(false) })
-  }, [creatorId])
 
   React.useEffect(() => {
     if (!copied) return
@@ -481,15 +482,8 @@ export function DocumentUpload({ creatorId }: { creatorId: string }) {
         const file = fw.file
         setUploading((prev) => new Set(prev).add(file.name))
         try {
-          const formData = new FormData()
-          formData.append("file", file)
-          const res = await fetch(`/api/creators/${creatorId}/documents`, {
-            method: "POST",
-            body: formData,
-          })
-          const data = await res.json()
-          if (!res.ok) throw new Error(data.error ?? "Upload fehlgeschlagen")
-          setDocuments((prev) => [data.document, ...prev])
+          const doc = await onUpload(file)
+          setDocuments((prev) => [doc, ...prev])
         } catch (e) {
           setApiError(e instanceof Error ? e.message : "Fehler beim Hochladen")
         } finally {
@@ -497,7 +491,7 @@ export function DocumentUpload({ creatorId }: { creatorId: string }) {
         }
       }
     },
-    [creatorId]
+    [onUpload]
   )
 
   // Delete a single document via API
@@ -506,15 +500,7 @@ export function DocumentUpload({ creatorId }: { creatorId: string }) {
       setDeleting((prev) => new Set(prev).add(doc.id))
       setApiError(null)
       try {
-        const res = await fetch(`/api/creators/${creatorId}/documents`, {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ path: doc.path }),
-        })
-        if (!res.ok) {
-          const d = await res.json()
-          throw new Error(d.error ?? "Fehler beim Löschen")
-        }
+        await onDelete(doc)
         setDocuments((prev) => prev.filter((d) => d.id !== doc.id))
         setSelected((prev) => { const n = new Set(prev); n.delete(doc.id); return n })
       } catch (e) {
@@ -523,7 +509,7 @@ export function DocumentUpload({ creatorId }: { creatorId: string }) {
         setDeleting((prev) => { const n = new Set(prev); n.delete(doc.id); return n })
       }
     },
-    [creatorId]
+    [onDelete]
   )
 
   // DnD/input hook — only used for drag state + validation + triggering uploadFiles
@@ -687,15 +673,8 @@ export function DocumentUpload({ creatorId }: { creatorId: string }) {
         </div>
       </div>
 
-      {/* Loading skeleton */}
-      {loading && (
-        <div className="flex items-center justify-center py-8">
-          <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
-        </div>
-      )}
-
       {/* File list */}
-      {!loading && filtered.length > 0 && (
+      {filtered.length > 0 && (
         <>
           {/* Bulk action bar */}
           <div className="flex items-center justify-between gap-2">
@@ -863,7 +842,7 @@ export function DocumentUpload({ creatorId }: { creatorId: string }) {
       )}
 
       {/* Empty state */}
-      {!loading && filtered.length === 0 && (
+      {filtered.length === 0 && (
         <p className="text-muted-foreground text-center text-sm py-6">
           {documents.length === 0
             ? "Noch keine Dokumente. Dateien hinzufügen oder hier ablegen."

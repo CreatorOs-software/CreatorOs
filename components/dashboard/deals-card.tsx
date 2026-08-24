@@ -1,9 +1,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { QueryKeys } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { BrandAvatar } from "@/components/creators/dashboard/shared";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,7 +65,7 @@ interface DealsCardProps {
 
 export function DealsCard({ creatorId, className }: DealsCardProps) {
   const { data, isPending } = useQuery<{ deals: Deal[] }>({
-    queryKey: ["creator-deals", creatorId],
+    queryKey: QueryKeys.creators.deals(creatorId),
     queryFn: () =>
       fetch(`/api/creators/${creatorId}/deals`).then((r) => r.json()),
     staleTime: 5 * 60_000,
@@ -72,7 +74,7 @@ export function DealsCard({ creatorId, className }: DealsCardProps) {
   const deals = data?.deals ?? [];
 
   return (
-    <Card className={cn("rounded-2xl p-5 gap-0 ring-0 flex flex-col", className)}>
+    <Card className={cn("p-5 gap-0 ring-0 flex flex-col", className)}>
       <CardHeader className="p-0 mb-4 flex flex-row items-center justify-between">
         <span className="text-sm font-semibold">Deals</span>
         {deals.length > 0 && (
@@ -108,13 +110,7 @@ export function DealsCard({ creatorId, className }: DealsCardProps) {
 
                   {/* Brand avatar */}
                   {deal.brands ? (
-                    <span
-                      className="w-6 h-6 rounded-md shrink-0 inline-flex items-center justify-center text-[9px] font-bold text-white"
-                      style={{ background: deal.brands.color }}
-                      title={deal.brands.company_name}
-                    >
-                      {deal.brands.short_code.slice(0, 2).toUpperCase()}
-                    </span>
+                    <BrandAvatar brand={deal.brands} />
                   ) : (
                     <span className="w-6 h-6 rounded-md shrink-0 bg-muted" />
                   )}

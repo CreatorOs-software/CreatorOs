@@ -159,8 +159,9 @@ async function pullGmail(integration: IntegrationRow): Promise<{ pulled: number;
     const snippet: string = msg.snippet ?? body.slice(0, 240);
     const labelIds: string[] = msg.labelIds ?? [];
 
-    const { error } = await db.from("email_threads").insert({
+    const { data: inserted, error } = await db.from("email_threads").insert({
       agency_id: integration.agency_id,
+      integration_id: integration.id,
       gmail_thread_id: m.threadId,
       sender_email: email,
       sender_name: name,
@@ -172,9 +173,19 @@ async function pullGmail(integration: IntegrationRow): Promise<{ pulled: number;
       unread: labelIds.includes("UNREAD"),
       starred: labelIds.includes("STARRED"),
       priority: labelIds.includes("IMPORTANT") ? "high" : "med",
-    });
+    }).select("id").single();
     if (error) { console.error("insert failed", error); continue; }
     pulled++;
+
+    // Fire-and-forget: trigger AI labeling in background (best-effort)
+    void fetch(`${SUPABASE_URL}/functions/v1/execute-ai-job`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({ email_thread_id: inserted.id, agency_id: integration.agency_id }),
+    }).catch((e) => console.error("execute-ai-job trigger failed", e));
   }
 
   await db.from("email_integrations").update({

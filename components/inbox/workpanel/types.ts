@@ -1,0 +1,52 @@
+export type ExtractedDeliverable = {
+  count: number;
+  content_type: string;
+  platform: string;
+  draft_deadline: string;
+  freigabe_deadline: string;
+  live_date: string;
+};
+
+export type ExtractedEmailData = {
+  brand: string;
+  contact: string;
+  creatorId: string | null;
+  creatorConfidence: number;
+  product: string;
+  budget: number | null;
+  period: string;
+  campaign_start: string;
+  campaign_end: string;
+  deliverables: ExtractedDeliverable[];
+  uncertainFields: string[];
+};
+
+export type LocalVorgang = {
+  brand: string;
+  creatorId: string | null;
+  title: string;
+  status: "anfrage" | "verh" | "aktiv" | "fertig";
+  amZug: "wir" | "brand" | "creator";
+  honorar: number | null;
+  stand: string;
+  history: Array<{
+    who: "wir" | "brand";
+    amount: number | null;
+    note: string;
+    date: string;
+  }>;
+};
+
+export type NewBrandData = {
+  brand_name: string;
+  industry: string | null;
+  extractedData: ExtractedEmailData;
+};
+
+export type WorkPanelState =
+  | { phase: "idle" }
+  | { phase: "scanning" }
+  | { phase: "not-coop" }
+  | { phase: "new-brand"; newBrand: NewBrandData }
+  | { phase: "extracted"; data: ExtractedEmailData }
+  | { phase: "vorgang"; vorgang: LocalVorgang };

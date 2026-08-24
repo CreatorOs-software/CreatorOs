@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { getAuthContext, toErrorResponse } from "@/lib/auth-context";
+import { toErrorResponse } from "@/lib/auth-context";
+import { DealService } from "@/domains/deals";
 import { dealFormSchema } from "@/app/(main)/creators/deals/create-deal/[id]/deal-form.schema";
 
 export async function GET(
@@ -8,26 +9,8 @@ export async function GET(
 ) {
   try {
     const { id: creatorId } = await params;
-    const { supabase } = await getAuthContext();
-
-    const { data: deals, error } = await supabase
-      .from("deals")
-      .select(`
-        id, title, budget, status, priority, platform, deadline,
-        brand_id, creator_id,
-        campaign_type, deliverables, description, product, contact_person,
-        usage_rights, exclusivity, payment_items, blocker, created_at,
-        campaign_start, campaign_end, contract_status, contract_date, contract_url,
-        rights, approval_info, delivery_info, guidelines, tracking_assets,
-        exclusivity_info, embargo, whitelisting,
-        brands(company_name, color, short_code, contact_name, contact_email)
-      `)
-      .eq("creator_id", creatorId)
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-
-    return Response.json({ deals: deals ?? [] });
+    const deals = await DealService.getDealsByCreator(creatorId);
+    return Response.json({ deals });
   } catch (e) {
     return toErrorResponse(e);
   }
@@ -39,8 +22,6 @@ export async function POST(
 ) {
   try {
     const { id: creatorId } = await params;
-    const { supabase, agencyId } = await getAuthContext();
-
     const body = await req.json();
     const parsed = dealFormSchema.safeParse(body);
     if (!parsed.success) {
@@ -56,38 +37,30 @@ export async function POST(
       contract_status, contract_date, contract_url,
     } = parsed.data;
 
-    const { data: deal, error } = await supabase
-      .from("deals")
-      .insert({
-        agency_id: agencyId,
-        creator_id: creator_id || creatorId,
-        brand_id: brand_id || null,
-        title,
-        product: product || null,
-        contact_person: contact_person || null,
-        campaign_start: campaign_start || null,
-        campaign_end: campaign_end || null,
-        assignee_id: assignee_id || null,
-        deliverables,
-        description: notes || null,
-        guidelines: guidelines ?? null,
-        tracking_assets: tracking_assets ?? null,
-        rights: rights ?? null,
-        exclusivity_info: exclusivity_info ?? null,
-        embargo: embargo ?? null,
-        whitelisting: whitelisting ?? null,
-        contract_status: contract_status ?? "offen",
-        contract_date: contract_date || null,
-        contract_url: contract_url || null,
-        budget: fee,
-        payment_items,
-        status: "confirmed",
-        source: "manual",
-      })
-      .select("id")
-      .single();
-
-    if (error) throw error;
+    const deal = await DealService.createDeal(creator_id || creatorId, {
+      brand_id: brand_id || null,
+      title,
+      product: product || null,
+      contact_person: contact_person || null,
+      campaign_start: campaign_start || null,
+      campaign_end: campaign_end || null,
+      assignee_id: assignee_id || null,
+      deliverables,
+      description: notes || null,
+      guidelines: guidelines ?? null,
+      tracking_assets: tracking_assets ?? null,
+      rights: rights ?? null,
+      exclusivity_info: exclusivity_info ?? null,
+      embargo: embargo ?? null,
+      whitelisting: whitelisting ?? null,
+      contract_status: (contract_status ?? "offen") as "offen" | "versendet" | "unterschrieben",
+      contract_date: contract_date || null,
+      contract_url: contract_url || null,
+      budget: fee,
+      payment_items,
+      status: "confirmed",
+      source: "manual",
+    });
 
     return Response.json({ deal }, { status: 201 });
   } catch (e) {

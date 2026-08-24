@@ -86,7 +86,7 @@ export function MiniBarChart({
   const total = values.reduce((s, v) => s + v, 0);
 
   return (
-    <Card className={cn("rounded-2xl p-5 gap-0", className)}>
+    <Card className={cn("p-5 gap-0", className)}>
       <CardHeader className="flex flex-row items-center justify-between p-0 mb-4 gap-0">
         <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
         <div className="flex items-center gap-1">
@@ -167,7 +167,7 @@ export function SubscriberChart({
   const range = max - min || 1;
 
   return (
-    <Card className={cn("rounded-2xl p-5 gap-0", className)}>
+    <Card className={cn("p-5 gap-0", className)}>
       <CardHeader className="flex flex-row items-center justify-between p-0 mb-4 gap-0">
         <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
         <CopyButton value={fmt(values[values.length - 1] ?? 0)} />
@@ -256,7 +256,7 @@ function YouTubeContent({
       {hasDaily ? (
         <MiniBarChart title="Views" data={daily} valueKey="views" className="col-span-12 lg:col-span-4" />
       ) : (
-        <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 flex items-center justify-center text-sm text-muted-foreground">
+        <Card className="col-span-12 lg:col-span-4 p-5 flex items-center justify-center text-sm text-muted-foreground">
           Noch keine Verlaufsdaten
         </Card>
       )}
@@ -264,12 +264,12 @@ function YouTubeContent({
       {hasDaily ? (
         <SubscriberChart data={daily} className="col-span-12 lg:col-span-4" />
       ) : (
-        <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 flex items-center justify-center text-sm text-muted-foreground">
+        <Card className="col-span-12 lg:col-span-4 p-5 flex items-center justify-center text-sm text-muted-foreground">
           Noch keine Verlaufsdaten
         </Card>
       )}
 
-      <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 gap-6 flex flex-col justify-between">
+      <Card className="col-span-12 lg:col-span-4 p-5 gap-6 flex flex-col justify-between">
         <StatBlock
           label="Avg. View-Zeit"
           value={fmtDuration(ytRaw.avgViewDurationSecs ?? 0)}
@@ -294,7 +294,7 @@ function YouTubeContent({
         <MiniBarChart title="Kommentare" data={daily} valueKey="comments" className="col-span-12 lg:col-span-4" />
       )}
 
-      <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 gap-6 flex flex-col justify-between">
+      <Card className="col-span-12 lg:col-span-4 p-5 gap-6 flex flex-col justify-between">
         <StatBlock label="Views (30d)" value={fmt(current.views_30d)} />
         <div className="h-px bg-border-light" />
         <StatBlock
@@ -337,7 +337,7 @@ function InstagramContent({
           className="col-span-12 lg:col-span-4"
         />
       ) : (
-        <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 gap-6 flex flex-col justify-between">
+        <Card className="col-span-12 lg:col-span-4 p-5 gap-6 flex flex-col justify-between">
           <StatBlock
             label="Follower"
             value={fmt(current.audience)}
@@ -353,24 +353,24 @@ function InstagramContent({
       {hasDaily ? (
         <MiniBarChart title="Views" data={daily} valueKey="views" className="col-span-12 lg:col-span-4" />
       ) : (
-        <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 gap-6 flex flex-col justify-between">
+        <Card className="col-span-12 lg:col-span-4 p-5 gap-6 flex flex-col justify-between">
           <StatBlock label="Views (30d)" value={fmt(current.views_30d)} />
         </Card>
       )}
 
-      <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 gap-6 flex flex-col justify-between">
+      <Card className="col-span-12 lg:col-span-4 p-5 gap-6 flex flex-col justify-between">
         <StatBlock label="Reach (30d)" value={fmt(raw.reach30d ?? 0)} />
         <div className="h-px bg-border-light" />
         <StatBlock label="Profilbesuche (30d)" value={fmt(raw.profileViews30d ?? 0)} />
       </Card>
 
-      <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 gap-6 flex flex-col justify-between">
+      <Card className="col-span-12 lg:col-span-4 p-5 gap-6 flex flex-col justify-between">
         <StatBlock label="Story Views (live)" value={fmt(raw.storyViews ?? 0)} sub="Aktuell laufende Stories" />
         <div className="h-px bg-border-light" />
         <StatBlock label="Reel Reichweite (30d)" value={fmt(raw.reelReach30d ?? 0)} />
       </Card>
 
-      <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 gap-6 flex flex-col justify-between">
+      <Card className="col-span-12 lg:col-span-4 p-5 gap-6 flex flex-col justify-between">
         <StatBlock
           label="Linkklicks (7d)"
           value={fmt(raw.websiteClicks7d ?? 0)}
@@ -384,7 +384,7 @@ function InstagramContent({
         />
       </Card>
 
-      <Card className="col-span-12 lg:col-span-4 rounded-2xl p-5 gap-6 flex flex-col justify-between">
+      <Card className="col-span-12 lg:col-span-4 p-5 gap-6 flex flex-col justify-between">
         <StatBlock
           label="Follower-Wachstum (7d)"
           value={`${current.audience_growth_7d >= 0 ? "+" : ""}${fmt(current.audience_growth_7d)}`}

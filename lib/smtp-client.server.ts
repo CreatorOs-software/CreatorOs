@@ -16,6 +16,8 @@ export type SmtpOptions = {
 export type SmtpMessage = {
   from: { name?: string | null; email: string };
   to: string[];
+  cc?: string[];
+  bcc?: string[];
   subject: string;
   text: string;
   inReplyTo?: string | null;
@@ -35,18 +37,155 @@ export class SmtpClient {
   constructor(private opts: SmtpOptions) {}
 
   async connect(): Promise<void> {
-    if (!this.opts.secure) {
-      throw new SmtpError("Only implicit TLS (port 465-style) is supported. Set SMTP secure=true.");
+    // Port 587 is always STARTTLS; port 465 is always implicit TLS.
+    // Respect the stored secure flag otherwise, but override for well-known ports
+    // so existing integrations saved with the wrong setting still work.
+    const useImplicitTLS = this.opts.port === 465 || (this.opts.secure && this.opts.port !== 587);
+    if (useImplicitTLS) {
+      // Implicit TLS (port 465)
+      const connect = await getConnect();
+      this.socket = connect(
+        { hostname: this.opts.host, port: this.opts.port },
+        { secureTransport: "on" },
+      );
+      this.writer = this.socket.writable.getWriter();
+      this.reader = this.socket.readable.getReader();
+      const greeting = await this.readResponse();
+      if (!greeting.code.startsWith("2")) throw new SmtpError(`SMTP greeting failed: ${greeting.text}`);
+    } else {
+      // STARTTLS (port 587 or explicit secure: false)
+      await this.connectStartTLS();
     }
-    const connect = await getConnect();
-    this.socket = connect(
-      { hostname: this.opts.host, port: this.opts.port },
-      { secureTransport: "on" },
-    );
+  }
+
+  // STARTTLS: plain connect → greeting → EHLO → STARTTLS → TLS upgrade
+  private async connectStartTLS(): Promise<void> {
+    // Try Cloudflare Workers socket (supports secureTransport "starttls")
+    const cfModule = `cloudflare:${"sockets"}`;
+    try {
+      const mod = await import(/* @vite-ignore */ cfModule);
+      const cfConnect = (mod as { connect?: (opts: { hostname: string; port: number }, init?: { secureTransport?: string }) => Socket & { startTls(): Socket } }).connect;
+      if (typeof cfConnect === "function") {
+        const cfSocket = cfConnect(
+          { hostname: this.opts.host, port: this.opts.port },
+          { secureTransport: "starttls" },
+        );
+        this.socket = cfSocket;
+        this.writer = this.socket.writable.getWriter();
+        this.reader = this.socket.readable.getReader();
+
+        const greeting = await this.readResponse();
+        if (!greeting.code.startsWith("2")) throw new SmtpError(`SMTP greeting failed: ${greeting.text}`);
+
+        const ehlo = await this.cmd(`EHLO smtp.client.local`);
+        if (!ehlo.code.startsWith("2")) throw new SmtpError(`EHLO failed: ${ehlo.text}`);
+
+        const st = await this.cmd(`STARTTLS`);
+        if (!st.code.startsWith("2")) throw new SmtpError(`STARTTLS rejected: ${st.text}`);
+
+        this.reader.releaseLock();
+        this.writer.releaseLock();
+        const tlsSocket = cfSocket.startTls();
+        this.socket = tlsSocket;
+        this.buf = "";
+        this.writer = this.socket.writable.getWriter();
+        this.reader = this.socket.readable.getReader();
+        return;
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!msg.includes("cloudflare:sockets")) throw e;
+    }
+
+    // Node.js STARTTLS implementation
+    const netMod  = await import(/* @vite-ignore */ `node:${"net"}`);
+    const tlsMod  = await import(/* @vite-ignore */ `node:${"tls"}`);
+    const streamMod = await import(/* @vite-ignore */ `node:${"stream"}`);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    type NodeDuplex = { destroyed?: boolean; once(e: string, fn: (...a: any[]) => void): unknown; end(cb?: () => void): unknown; destroy(e?: Error): unknown; on(e: string, fn: (...a: any[]) => void): unknown; off(e: string, fn: (...a: any[]) => void): unknown; write(d: string, cb?: (err: Error | null | undefined) => void): void };
+
+    const net = netMod as { connect(o: { host: string; port: number }): NodeDuplex };
+    const tls = tlsMod as { connect(o: { socket: NodeDuplex; servername: string }): NodeDuplex & { authorized?: boolean } };
+    const { Readable, Writable } = streamMod as { Readable: { toWeb(s: unknown): ReadableStream<Uint8Array> }; Writable: { toWeb(s: unknown): WritableStream<Uint8Array> } };
+
+    const netSocket = net.connect({ host: this.opts.host, port: this.opts.port });
+    await new Promise<void>((res, rej) => { netSocket.once("connect", res); netSocket.once("error", rej); });
+
+    // Line-buffered reader for the pre-TLS exchange
+    let plainBuf = "";
+    const onPlainData = (chunk: unknown) => { plainBuf += (chunk as Buffer).toString("utf-8"); };
+    netSocket.on("data", onPlainData);
+
+    const readPlainLine = (): Promise<string> => new Promise((res, rej) => {
+      const check = () => {
+        const idx = plainBuf.indexOf("\r\n");
+        if (idx < 0) return false;
+        const line = plainBuf.slice(0, idx);
+        plainBuf = plainBuf.slice(idx + 2);
+        res(line);
+        return true;
+      };
+      if (check()) return;
+      const poll = () => {
+        if (check()) return;
+        // Re-listen for next chunk
+        netSocket.once("data", poll);
+      };
+      netSocket.once("error", rej);
+      poll();
+    });
+
+    const readPlainResponse = async (): Promise<{ code: string; text: string }> => {
+      const lines: string[] = [];
+      let code = "";
+      for (;;) {
+        const line = await readPlainLine();
+        lines.push(line);
+        if (line.length < 4) throw new SmtpError(`Bad SMTP response: ${line}`);
+        code = line.slice(0, 3);
+        if (line[3] === " " || line[3] === undefined) break;
+      }
+      return { code, text: lines.join("\n") };
+    };
+
+    const writePlain = (s: string): Promise<void> => new Promise((res, rej) => { netSocket.write(s, (err) => err ? rej(err) : res()); });
+
+    // Greeting
+    const greeting = await readPlainResponse();
+    if (!greeting.code.startsWith("2")) throw new SmtpError(`SMTP greeting failed: ${greeting.text}`);
+
+    // EHLO
+    await writePlain(`EHLO smtp.client.local\r\n`);
+    const ehlo = await readPlainResponse();
+    if (!ehlo.code.startsWith("2")) throw new SmtpError(`EHLO failed: ${ehlo.text}`);
+
+    // STARTTLS
+    await writePlain(`STARTTLS\r\n`);
+    const st = await readPlainResponse();
+    if (!st.code.startsWith("2")) throw new SmtpError(`STARTTLS rejected: ${st.text}`);
+
+    // Upgrade to TLS — remove the plain data accumulator first to avoid a listener leak
+    netSocket.off("data", onPlainData);
+    const tlsSocket = tls.connect({ socket: netSocket, servername: this.opts.host });
+    await new Promise<void>((res, rej) => { tlsSocket.once("secureConnect", res); tlsSocket.once("error", rej); });
+
+    this.socket = {
+      readable: Readable.toWeb(tlsSocket),
+      writable: Writable.toWeb(tlsSocket),
+      close: () => new Promise<void>((res) => {
+        const cleanup = () => {
+          if (!netSocket.destroyed) { try { netSocket.destroy(); } catch {} }
+          res();
+        };
+        if (tlsSocket.destroyed) { cleanup(); return; }
+        tlsSocket.once("close", cleanup);
+        try { tlsSocket.end(); } catch { try { tlsSocket.destroy(); } catch {} cleanup(); }
+      }),
+    };
     this.writer = this.socket.writable.getWriter();
     this.reader = this.socket.readable.getReader();
-    const greeting = await this.readResponse();
-    if (!greeting.code.startsWith("2")) throw new SmtpError(`SMTP greeting failed: ${greeting.text}`);
+    // greeting already consumed; login() will re-send EHLO over TLS which is required by RFC
   }
 
   async login(): Promise<void> {
@@ -64,7 +203,7 @@ export class SmtpClient {
   async send(msg: SmtpMessage): Promise<void> {
     const mf = await this.cmd(`MAIL FROM:<${msg.from.email}>`);
     if (!mf.code.startsWith("2")) throw new SmtpError(`MAIL FROM rejected: ${mf.text}`);
-    for (const r of msg.to) {
+    for (const r of [...msg.to, ...(msg.cc ?? []), ...(msg.bcc ?? [])]) {
       const rcpt = await this.cmd(`RCPT TO:<${r}>`);
       if (!rcpt.code.startsWith("2")) throw new SmtpError(`RCPT TO rejected: ${rcpt.text}`);
     }
@@ -80,6 +219,7 @@ export class SmtpClient {
     const headers: string[] = [
       `From: ${fromHeader}`,
       `To: ${msg.to.join(", ")}`,
+      ...(msg.cc?.length ? [`Cc: ${msg.cc.join(", ")}`] : []),
       `Subject: ${encodeHeaderWord(msg.subject)}`,
       `Date: ${now}`,
       `Message-ID: ${messageId}`,

@@ -1,7 +1,7 @@
 import { CommunicationService } from "@/domains/communication";
 import { toErrorResponse } from "@/lib/auth-context";
 
-const ALLOWED_PATCH_KEYS = ["unread", "starred", "priority"] as const;
+const ALLOWED_PATCH_KEYS = ["unread", "starred", "priority", "folder"] as const;
 type PatchKey = (typeof ALLOWED_PATCH_KEYS)[number];
 
 export async function PATCH(
