@@ -4,6 +4,17 @@ export type EmailLabel = {
   color: string;
 };
 
+export type SystemLabel = "ANFRAGE" | "LAUFEND" | "PROMOTIONS" | "RECHNUNG" | "ANDERES";
+
+export type LabelStatus =
+  | "pending"
+  | "processing"
+  | "completed"
+  | "skipped"
+  | "failed"
+  | "manual"
+  | "low_confidence";
+
 export type EmailThread = {
   id: string;
   agency_id: string;
@@ -22,6 +33,12 @@ export type EmailThread = {
   starred: boolean;
   priority: "low" | "med" | "high";
   gmail_thread_id: string | null;
+  system_labels: SystemLabel[];
+  label_status: LabelStatus;
+  conversation_id: string | null;
+  message_id: string | null;
+  in_reply_to: string | null;
+  references_header: string | null;
 };
 
 export type ThreadPatch = {
@@ -44,6 +61,7 @@ export type InboxIntegration = {
   provider: string;
   status: string;
   creator_id: string | null;
+  auto_label: boolean;
 };
 
 export type InboxPageData = {

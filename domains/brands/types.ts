@@ -47,7 +47,6 @@ export type CreatorRef = {
   id: string;
   full_name: string;
   initials: string;
-  color: string;
 };
 
 export type DealRef = {

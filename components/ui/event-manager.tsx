@@ -50,7 +50,7 @@ import {
   FileText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { CreatorRef as Creator } from "@/domains/brands"
+import type { Creator } from "@/domains/creators"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1040,10 +1040,7 @@ function EventDialog({
                       {creators.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           <span className="flex items-center gap-2">
-                            <span
-                              className="inline-flex size-4 items-center justify-center rounded-full text-[9px] font-semibold text-white"
-                              style={{ backgroundColor: c.color }}
-                            >
+                            <span className="inline-flex size-4 items-center justify-center rounded-full bg-neutral-800 text-[9px] font-semibold text-white">
                               {c.initials}
                             </span>
                             {c.full_name}
@@ -1377,7 +1374,7 @@ export function EventManager() {
                 const c = creators.find((x) => x.id === filterCreator)
                 return c ? (
                   <span className="flex items-center gap-2">
-                    <span className="inline-flex size-4 items-center justify-center rounded-full text-[9px] font-semibold text-white" style={{ backgroundColor: c.color }}>
+                    <span className="inline-flex size-4 items-center justify-center rounded-full bg-neutral-800 text-[9px] font-semibold text-white">
                       {c.initials}
                     </span>
                     {c.full_name}
@@ -1391,7 +1388,7 @@ export function EventManager() {
             {creators.map((c) => (
               <SelectItem key={c.id} value={c.id}>
                 <span className="flex items-center gap-2">
-                  <span className="inline-flex size-4 items-center justify-center rounded-full text-[9px] font-semibold text-white" style={{ backgroundColor: c.color }}>
+                  <span className="inline-flex size-4 items-center justify-center rounded-full bg-neutral-800 text-[9px] font-semibold text-white">
                     {c.initials}
                   </span>
                   {c.full_name}

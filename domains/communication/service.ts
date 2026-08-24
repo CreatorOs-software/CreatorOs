@@ -178,6 +178,7 @@ export const CommunicationService = {
         unread: false,
         starred: false,
         priority: "med",
+        conversation_id: thread.conversation_id ?? null,
       });
     } catch {}
   },

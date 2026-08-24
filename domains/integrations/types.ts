@@ -37,6 +37,7 @@ export type IntegrationInsert = {
 export type IntegrationPatch = {
   creator_id?: string | null;
   display_name?: string | null;
+  auto_label?: boolean;
 };
 
 export type SyncResult = {

@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,42 +10,60 @@ import type { WorkPanelState } from "./types";
 import { IdlePanel } from "./components/idle-panel";
 import { ScanningPanel } from "./components/scanning-panel";
 import { NotCoopPanel } from "./components/not-coop-panel";
+import { NewBrandPanel } from "./components/new-brand-panel";
 import { ExtractedPanel } from "./components/extracted-panel";
 import { VorgangPanel } from "./components/vorgang-panel";
+import type { AnalyseResult } from "@/app/api/inbox/[id]/analyse/route";
 
-// ─── AI simulation ────────────────────────────────────────────────────────────
+async function runAnalyse(threadId: string): Promise<WorkPanelState> {
+  const res = await fetch(`/api/inbox/${threadId}/analyse`, { method: "POST" });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "(no body)");
+    throw new Error(`Analyse fehlgeschlagen (${res.status}): ${text}`);
+  }
+  const data = await res.json() as AnalyseResult;
 
-function buildExtracted(thread: Thread): WorkPanelState {
-  const domainRaw = thread.sender_email.split("@")[1] ?? "";
-  const domain = domainRaw.replace(/\.(de|com|net|org|io)$/, "");
-  const brand =
-    thread.sender_name ?? domain.charAt(0).toUpperCase() + domain.slice(1);
+  const aiDeliverables = (data.deliverables ?? []).map((d) => ({
+    count:             d.count,
+    content_type:      d.content_type,
+    platform:          d.platform,
+    draft_deadline:    "",
+    freigabe_deadline: "",
+    live_date:         "",
+  }));
 
-  const budgetMatch = thread.body?.match(/(\d[\d.]{2,})\s?€/);
-  const budget = budgetMatch
-    ? parseFloat(budgetMatch[1]!.replace(/\./g, ""))
-    : null;
-
-  return {
-    phase: "extracted",
-    data: {
-      brand,
-      contact: thread.sender_name ?? thread.sender_email,
-      creatorId: null,
-      creatorConfidence: 0,
-      format: "",
-      product: "",
-      budget,
-      period: "",
-      uncertainFields: [
-        "creatorId",
-        "format",
-        "product",
-        "period",
-        ...(budget ? [] : ["budget"]),
-      ],
-    },
+  const extractedData = {
+    brand:             data.brand_name ?? "",
+    contact:           data.contact ?? "",
+    creatorId:         data.creator_id,
+    creatorConfidence: data.creator_confidence,
+    product:           data.product ?? "",
+    budget:            data.budget,
+    period:            data.period ?? "",
+    campaign_start:    "",
+    campaign_end:      "",
+    deliverables:      aiDeliverables,
+    uncertainFields:   [
+      ...(!data.creator_id                ? ["creatorId"]    : []),
+      ...(!data.product                   ? ["product"]      : []),
+      ...(!data.budget                    ? ["budget"]       : []),
+      ...(!data.period                    ? ["period"]       : []),
+      ...(aiDeliverables.length === 0     ? ["deliverables"] : []),
+    ],
   };
+
+  if (data.brand_is_new) {
+    return {
+      phase: "new-brand",
+      newBrand: {
+        brand_name:    data.brand_name ?? "",
+        industry:      null,
+        extractedData,
+      },
+    };
+  }
+
+  return { phase: "extracted", data: extractedData };
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -75,10 +93,22 @@ export function WorkPanel({
   onToggle,
   onSetWorkState,
 }: Props) {
+  const [analyseError, setAnalyseError] = useState<string | null>(null);
+
   useEffect(() => {
     if (workState.phase !== "scanning" || !selected) return;
-    const t = setTimeout(() => onSetWorkState(buildExtracted(selected)), 1400);
-    return () => clearTimeout(t);
+    setAnalyseError(null);
+    let cancelled = false;
+    runAnalyse(selected.id).then((state) => {
+      if (!cancelled) onSetWorkState(state);
+    }).catch((err: unknown) => {
+      console.error("[WorkPanel] runAnalyse failed:", err);
+      if (!cancelled) {
+        setAnalyseError(err instanceof Error ? err.message : "Unbekannter Fehler");
+        onSetWorkState({ phase: "idle" });
+      }
+    });
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workState.phase, selected?.id]);
 
@@ -87,6 +117,7 @@ export function WorkPanel({
     : workState.phase === "idle" ? "neu"
     : workState.phase === "scanning" ? "liest…"
     : workState.phase === "not-coop" ? "ignoriert"
+    : workState.phase === "new-brand" ? "Neue Brand"
     : workState.phase === "extracted" ? "Entwurf"
     : "Vorgang";
 
@@ -138,6 +169,12 @@ export function WorkPanel({
               Keine Nachricht ausgewählt
             </p>
           )}
+          {selected && workState.phase === "idle" && analyseError && (
+            <div className="mb-3 rounded-lg bg-destructive/10 px-3 py-2.5 text-xs leading-relaxed text-destructive">
+              <p className="mb-1 font-semibold">Analyse fehlgeschlagen</p>
+              <p className="opacity-80">{analyseError}</p>
+            </div>
+          )}
           {selected && workState.phase === "idle" && (
             <IdlePanel
               onAnalyse={() => onSetWorkState({ phase: "scanning" })}
@@ -150,10 +187,12 @@ export function WorkPanel({
                     contact: "",
                     creatorId: null,
                     creatorConfidence: 0,
-                    format: "",
                     product: "",
                     budget: null,
                     period: "",
+                    campaign_start: "",
+                    campaign_end: "",
+                    deliverables: [],
                     uncertainFields: [],
                   },
                 })
@@ -162,6 +201,12 @@ export function WorkPanel({
           )}
           {selected && workState.phase === "scanning" && <ScanningPanel />}
           {selected && workState.phase === "not-coop" && <NotCoopPanel />}
+          {selected && workState.phase === "new-brand" && (
+            <NewBrandPanel
+              newBrand={workState.newBrand}
+              onSetWorkState={onSetWorkState}
+            />
+          )}
           {selected && workState.phase === "extracted" && (
             <ExtractedPanel
               data={workState.data}

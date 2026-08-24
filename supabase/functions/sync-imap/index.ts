@@ -515,7 +515,7 @@ async function syncFolder(
       }
     }
 
-    const { error } = await db.from("email_threads").insert({
+    const { data: inserted, error } = await db.from("email_threads").insert({
       agency_id: row.agency_id,
       integration_id: row.id,
       gmail_thread_id: messageId ?? `imap-${row.id}-${info.folder.toLowerCase()}-${msg.uid}`,
@@ -530,9 +530,23 @@ async function syncFolder(
       unread: info.folder === "INBOX", // only mark inbox messages as unread
       starred: false,
       priority: "med",
-    });
+    }).select("id").single();
     if (error) { console.error("[sync-imap] insert failed", error); continue; }
     pulled++;
+
+    // Trigger AI labeling for new INBOX messages.
+    // waitUntil ensures the fetch survives after sync-imap returns its response.
+    if (info.folder === "INBOX") {
+      const labelFetch = fetch(`${SUPABASE_URL}/functions/v1/execute-ai-job`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({ email_thread_id: inserted.id, agency_id: row.agency_id }),
+      }).catch((e) => console.error("[sync-imap] execute-ai-job trigger failed", e));
+      EdgeRuntime.waitUntil(labelFetch);
+    }
   }
 
   return { pulled, skipped, newHighestUid };

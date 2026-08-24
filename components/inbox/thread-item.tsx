@@ -1,9 +1,14 @@
 "use client";
 
-import { Archive, Star, Trash2 } from "lucide-react";
+import { Archive, Loader2, Star, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Thread } from "./types";
 import { formatDate, getDisplayName, getInitial, getSenderColor } from "./utils";
+import { SYSTEM_LABELS } from "./constants";
+
+const SYSTEM_LABEL_COLOR: Record<string, string> = Object.fromEntries(
+  SYSTEM_LABELS.map((s) => [s.name, s.color]),
+);
 
 type Props = {
   thread: Thread;
@@ -62,8 +67,27 @@ export function ThreadItem({ thread, isSelected, onClick, onStar, onArchive, onD
           </div>
           <p className="mt-1 line-clamp-1 text-xs font-medium opacity-80">{thread.subject}</p>
           <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">{thread.preview}</p>
-          {thread.labels.length > 0 && (
+          {thread.label_status === "processing" && (
+            <div className="mt-1.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>Wird gelabelt…</span>
+            </div>
+          )}
+          {thread.label_status !== "processing" && (thread.system_labels.length > 0 || thread.labels.length > 0) && (
             <div className="mt-1.5 flex flex-wrap gap-1">
+              {thread.system_labels.map((name) => {
+                const color = SYSTEM_LABEL_COLOR[name] ?? "#8C8C8C";
+                return (
+                  <span
+                    key={name}
+                    className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                    style={{ backgroundColor: color + "22", color }}
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+                    {name}
+                  </span>
+                );
+              })}
               {thread.labels.map((label) => (
                 <span
                   key={label.id}
@@ -76,6 +100,7 @@ export function ThreadItem({ thread, isSelected, onClick, onStar, onArchive, onD
               ))}
             </div>
           )}
+
         </div>
       </div>
 

@@ -9,9 +9,10 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const patch: { creator_id?: string | null; display_name?: string | null } = {};
+    const patch: { creator_id?: string | null; display_name?: string | null; auto_label?: boolean } = {};
     if ("creator_id" in body) patch.creator_id = body.creator_id ?? null;
     if ("display_name" in body) patch.display_name = body.display_name ?? null;
+    if ("auto_label" in body) patch.auto_label = Boolean(body.auto_label);
 
     await IntegrationService.patch(id, patch);
     return Response.json({ ok: true });

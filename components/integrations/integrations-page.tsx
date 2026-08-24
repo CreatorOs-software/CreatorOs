@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { CreatorRef as Creator } from "@/domains/brands";
+import type { Creator } from "@/domains/creators";
 
 type Provider = "gmail" | "outlook" | "imap";
 
@@ -338,8 +338,7 @@ export function IntegrationsPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     {assignedCreator && (
                       <span
-                        className="w-6 h-6 rounded-lg inline-flex items-center justify-center text-[10px] font-bold text-white"
-                        style={{ background: assignedCreator.color }}
+                        className="w-6 h-6 rounded-lg bg-neutral-800 inline-flex items-center justify-center text-[10px] font-bold text-white"
                         title={assignedCreator.full_name}
                       >
                         {assignedCreator.initials}

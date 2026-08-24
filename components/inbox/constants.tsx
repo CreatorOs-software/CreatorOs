@@ -1,11 +1,12 @@
-import { Bell, Eye, Mail, Star, Tag as TagIcon, User } from "lucide-react";
+import { Briefcase, Clock, FileText, HelpCircle, Mail, Star, Tag as TagIcon } from "lucide-react";
 import type { Category } from "./types";
 
-// System categories that can be assigned to threads as labels
 export const SYSTEM_LABELS = [
-  { name: "Personal",   color: "#39AE4A" },
-  { name: "Updates",    color: "#8B5CF6" },
-  { name: "Promotions", color: "#F43F5E" },
+  { name: "ANFRAGE",    color: "#006FFE" },
+  { name: "LAUFEND",    color: "#39AE4A" },
+  { name: "PROMOTIONS", color: "#F43F5E" },
+  { name: "RECHNUNG",   color: "#8B5CF6" },
+  { name: "ANDERES",    color: "#8C8C8C" },
 ] as const;
 
 export const CATEGORIES: Category[] = [
@@ -19,19 +20,19 @@ export const CATEGORIES: Category[] = [
     id: "all",
     label: "All Mail",
     icon: <Mail className="h-3.5 w-3.5 fill-current" />,
+    color: "bg-[#6D6D6D]",
+  },
+  {
+    id: "anfrage",
+    label: "Anfrage",
+    icon: <Briefcase className="h-3.5 w-3.5 fill-current" />,
     color: "bg-[#006FFE]",
   },
   {
-    id: "personal",
-    label: "Personal",
-    icon: <User className="h-3.5 w-3.5 fill-current" />,
+    id: "laufend",
+    label: "Laufend",
+    icon: <Clock className="h-3.5 w-3.5 fill-current" />,
     color: "bg-[#39AE4A]",
-  },
-  {
-    id: "updates",
-    label: "Updates",
-    icon: <Bell className="h-3.5 w-3.5 fill-current" />,
-    color: "bg-[#8B5CF6]",
   },
   {
     id: "promotions",
@@ -40,10 +41,16 @@ export const CATEGORIES: Category[] = [
     color: "bg-[#F43F5E]",
   },
   {
-    id: "unread",
-    label: "Unread",
-    icon: <Eye className="h-3.5 w-3.5 fill-current" />,
-    color: "bg-[#FF4800]",
+    id: "rechnung",
+    label: "Rechnung",
+    icon: <FileText className="h-3.5 w-3.5 fill-current" />,
+    color: "bg-[#8B5CF6]",
+  },
+  {
+    id: "anderes",
+    label: "Anderes",
+    icon: <HelpCircle className="h-3.5 w-3.5 fill-current" />,
+    color: "bg-[#8C8C8C]",
   },
 ];
 

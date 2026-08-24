@@ -15,6 +15,7 @@ import {
   Paperclip,
   Reply,
   ReplyAll,
+  Sparkles,
   Star,
   Tag,
   Trash2,
@@ -22,7 +23,9 @@ import {
   Zap,
 } from "lucide-react";
 import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { QueryKeys } from "@/lib/query-keys";
 import {
   Popover,
   PopoverContent,
@@ -303,6 +306,7 @@ type EmailDetailPanelProps = {
     color: string,
     assign: boolean,
   ) => void;
+  onLabelThread: (threadId: string) => Promise<void>;
 };
 
 export function EmailDetailPanel({
@@ -320,8 +324,27 @@ export function EmailDetailPanel({
   onAfterSend,
   onToggleLabel,
   onToggleCategoryLabel,
+  onLabelThread,
 }: EmailDetailPanelProps) {
   const [replyMode, setReplyMode] = useState<"reply" | "replyAll" | null>(null);
+  const [labeling, setLabeling] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: conversationData } = useQuery({
+    queryKey: QueryKeys.inbox.conversation(thread.id),
+    queryFn: async () => {
+      const res = await fetch(`/api/inbox/${thread.id}/conversation`);
+      if (!res.ok) return { messages: [] as Thread[] };
+      return res.json() as Promise<{ messages: Thread[] }>;
+    },
+    enabled: !!thread.conversation_id,
+  });
+  const conversationMessages = conversationData?.messages ?? [];
+
+  function handleAfterSend() {
+    void queryClient.invalidateQueries({ queryKey: QueryKeys.inbox.conversation(thread.id) });
+    onAfterSend();
+  }
 
   const displayName = getDisplayName(thread.sender_name, thread.sender_email);
   const initial = getInitial(thread.sender_name, thread.sender_email);
@@ -375,6 +398,18 @@ export function EmailDetailPanel({
                   : "text-muted-foreground",
               )}
             />
+          </button>
+          <button
+            onClick={() => {
+              if (labeling) return;
+              setLabeling(true);
+              void onLabelThread(thread.id).finally(() => setLabeling(false));
+            }}
+            disabled={labeling || thread.label_status === "processing"}
+            title="Diese E-Mail labeln"
+            className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted disabled:opacity-40"
+          >
+            <Sparkles className={cn("h-4 w-4 text-muted-foreground", labeling && "animate-pulse")} />
           </button>
           {/* Label picker */}
           <Popover>
@@ -555,7 +590,7 @@ export function EmailDetailPanel({
           </div>
 
           {/* Email body */}
-          <div className="mt-5 pb-6">
+          <div className="mt-5">
             {thread.body_html ? (
               <div
                 className="prose prose-sm max-w-none overflow-hidden text-foreground [&_a]:text-[#006FFE] [&_a]:underline [&_img]:max-w-full [&_table]:max-w-full [&_pre]:overflow-x-auto"
@@ -569,6 +604,49 @@ export function EmailDetailPanel({
               </pre>
             )}
           </div>
+
+          {/* Conversation history */}
+          {conversationMessages.length > 0 && (
+            <div className="pb-6">
+              {conversationMessages.map((msg) => {
+                const msgName = getDisplayName(msg.sender_name, msg.sender_email);
+                const msgInitial = getInitial(msg.sender_name, msg.sender_email);
+                const msgColor = getSenderColor(msg.sender_email);
+                return (
+                  <div key={msg.id} className="mt-6 border-t border-[#E7E7E7] pt-6">
+                    <div className="flex items-start gap-3">
+                      <div
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                        style={{ backgroundColor: msgColor }}
+                      >
+                        {msgInitial}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-4">
+                          <span className="text-sm font-semibold">{msgName}</span>
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {formatDate(msg.received_at)}
+                          </span>
+                        </div>
+                        <div className="mt-3">
+                          {msg.body_html ? (
+                            <div
+                              className="prose prose-sm max-w-none overflow-hidden text-foreground [&_a]:text-[#006FFE] [&_a]:underline [&_img]:max-w-full"
+                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(msg.body_html) }}
+                            />
+                          ) : (
+                            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">
+                              {msg.body ?? msg.preview ?? ""}
+                            </pre>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -620,7 +698,7 @@ export function EmailDetailPanel({
                 : undefined
             }
             onClose={() => setReplyMode(null)}
-            onAfterSend={onAfterSend}
+            onAfterSend={handleAfterSend}
           />
         )}
       </div>
@@ -653,12 +731,6 @@ export function EmptyState({ onCompose }: { onCompose?: () => void }) {
               className="rounded-lg border border-[#E7E7E7] bg-white px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted"
             >
               E-Mail senden
-            </button>
-            <button
-              disabled
-              className="cursor-not-allowed rounded-lg border border-[#E7E7E7] bg-white px-4 py-2 text-sm text-muted-foreground opacity-50"
-            >
-              Letzte 50 E-Mails labeln
             </button>
           </div>
         </div>
