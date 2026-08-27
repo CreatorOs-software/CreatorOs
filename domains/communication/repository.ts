@@ -70,14 +70,53 @@ export const CommunicationRepository = {
   async findThread(
     supabase: SupabaseClient,
     id: string,
-  ): Promise<Pick<EmailThread, "id" | "agency_id" | "sender_email" | "subject" | "gmail_thread_id" | "integration_id" | "conversation_id"> | null> {
+  ): Promise<Pick<EmailThread, "id" | "agency_id" | "sender_email" | "subject" | "gmail_thread_id" | "integration_id" | "conversation_id" | "message_id"> | null> {
     const { data } = await supabase
       .from("email_threads")
-      .select("id, agency_id, sender_email, sender_name, subject, gmail_thread_id, integration_id, conversation_id")
+      .select("id, agency_id, sender_email, sender_name, subject, gmail_thread_id, integration_id, conversation_id, message_id")
       .eq("id", id)
       .maybeSingle();
 
     return data ?? null;
+  },
+
+  /** Returns the thread's conversation_id, creating a conversation and linking the thread if none exists yet. */
+  async ensureThreadConversation(
+    supabase: SupabaseClient,
+    thread: {
+      id: string;
+      agency_id: string;
+      integration_id: string;
+      subject: string;
+      gmail_thread_id: string | null;
+      conversation_id: string | null;
+    },
+  ): Promise<string> {
+    if (thread.conversation_id) return thread.conversation_id;
+
+    const canonical = thread.subject.replace(/^(Re|Fwd|Fw|Aw|Antwort):\s*/gi, "").trim();
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from("conversations")
+      .insert({
+        agency_id: thread.agency_id,
+        integration_id: thread.integration_id,
+        provider_thread_id: thread.gmail_thread_id,
+        subject_canonical: canonical || thread.subject,
+        first_email_at: now,
+        last_email_at: now,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+
+    await supabase
+      .from("email_threads")
+      .update({ conversation_id: data.id })
+      .eq("id", thread.id);
+
+    return data.id as string;
   },
 
   async findConversationMessages(
@@ -207,6 +246,9 @@ export const CommunicationRepository = {
       starred: boolean;
       priority: string;
       conversation_id?: string | null;
+      message_id?: string | null;
+      in_reply_to?: string | null;
+      references_header?: string | null;
     },
   ): Promise<void> {
     const { error } = await supabase.from("email_threads").insert(row);

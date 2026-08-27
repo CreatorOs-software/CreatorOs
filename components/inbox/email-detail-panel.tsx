@@ -521,16 +521,6 @@ export function EmailDetailPanel({
             {thread.subject}
           </h2>
 
-          {/* Summary / preview box */}
-          {thread.preview && (
-            <div className="mt-4 rounded-lg border border-[#006FFE]/30 bg-[#006FFE]/5 p-3">
-              <p className="mb-1 flex items-center gap-1 text-xs font-semibold text-[#006FFE]">
-                Vorschau
-              </p>
-              <p className="text-sm text-muted-foreground">{thread.preview}</p>
-            </div>
-          )}
-
           {/* Sender header */}
           <div className="mt-6 flex items-start gap-3">
             <div

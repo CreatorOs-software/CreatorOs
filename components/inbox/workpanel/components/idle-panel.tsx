@@ -21,12 +21,12 @@ export function IdlePanel({ onAnalyse, onNotCoop, onManualCreate }: Props) {
         </p>
       </div>
 
-      <Button className="w-full" onClick={onManualCreate}>
-        Anfrage anlegen
+      <Button className={"w-full"} onClick={onAnalyse}>
+        Als Kooperationsanfrage lesen
       </Button>
 
-      <Button className={"w-full"} variant={"secondary"} onClick={onAnalyse}>
-        Als Kooperationsanfrage lesen
+      <Button className="w-full" variant={"secondary"} onClick={onManualCreate}>
+        Anfrage anlegen
       </Button>
 
       <div className="flex w-full flex-col gap-2">

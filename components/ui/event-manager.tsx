@@ -106,13 +106,13 @@ type FormState = {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const TYPE_CONFIG: Record<EventType, { label: string; bg: string; dot: string; pill: string }> = {
-  shoot:    { label: "Shoot",    bg: "bg-purple-500", dot: "bg-purple-500", pill: "bg-purple-100 text-purple-700 border-purple-200" },
-  travel:   { label: "Reise",   bg: "bg-blue-500",   dot: "bg-blue-500",   pill: "bg-blue-100 text-blue-700 border-blue-200" },
-  deadline: { label: "Deadline", bg: "bg-red-500",    dot: "bg-red-500",    pill: "bg-red-100 text-red-700 border-red-200" },
-  brand:    { label: "Brand",    bg: "bg-orange-500", dot: "bg-orange-500", pill: "bg-orange-100 text-orange-700 border-orange-200" },
-  internal: { label: "Intern",   bg: "bg-green-500",  dot: "bg-green-500",  pill: "bg-green-100 text-green-700 border-green-200" },
-  posting:  { label: "Posting",  bg: "bg-pink-500",   dot: "bg-pink-500",   pill: "bg-pink-100 text-pink-700 border-pink-200" },
+const TYPE_CONFIG: Record<EventType, { label: string; bg: string; border: string; dot: string; pill: string }> = {
+  shoot:    { label: "Shoot",    bg: "bg-purple-500", border: "border-l-purple-500", dot: "bg-purple-500", pill: "bg-purple-100 text-purple-700 border-purple-200" },
+  travel:   { label: "Reise",   bg: "bg-blue-500",   border: "border-l-blue-500",   dot: "bg-blue-500",   pill: "bg-blue-100 text-blue-700 border-blue-200" },
+  deadline: { label: "Deadline", bg: "bg-red-500",    border: "border-l-red-500",    dot: "bg-red-500",    pill: "bg-red-100 text-red-700 border-red-200" },
+  brand:    { label: "Brand",    bg: "bg-orange-500", border: "border-l-orange-500", dot: "bg-orange-500", pill: "bg-orange-100 text-orange-700 border-orange-200" },
+  internal: { label: "Intern",   bg: "bg-green-500",  border: "border-l-green-500",  dot: "bg-green-500",  pill: "bg-green-100 text-green-700 border-green-200" },
+  posting:  { label: "Posting",  bg: "bg-pink-500",   border: "border-l-pink-500",   dot: "bg-pink-500",   pill: "bg-pink-100 text-pink-700 border-pink-200" },
 }
 
 const ALL_TYPES = Object.keys(TYPE_CONFIG) as EventType[]
@@ -242,12 +242,12 @@ function EventChip({
       onDragEnd={onDragEnd}
       onClick={() => onClick(event)}
       className={cn(
-        "cursor-pointer truncate rounded px-1.5 text-sm font-medium text-white transition-all hover:brightness-110 hover:shadow-md",
-        cfg.bg,
+        "cursor-pointer truncate rounded border-l-2 bg-accent px-1.5 text-sm font-medium text-accent-foreground transition-all hover:bg-accent/70 hover:shadow-sm",
+        cfg.border,
         compact ? "py-0.5" : "py-1",
       )}
     >
-      {!compact && <span className="mr-1 opacity-80">{formatTime(event.startTime)}</span>}
+      {!compact && <span className="mr-1 text-muted-foreground">{formatTime(event.startTime)}</span>}
       {event.title}
     </div>
   )
@@ -364,8 +364,8 @@ function TimeGridEvent({
   return (
     <div
       className={cn(
-        "absolute inset-x-0.5 overflow-hidden rounded-md px-1.5 py-0.5 cursor-pointer text-white",
-        cfg.bg,
+        "absolute inset-x-0.5 overflow-hidden rounded-md border-l-2 bg-accent px-1.5 py-0.5 cursor-pointer text-accent-foreground",
+        cfg.border,
       )}
       style={{ top: 0, bottom: 0 }}
       onClick={() => onClick(event)}
@@ -374,7 +374,7 @@ function TimeGridEvent({
       onDragEnd={onDragEnd}
     >
       <p className="truncate text-xs font-semibold leading-tight">{event.title}</p>
-      <p className="text-[10px] leading-tight opacity-80">
+      <p className="text-[10px] leading-tight text-muted-foreground">
         {formatTime(event.startTime)}–{formatTime(event.endTime)}
       </p>
     </div>

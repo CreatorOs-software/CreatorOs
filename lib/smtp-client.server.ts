@@ -200,7 +200,7 @@ export class SmtpClient {
     if (!passResp.code.startsWith("2")) throw new SmtpError(`AUTH failed: ${passResp.text}`);
   }
 
-  async send(msg: SmtpMessage): Promise<void> {
+  async send(msg: SmtpMessage): Promise<{ messageId: string }> {
     const mf = await this.cmd(`MAIL FROM:<${msg.from.email}>`);
     if (!mf.code.startsWith("2")) throw new SmtpError(`MAIL FROM rejected: ${mf.text}`);
     for (const r of [...msg.to, ...(msg.cc ?? []), ...(msg.bcc ?? [])]) {
@@ -235,6 +235,7 @@ export class SmtpClient {
     await this.writeRaw(payload);
     const ok = await this.readResponse();
     if (!ok.code.startsWith("2")) throw new SmtpError(`Message rejected: ${ok.text}`);
+    return { messageId };
   }
 
   async quit(): Promise<void> {

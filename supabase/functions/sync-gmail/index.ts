@@ -153,6 +153,9 @@ async function pullGmail(integration: IntegrationRow): Promise<{ pulled: number;
     const subject = getHeader(headers, "Subject") ?? "(no subject)";
     const fromRaw = getHeader(headers, "From") ?? "";
     const dateRaw = getHeader(headers, "Date");
+    const rfcMessageId = getHeader(headers, "Message-ID");
+    const inReplyTo = getHeader(headers, "In-Reply-To");
+    const referencesHeader = getHeader(headers, "References");
     const { name, email } = parseFrom(fromRaw);
     const { text, html } = extractBody(msg.payload ?? {});
     const body = text || stripHtml(html);
@@ -163,6 +166,9 @@ async function pullGmail(integration: IntegrationRow): Promise<{ pulled: number;
       agency_id: integration.agency_id,
       integration_id: integration.id,
       gmail_thread_id: m.threadId,
+      message_id: rfcMessageId,
+      in_reply_to: inReplyTo,
+      references_header: referencesHeader,
       sender_email: email,
       sender_name: name,
       subject,
