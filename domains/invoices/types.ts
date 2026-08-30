@@ -6,5 +6,5 @@ export type Invoice = {
   issued_at: string | null;
   due_date: string | null;
   paid_at: string | null;
-  brands: { company_name: string; color: string; short_code: string } | null;
+  brands: { company_name: string; short_code: string } | null;
 };

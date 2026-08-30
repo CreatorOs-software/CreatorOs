@@ -80,7 +80,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                     className={cn(
                       "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors",
                       isActive
-                        ? "bg-accent text-accent-foreground"
+                        ? "bg-secondary text-foreground"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted",
                     )}
                     onClick={onClose}

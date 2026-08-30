@@ -121,7 +121,6 @@ export const BrandService = {
   async createBrand(data: {
     company_name: string;
     short_code: string;
-    color: string;
     industry?: string | null;
   }): Promise<Brand> {
     const supabase = await createClient();

@@ -13,7 +13,40 @@ import { NotCoopPanel } from "./components/not-coop-panel";
 import { NewBrandPanel } from "./components/new-brand-panel";
 import { ExtractedPanel } from "./components/extracted-panel";
 import { VorgangPanel } from "./components/vorgang-panel";
+import {
+  WhatsappForwardPopover,
+  type ForwardContext,
+} from "./components/whatsapp-forward-popover";
 import type { AnalyseResult } from "@/app/api/inbox/[id]/analyse/route";
+
+function forwardContextFromState(state: WorkPanelState): {
+  creatorId: string | null;
+  context: ForwardContext;
+} {
+  if (state.phase === "extracted") {
+    const d = state.data;
+    return {
+      creatorId: d.creatorId,
+      context: {
+        brand: d.brand,
+        contact: d.contact,
+        title: d.deliverables
+          .map((x) => `${x.count}x ${x.content_type}`)
+          .join(" + "),
+        budget: d.budget,
+        period: d.period,
+      },
+    };
+  }
+  if (state.phase === "vorgang") {
+    const v = state.vorgang;
+    return {
+      creatorId: v.creatorId,
+      context: { brand: v.brand, title: v.title, budget: v.honorar },
+    };
+  }
+  return { creatorId: null, context: {} };
+}
 
 async function runAnalyse(threadId: string): Promise<WorkPanelState> {
   const res = await fetch(`/api/inbox/${threadId}/analyse`, { method: "POST" });
@@ -177,6 +210,9 @@ export function WorkPanel({
           )}
           {selected && workState.phase === "idle" && (
             <IdlePanel
+              labels={selected.system_labels ?? []}
+              anfrageId={selected.anfrage_id}
+              dealId={selected.deal_id}
               onAnalyse={() => onSetWorkState({ phase: "scanning" })}
               onNotCoop={() => onSetWorkState({ phase: "not-coop" })}
               onManualCreate={() =>
@@ -204,6 +240,8 @@ export function WorkPanel({
           {selected && workState.phase === "new-brand" && (
             <NewBrandPanel
               newBrand={workState.newBrand}
+              senderEmail={selected.sender_email}
+              senderName={selected.sender_name}
               onSetWorkState={onSetWorkState}
             />
           )}
@@ -211,6 +249,7 @@ export function WorkPanel({
             <ExtractedPanel
               data={workState.data}
               creators={creators}
+              threadId={selected.id}
               onSetWorkState={onSetWorkState}
             />
           )}
@@ -218,9 +257,21 @@ export function WorkPanel({
             <VorgangPanel
               vorgang={workState.vorgang}
               creators={creators}
+              thread={selected}
               onSetWorkState={onSetWorkState}
             />
           )}
+        </div>
+      )}
+
+      {open && selected && (
+        <div className="shrink-0 border-t border-border px-4 py-3">
+          <WhatsappForwardPopover
+            key={selected.id}
+            thread={selected}
+            creators={creators}
+            {...forwardContextFromState(workState)}
+          />
         </div>
       )}
 

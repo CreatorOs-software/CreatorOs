@@ -200,4 +200,29 @@ export const CommunicationService = {
       });
     } catch {}
   },
+
+  async linkThreadToAnfrage(threadId: string, anfrageId: string): Promise<void> {
+    const supabase = await createClient();
+    const { agencyId } = await getAuthContext(supabase);
+
+    const thread = await CommunicationRepository.findThread(supabase, threadId);
+    if (!thread) throw new CommunicationError("Thread not found");
+    if (thread.agency_id !== agencyId) throw new CommunicationError("Kein Zugriff");
+
+    const conversationId = await CommunicationRepository.ensureThreadConversation(supabase, {
+      id: thread.id,
+      agency_id: thread.agency_id,
+      integration_id: thread.integration_id,
+      subject: thread.subject,
+      gmail_thread_id: thread.gmail_thread_id,
+      conversation_id: thread.conversation_id,
+    });
+
+    await CommunicationRepository.setConversationAnfrage(
+      supabase,
+      conversationId,
+      anfrageId,
+      agencyId,
+    );
+  },
 };

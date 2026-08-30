@@ -220,7 +220,7 @@ function NavItem({ id, label, icon, badge, activeFolder, onFolderChange }: NavIt
       {icon}
       <span className="flex-1 truncate">{label}</span>
       {badge != null && badge > 0 && (
-        <span className="px-1 text-xs font-medium text-[#006FFE]">{badge}</span>
+        <span className="px-1 text-xs font-medium text-brand">{badge}</span>
       )}
     </button>
   );
@@ -239,7 +239,7 @@ function IntegrationAvatar({
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-lg bg-[#006FFE] font-bold text-white",
+        "flex shrink-0 items-center justify-center rounded-lg bg-zinc-100 font-bold text-zinc-500",
         size === "sm" ? "h-6 w-6 text-[10px]" : "h-7 w-7 text-[11px]",
       )}
     >

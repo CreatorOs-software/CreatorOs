@@ -95,13 +95,7 @@ export function Step1({ form, errors, brands, users, documents, onDocumentsChang
                     <SelectContent>
                       {brands.map((b) => (
                         <SelectItem key={b.id} value={b.id}>
-                          <span className="flex items-center gap-2">
-                            <span
-                              className="w-4 h-4 rounded-sm shrink-0"
-                              style={{ background: b.color }}
-                            />
-                            {b.company_name}
-                          </span>
+                          {b.company_name}
                         </SelectItem>
                       ))}
                     </SelectContent>

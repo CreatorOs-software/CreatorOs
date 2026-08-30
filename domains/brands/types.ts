@@ -3,7 +3,6 @@ export type Brand = {
   agency_id: string;
   company_name: string;
   short_code: string;
-  color: string;
   industry: string | null;
   notes: string | null;
 };
@@ -31,7 +30,6 @@ export type BrandContact = {
 export type BrandPatch = {
   company_name?: string;
   short_code?: string;
-  color?: string;
   industry?: string | null;
   notes?: string | null;
 };

@@ -178,7 +178,15 @@ export function AnfrageDialog({
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5"
+                  onClick={() => {
+                    onClose();
+                    router.push(`/creators/anfragen/edit/${anfrage.id}`);
+                  }}
+                >
                   <Pencil className="w-3 h-3" />
                   Bearbeiten
                 </Button>

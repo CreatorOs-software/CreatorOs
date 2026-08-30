@@ -14,7 +14,7 @@ export const BrandRepository = {
     const [brandsRes, dealsRes, anfrageRes] = await Promise.all([
       supabase
         .from("brands")
-        .select("id, company_name, short_code, color, industry, notes")
+        .select("id, company_name, short_code, industry, notes")
         .eq("agency_id", agencyId)
         .order("company_name"),
       supabase
@@ -84,12 +84,12 @@ export const BrandRepository = {
   async create(
     supabase: SupabaseClient,
     agencyId: string,
-    data: { company_name: string; short_code: string; color: string; industry?: string | null },
+    data: { company_name: string; short_code: string; industry?: string | null },
   ): Promise<Brand> {
     const { data: brand, error } = await supabase
       .from("brands")
       .insert({ agency_id: agencyId, ...data })
-      .select("id, company_name, short_code, color, industry, notes")
+      .select("id, company_name, short_code, industry, notes")
       .single();
     if (error) throw error;
     return brand as Brand;

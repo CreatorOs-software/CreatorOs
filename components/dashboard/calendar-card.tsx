@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Avatar } from "@/components/ui/avatar-creator";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,7 +19,7 @@ type CalendarEvent = {
   end_at: string;
   location: string | null;
   creator_id: string | null;
-  creators: { full_name: string; initials: string; color: string } | null;
+  creators: { full_name: string; initials: string } | null;
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -159,13 +160,10 @@ export function CalendarCard({ className, creatorId }: CalendarCardProps) {
                           {formatTime(ev.start_at)}
                         </p>
                         {ev.creators && (
-                          <span
-                            className="mt-0.5 w-5 h-5 rounded-md inline-flex items-center justify-center text-[8px] font-bold text-white shrink-0"
-                            style={{ background: ev.creators.color }}
-                            title={ev.creators.full_name}
-                          >
-                            {ev.creators.initials}
-                          </span>
+                          <Avatar
+                            initials={ev.creators.initials}
+                            className="mt-0.5 w-5 h-5 text-[8px]"
+                          />
                         )}
                       </div>
                     );

@@ -7,7 +7,7 @@ export type Todo = {
   due_date: string | null;
   priority: TodoPriority | null;
   created_at: string;
-  assignee: { id: string; full_name: string; initials: string; color: string } | null;
+  assignee: { id: string; full_name: string; initials: string } | null;
 };
 
 export type TodoCreateInput = {

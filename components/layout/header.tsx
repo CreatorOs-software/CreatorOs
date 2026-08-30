@@ -81,7 +81,7 @@ export function Header({ user }: HeaderProps) {
                 alt={user.name}
                 className="w-full h-full object-cover"
               />
-              <Avatar.Fallback className="w-full h-full rounded-full bg-yellow-400 flex items-center justify-center text-xs font-bold text-black">
+              <Avatar.Fallback className="w-full h-full rounded-full bg-brand/10 flex items-center justify-center text-xs font-bold text-brand">
                 {initials}
               </Avatar.Fallback>
             </Avatar.Root>

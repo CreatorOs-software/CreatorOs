@@ -6,7 +6,6 @@ import { BrandService } from "@/domains/brands";
 const patchSchema = z.object({
   company_name: z.string().min(1).optional(),
   short_code: z.string().min(1).max(4).optional(),
-  color: z.string().optional(),
   industry: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
 });

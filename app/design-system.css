@@ -33,7 +33,7 @@
   --accent-gold: oklch(9% 0 0);
 
   /* Muted — #FAFAFA content panel bg + #8C8C8C placeholder/secondary text */
-  --muted: oklch(98.8% 0 0);
+  --muted: oklch(95.815% 0.00011 271.152);
   --muted-foreground: oklch(60% 0 0); /* #8C8C8C */
 
   /* UI Elements */

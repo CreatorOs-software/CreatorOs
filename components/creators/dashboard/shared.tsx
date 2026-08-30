@@ -31,17 +31,16 @@ export function BrandAvatar({
   brand,
   size = "md",
 }: {
-  brand: { color: string; short_code: string; company_name: string };
+  brand: { short_code: string; company_name: string };
   size?: "sm" | "md";
 }) {
   return (
     <span
+      title={brand.company_name}
       className={cn(
-        "rounded-md shrink-0 inline-flex items-center justify-center font-bold text-white",
+        "rounded-md shrink-0 inline-flex items-center justify-center font-bold bg-zinc-100 text-zinc-500",
         size === "sm" ? "w-5 h-5 text-[8px]" : "w-6 h-6 text-[9px]",
       )}
-      style={{ background: brand.color }}
-      title={brand.company_name}
     >
       {brand.short_code.slice(0, 2).toUpperCase()}
     </span>

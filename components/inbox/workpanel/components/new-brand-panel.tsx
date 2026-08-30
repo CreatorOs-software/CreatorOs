@@ -18,20 +18,25 @@ function generateShortCode(name: string): string {
     .padEnd(1, "X");
 }
 
-const DEFAULT_COLOR = "#6366F1";
-
 type Props = {
   newBrand: NewBrandData;
+  senderEmail?: string;
+  senderName?: string | null;
   onSetWorkState: (s: WorkPanelState) => void;
 };
 
-export function NewBrandPanel({ newBrand, onSetWorkState }: Props) {
+export function NewBrandPanel({ newBrand, senderEmail, senderName, onSetWorkState }: Props) {
   const [companyName, setCompanyName] = useState(newBrand.brand_name);
   const [industry, setIndustry] = useState(newBrand.industry ?? "");
   const [shortCode, setShortCode] = useState(generateShortCode(newBrand.brand_name));
-  const [color, setColor] = useState(DEFAULT_COLOR);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [addContact, setAddContact] = useState(true);
+  const [contactName, setContactName] = useState(
+    newBrand.extractedData.contact?.trim() || senderName?.trim() || senderEmail || "",
+  );
+  const [contactEmail, setContactEmail] = useState(senderEmail ?? "");
 
   async function handleCreate() {
     if (!companyName.trim() || saving) return;
@@ -44,7 +49,6 @@ export function NewBrandPanel({ newBrand, onSetWorkState }: Props) {
         body: JSON.stringify({
           company_name: companyName.trim(),
           short_code: shortCode.trim().toUpperCase() || "XX",
-          color,
           industry: industry.trim() || null,
         }),
       });
@@ -52,6 +56,23 @@ export function NewBrandPanel({ newBrand, onSetWorkState }: Props) {
         const body = await res.json() as { error?: string };
         throw new Error(body.error ?? "Fehler beim Erstellen");
       }
+
+      // Brand created — attach contact best-effort so a failure here can't
+      // trigger a retry that duplicates the brand.
+      if (addContact && contactName.trim()) {
+        const { brand } = await res.json() as { brand: { id: string } };
+        try {
+          await fetch(`/api/brands/${brand.id}/contacts`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: contactName.trim(),
+              email: contactEmail.trim() || null,
+            }),
+          });
+        } catch {}
+      }
+
       // Brand created → proceed to extracted form
       onSetWorkState({
         phase: "extracted",
@@ -104,17 +125,37 @@ export function NewBrandPanel({ newBrand, onSetWorkState }: Props) {
         />
       </FormField>
 
-      <FormField label="Farbe">
-        <div className="flex items-center gap-2">
+      <div className="mb-1 mt-4 flex items-center justify-between">
+        <SectionLabel>Ansprechpartner</SectionLabel>
+        <label className="flex cursor-pointer items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
           <input
-            type="color"
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            className="h-8 w-10 cursor-pointer rounded border border-border bg-transparent p-0.5"
+            type="checkbox"
+            checked={addContact}
+            onChange={(e) => setAddContact(e.target.checked)}
+            className="h-3 w-3 cursor-pointer accent-foreground"
           />
-          <span className="text-xs text-muted-foreground">{color}</span>
-        </div>
-      </FormField>
+          anlegen
+        </label>
+      </div>
+
+      {addContact && (
+        <>
+          <FormField label="Name">
+            <Input
+              value={contactName}
+              onChange={(e) => setContactName(e.target.value)}
+              placeholder="Name aus der Mail"
+            />
+          </FormField>
+          <FormField label="E-Mail">
+            <Input
+              value={contactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              placeholder="absender@brand.de"
+            />
+          </FormField>
+        </>
+      )}
 
       {error && (
         <p className="mb-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">

@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Sparkles, Plus, Trash2, ChevronDown } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useForm } from "@tanstack/react-form";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { QueryKeys } from "@/lib/query-keys";
 import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion";
 import { AccordionContent } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
@@ -16,13 +19,14 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { Creator } from "../../types";
-import type {
-  WorkPanelState,
-  ExtractedEmailData,
-  ExtractedDeliverable,
-  LocalVorgang,
-} from "../types";
+import type { WorkPanelState, ExtractedEmailData, LocalVorgang } from "../types";
 import { SectionLabel, FormField } from "./shared";
+import {
+  collectErrors,
+  type ExtractedErrors,
+  type ExtractedField,
+  type ExtractedFormValues,
+} from "./extracted-form.schema";
 
 const TODAY = new Date().toLocaleDateString("de-DE", {
   day: "2-digit",
@@ -52,10 +56,30 @@ const PLATFORMS = [
 type Props = {
   data: ExtractedEmailData;
   creators: Creator[];
+  threadId: string;
   onSetWorkState: (s: WorkPanelState) => void;
 };
 
-export function ExtractedPanel({ data, creators, onSetWorkState }: Props) {
+function buildVorgang(v: ExtractedFormValues): LocalVorgang {
+  return {
+    brand: v.brand || "Unbekannte Brand",
+    creatorId: v.creatorId || null,
+    title:
+      v.deliverables.length > 0
+        ? v.deliverables.map((d) => `${d.count}x ${d.content_type}`).join(" + ")
+        : "Kooperation",
+    status: "anfrage",
+    amZug: "wir",
+    honorar: null,
+    stand: "Anfrage aus E-Mail übernommen. Noch nicht beantwortet.",
+    history: v.budget
+      ? [{ who: "brand", amount: v.budget, note: "aus der Anfrage", date: TODAY }]
+      : [],
+  };
+}
+
+export function ExtractedPanel({ data, creators, threadId, onSetWorkState }: Props) {
+  const queryClient = useQueryClient();
   const { data: brandsData } = useQuery({
     queryKey: ["brands"],
     queryFn: async () => {
@@ -67,79 +91,88 @@ export function ExtractedPanel({ data, creators, onSetWorkState }: Props) {
   });
   const brands = brandsData?.brands ?? [];
 
-  const uncertain = (f: string) =>
-    data.uncertainFields.includes(f) && !(data as Record<string, unknown>)[f];
+  const [errors, setErrors] = useState<ExtractedErrors>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  function patch(update: Partial<ExtractedEmailData>) {
-    onSetWorkState({
-      phase: "extracted",
-      data: {
-        ...data,
-        ...update,
-        uncertainFields: data.uncertainFields.filter(
-          (f) => !Object.keys(update).includes(f),
-        ),
-      },
-    });
-  }
+  const form = useForm({
+    defaultValues: {
+      creatorId: data.creatorId ?? "",
+      brand: data.brand ?? "",
+      contact: data.contact ?? "",
+      product: data.product ?? "",
+      budget: data.budget,
+      period: data.period ?? "",
+      campaign_start: data.campaign_start ?? "",
+      campaign_end: data.campaign_end ?? "",
+      deliverables: data.deliverables.map((d) => ({
+        count: d.count,
+        content_type: d.content_type,
+        platform: d.platform,
+        draft_deadline: d.draft_deadline ?? "",
+        freigabe_deadline: d.freigabe_deadline ?? "",
+        live_date: d.live_date ?? "",
+      })),
+    } as ExtractedFormValues,
+    onSubmit: async ({ value }) => {
+      const errs = collectErrors(value);
+      setErrors(errs);
+      if (Object.keys(errs).length > 0) return;
 
-  function addDeliverable() {
-    patch({
-      deliverables: [
-        ...data.deliverables,
-        {
-          count: 1,
-          content_type: "",
-          platform: "",
-          draft_deadline: "",
-          freigabe_deadline: "",
-          live_date: "",
-        },
-      ],
-    });
-  }
+      setSaving(true);
+      setSubmitError(null);
+      try {
+        const brandMatch = brands.find((b) => b.company_name === value.brand);
+        const res = await fetch(`/api/creators/${value.creatorId}/anfragen`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            source: "email",
+            brand_id: brandMatch?.id ?? null,
+            brand_name: value.brand || null,
+            contact_person: value.contact || null,
+            product: value.product || null,
+            budget_requested: value.budget ?? null,
+            campaign_start: value.campaign_start || null,
+            campaign_end: value.campaign_end || null,
+            deliverables: value.deliverables.map((d) => ({
+              count: d.count,
+              content_type: d.content_type,
+              platform: d.platform,
+              draft_deadline: d.draft_deadline || null,
+              freigabe_deadline: d.freigabe_deadline || null,
+              live_date: d.live_date || null,
+            })),
+          }),
+        });
+        if (!res.ok) {
+          const b = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(b.error ?? "Anfrage konnte nicht angelegt werden");
+        }
 
-  function updateDeliverable(
-    index: number,
-    update: Partial<ExtractedDeliverable>,
-  ) {
-    const next = data.deliverables.map((d, i) =>
-      i === index ? { ...d, ...update } : d,
-    );
-    patch({ deliverables: next });
-  }
+        // Anfrage exists — link the mail thread / conversation best-effort so a
+        // failure here can't trigger a retry that creates a second Anfrage.
+        const { anfrage } = (await res.json()) as { anfrage: { id: string } };
+        try {
+          await fetch(`/api/inbox/${threadId}/anfrage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ anfrage_id: anfrage.id }),
+          });
+          void queryClient.invalidateQueries({ queryKey: QueryKeys.inbox.all() });
+        } catch {}
 
-  function removeDeliverable(index: number) {
-    patch({ deliverables: data.deliverables.filter((_, i) => i !== index) });
-  }
+        onSetWorkState({ phase: "vorgang", vorgang: buildVorgang(value) });
+      } catch (e) {
+        setSubmitError(e instanceof Error ? e.message : "Unbekannter Fehler");
+      } finally {
+        setSaving(false);
+      }
+    },
+  });
 
-  function handleCreate() {
-    const vorgang: LocalVorgang = {
-      brand: data.brand || "Unbekannte Brand",
-      creatorId: data.creatorId,
-      title:
-        data.deliverables.length > 0
-          ? data.deliverables
-              .map((d) => `${d.count}x ${d.content_type}`)
-              .join(" + ")
-          : "Kooperation",
-      status: "anfrage",
-      amZug: "wir",
-      honorar: null,
-      stand: "Anfrage aus E-Mail übernommen. Noch nicht beantwortet.",
-      history: data.budget
-        ? [
-            {
-              who: "brand",
-              amount: data.budget,
-              note: "aus der Anfrage",
-              date: TODAY,
-            },
-          ]
-        : [],
-    };
-    onSetWorkState({ phase: "vorgang", vorgang });
-  }
+  const uncertain = (f: string) => data.uncertainFields.includes(f);
+  const errorList = Object.values(errors);
 
   return (
     <div>
@@ -162,298 +195,390 @@ export function ExtractedPanel({ data, creators, onSetWorkState }: Props) {
         </TabsList>
 
         <TabsContent value="uebersicht" className="mt-3 space-y-0">
-          <FormField label="Brand" uncertain={uncertain("brand")}>
-            <Select
-              value={data.brand || undefined}
-              onValueChange={(v) => {
-                if (v !== null) patch({ brand: v });
-              }}
-            >
-              <SelectTrigger
-                className={cn(
-                  "w-full",
-                  uncertain("brand") &&
-                    "border-dashed border-amber-300 bg-amber-50",
+          <form.Field name="brand">
+            {(field: ExtractedField<"brand">) => (
+              <FormField label="Brand" uncertain={uncertain("brand")}>
+                <Select
+                  value={field.state.value || undefined}
+                  onValueChange={(v) => {
+                    if (v !== null) field.handleChange(v);
+                  }}
+                >
+                  <SelectTrigger
+                    className={cn(
+                      "w-full",
+                      (uncertain("brand") || errors.brand) &&
+                        "border-dashed border-amber-300 bg-amber-50",
+                    )}
+                  >
+                    <SelectValue placeholder="— Brand auswählen —" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brands.map((b) => (
+                      <SelectItem key={b.id} value={b.company_name}>
+                        {b.company_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.brand && (
+                  <p data-field-error className="mt-1 text-xs text-destructive">
+                    {errors.brand}
+                  </p>
                 )}
-              >
-                <SelectValue placeholder="— Brand auswählen —" />
-              </SelectTrigger>
-              <SelectContent>
-                {brands.map((b) => (
-                  <SelectItem key={b.id} value={b.company_name}>
-                    {b.company_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
-
-          <FormField label="Ansprechpartner" uncertain={uncertain("contact")}>
-            <Input
-              value={data.contact}
-              className={cn(
-                uncertain("contact") &&
-                  "border-dashed border-amber-300 bg-amber-50",
-              )}
-              onChange={(e) => patch({ contact: e.target.value })}
-            />
-          </FormField>
-
-          <FormField
-            label={
-              data.creatorConfidence > 0
-                ? `Creator · ${data.creatorConfidence}% sicher`
-                : "Creator"
-            }
-            uncertain={uncertain("creatorId")}
-          >
-            <Select
-              value={data.creatorId ?? ""}
-              onValueChange={(v) =>
-                patch({ creatorId: v || null, creatorConfidence: v ? 100 : 0 })
-              }
-            >
-              <SelectTrigger
-                className={cn(
-                  "w-full",
-                  uncertain("creatorId") &&
-                    "border-dashed border-amber-300 bg-amber-50",
-                )}
-              >
-                <SelectValue placeholder="— Creator zuordnen —" />
-              </SelectTrigger>
-              <SelectContent>
-                {creators.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {!data.creatorId && (
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Kein Name in der Mail — bitte manuell zuordnen.
-              </p>
+              </FormField>
             )}
-          </FormField>
+          </form.Field>
 
-          <FormField label="Produkt" uncertain={uncertain("product")}>
-            <Input
-              value={data.product}
-              placeholder="z. B. Daily Greens"
-              className={cn(
-                uncertain("product") &&
-                  "border-dashed border-amber-300 bg-amber-50",
-              )}
-              onChange={(e) => patch({ product: e.target.value })}
-            />
-          </FormField>
+          <form.Field name="contact">
+            {(field: ExtractedField<"contact">) => (
+              <FormField label="Ansprechpartner" uncertain={uncertain("contact")}>
+                <Input
+                  value={field.state.value}
+                  className={cn(
+                    uncertain("contact") &&
+                      "border-dashed border-amber-300 bg-amber-50",
+                  )}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+              </FormField>
+            )}
+          </form.Field>
 
-          <FormField label="Budget (Brand)" uncertain={uncertain("budget")}>
-            <Input
-              value={data.budget?.toString() ?? ""}
-              placeholder="z. B. 5500"
-              className={cn(
-                uncertain("budget") &&
-                  "border-dashed border-amber-300 bg-amber-50",
-              )}
-              onChange={(e) =>
-                patch({
-                  budget: e.target.value
-                    ? parseFloat(e.target.value.replace(/[^0-9.]/g, ""))
-                    : null,
-                })
-              }
-            />
-          </FormField>
+          <form.Field name="creatorId">
+            {(field: ExtractedField<"creatorId">) => (
+              <FormField
+                label={
+                  data.creatorConfidence > 0
+                    ? `Creator · ${data.creatorConfidence}% sicher`
+                    : "Creator"
+                }
+                uncertain={uncertain("creatorId")}
+              >
+                <Select
+                  value={field.state.value || ""}
+                  onValueChange={(v) => field.handleChange(v || "")}
+                >
+                  <SelectTrigger
+                    className={cn(
+                      "w-full",
+                      (uncertain("creatorId") || errors.creatorId) &&
+                        "border-dashed border-amber-300 bg-amber-50",
+                    )}
+                  >
+                    <SelectValue placeholder="— Creator zuordnen —" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {creators.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.creatorId ? (
+                  <p data-field-error className="mt-1 text-xs text-destructive">
+                    {errors.creatorId}
+                  </p>
+                ) : (
+                  !field.state.value && (
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Kein Name in der Mail — bitte manuell zuordnen.
+                    </p>
+                  )
+                )}
+              </FormField>
+            )}
+          </form.Field>
 
-          <FormField label="Zeitraum" uncertain={uncertain("period")}>
-            <Input
-              value={data.period}
-              placeholder="steht nicht in der Mail"
-              className={cn(
-                uncertain("period") &&
-                  "border-dashed border-amber-300 bg-amber-50",
-              )}
-              onChange={(e) => patch({ period: e.target.value })}
-            />
-          </FormField>
+          <form.Field name="product">
+            {(field: ExtractedField<"product">) => (
+              <FormField label="Produkt" uncertain={uncertain("product")}>
+                <Input
+                  value={field.state.value}
+                  placeholder="z. B. Daily Greens"
+                  className={cn(
+                    uncertain("product") &&
+                      "border-dashed border-amber-300 bg-amber-50",
+                  )}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+              </FormField>
+            )}
+          </form.Field>
+
+          <form.Field name="budget">
+            {(field: ExtractedField<"budget">) => (
+              <FormField label="Budget (Brand)" uncertain={uncertain("budget")}>
+                <Input
+                  value={field.state.value?.toString() ?? ""}
+                  placeholder="z. B. 5500"
+                  className={cn(
+                    uncertain("budget") &&
+                      "border-dashed border-amber-300 bg-amber-50",
+                  )}
+                  onChange={(e) =>
+                    field.handleChange(
+                      e.target.value
+                        ? parseFloat(e.target.value.replace(/[^0-9.]/g, ""))
+                        : null,
+                    )
+                  }
+                />
+              </FormField>
+            )}
+          </form.Field>
+
+          <form.Field name="period">
+            {(field: ExtractedField<"period">) => (
+              <FormField label="Zeitraum" uncertain={uncertain("period")}>
+                <Input
+                  value={field.state.value}
+                  placeholder="steht nicht in der Mail"
+                  className={cn(
+                    uncertain("period") &&
+                      "border-dashed border-amber-300 bg-amber-50",
+                  )}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+              </FormField>
+            )}
+          </form.Field>
 
           <div className="grid grid-cols-2 gap-2">
-            <FormField label="Kampagnenstart">
-              <Input
-                type="date"
-                value={data.campaign_start}
-                onChange={(e) => patch({ campaign_start: e.target.value })}
-              />
-            </FormField>
-            <FormField label="Kampagnenende">
-              <Input
-                type="date"
-                value={data.campaign_end}
-                onChange={(e) => patch({ campaign_end: e.target.value })}
-              />
-            </FormField>
+            <form.Field name="campaign_start">
+              {(field: ExtractedField<"campaign_start">) => (
+                <FormField label="Kampagnenstart">
+                  <Input
+                    type="date"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                </FormField>
+              )}
+            </form.Field>
+            <form.Field name="campaign_end">
+              {(field: ExtractedField<"campaign_end">) => (
+                <FormField label="Kampagnenende">
+                  <Input
+                    type="date"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                </FormField>
+              )}
+            </form.Field>
           </div>
         </TabsContent>
 
         <TabsContent value="deliverables" className="mt-3">
-          <div className="flex flex-col gap-2">
-            {data.deliverables.length === 0 && (
-              <p className="py-4 text-center text-xs text-muted-foreground">
-                Noch keine Deliverables. Füge das erste hinzu.
-              </p>
-            )}
+          <form.Field name="deliverables">
+            {(field: ExtractedField<"deliverables">) => {
+              const items = field.state.value ?? [];
 
-            <AccordionPrimitive.Root multiple className="flex flex-col gap-2">
-              {data.deliverables.map((d, i) => {
-                const summary = d.content_type
-                  ? `${d.count}x ${d.content_type}${d.platform ? ` · ${d.platform}` : ""}`
-                  : `Deliverable ${i + 1}`;
-                return (
-                  <AccordionPrimitive.Item
-                    key={i}
-                    value={String(i)}
-                    className="rounded-xl border border-border bg-muted/40"
-                  >
-                    <AccordionPrimitive.Header className="flex items-center">
-                      <AccordionPrimitive.Trigger className="group flex flex-1 cursor-pointer items-center gap-1.5 px-3 py-2.5 text-left text-xs font-medium outline-none">
-                        <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground transition-transform group-aria-expanded:rotate-180" />
-                        <span className="flex-1 truncate">{summary}</span>
-                      </AccordionPrimitive.Trigger>
-                      <button
-                        type="button"
-                        onClick={() => removeDeliverable(i)}
-                        className="px-3 py-2.5 text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </AccordionPrimitive.Header>
-
-                    <AccordionContent className="px-3">
-                      <div className="grid grid-cols-5 gap-1.5 pb-1">
-                        <div className="col-span-1">
-                          <p className="mb-1 text-[10px] text-muted-foreground">
-                            Anz.
-                          </p>
-                          <Input
-                            type="number"
-                            min={1}
-                            value={d.count}
-                            className="h-7 px-2 text-xs"
-                            onChange={(e) =>
-                              updateDeliverable(i, {
-                                count: Math.max(
-                                  1,
-                                  parseInt(e.target.value) || 1,
-                                ),
-                              })
-                            }
-                          />
-                        </div>
-                        <div className="col-span-4">
-                          <p className="mb-1 text-[10px] text-muted-foreground">
-                            Content-Typ
-                          </p>
-                          <Select
-                            value={d.content_type || undefined}
-                            onValueChange={(v) => {
-                              if (v !== null)
-                                updateDeliverable(i, { content_type: v });
-                            }}
-                          >
-                            <SelectTrigger className="h-7 w-full text-xs">
-                              <SelectValue placeholder="Typ wählen" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {CONTENT_TYPES.map((t) => (
-                                <SelectItem key={t} value={t}>
-                                  {t}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <div className="pb-1">
-                        <p className="mb-1 text-[10px] text-muted-foreground">
-                          Plattform
-                        </p>
-                        <Select
-                          value={d.platform || undefined}
-                          onValueChange={(v) => {
-                            if (v !== null)
-                              updateDeliverable(i, { platform: v });
-                          }}
-                        >
-                          <SelectTrigger className="h-7 w-full text-xs">
-                            <SelectValue placeholder="Plattform wählen" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {PLATFORMS.map((p) => (
-                              <SelectItem key={p} value={p}>
-                                {p}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-1.5 pb-1">
-                        <div>
-                          <p className="mb-1 text-[10px] text-muted-foreground">
-                            Draft-Deadline
-                          </p>
-                          <Input
-                            type="date"
-                            value={d.draft_deadline}
-                            className="h-7 px-2 text-xs"
-                            onChange={(e) =>
-                              updateDeliverable(i, {
-                                draft_deadline: e.target.value,
-                              })
-                            }
-                          />
-                        </div>
-                        <div>
-                          <p className="mb-1 text-[10px] text-muted-foreground">
-                            Live-Datum
-                          </p>
-                          <Input
-                            type="date"
-                            value={d.live_date}
-                            className="h-7 px-2 text-xs"
-                            onChange={(e) =>
-                              updateDeliverable(i, {
-                                live_date: e.target.value,
-                              })
-                            }
-                          />
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionPrimitive.Item>
+              const update = (
+                index: number,
+                patch: Partial<ExtractedFormValues["deliverables"][number]>,
+              ) =>
+                field.handleChange(
+                  items.map((it, i) => (i === index ? { ...it, ...patch } : it)),
                 );
-              })}
-            </AccordionPrimitive.Root>
 
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full gap-1.5"
-              onClick={addDeliverable}
-            >
-              <Plus className="h-3 w-3" />
-              Deliverable hinzufügen
-            </Button>
-          </div>
+              const addDeliverable = () =>
+                field.handleChange([
+                  ...items,
+                  {
+                    count: 1,
+                    content_type: "",
+                    platform: "",
+                    draft_deadline: "",
+                    freigabe_deadline: "",
+                    live_date: "",
+                  },
+                ]);
+
+              const removeDeliverable = (index: number) =>
+                field.handleChange(items.filter((_, i) => i !== index));
+
+              return (
+                <div className="flex flex-col gap-2">
+                  {errors.deliverables && (
+                    <p data-field-error className="text-xs text-destructive">
+                      {errors.deliverables}
+                    </p>
+                  )}
+
+                  {items.length === 0 && (
+                    <p className="py-4 text-center text-xs text-muted-foreground">
+                      Noch keine Deliverables. Füge das erste hinzu.
+                    </p>
+                  )}
+
+                  <AccordionPrimitive.Root multiple className="flex flex-col gap-2">
+                    {items.map((d, i) => {
+                      const summary = d.content_type
+                        ? `${d.count}x ${d.content_type}${d.platform ? ` · ${d.platform}` : ""}`
+                        : `Deliverable ${i + 1}`;
+                      return (
+                        <AccordionPrimitive.Item
+                          key={i}
+                          value={String(i)}
+                          className="rounded-xl border border-border bg-muted/40"
+                        >
+                          <AccordionPrimitive.Header className="flex items-center">
+                            <AccordionPrimitive.Trigger className="group flex flex-1 cursor-pointer items-center gap-1.5 px-3 py-2.5 text-left text-xs font-medium outline-none">
+                              <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground transition-transform group-aria-expanded:rotate-180" />
+                              <span className="flex-1 truncate">{summary}</span>
+                            </AccordionPrimitive.Trigger>
+                            <button
+                              type="button"
+                              onClick={() => removeDeliverable(i)}
+                              className="px-3 py-2.5 text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </AccordionPrimitive.Header>
+
+                          <AccordionContent className="px-3">
+                            <div className="grid grid-cols-5 gap-1.5 pb-1">
+                              <div className="col-span-1">
+                                <p className="mb-1 text-[10px] text-muted-foreground">
+                                  Anz.
+                                </p>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  value={d.count}
+                                  className="h-7 px-2 text-xs"
+                                  onChange={(e) =>
+                                    update(i, {
+                                      count: Math.max(
+                                        1,
+                                        parseInt(e.target.value) || 1,
+                                      ),
+                                    })
+                                  }
+                                />
+                              </div>
+                              <div className="col-span-4">
+                                <p className="mb-1 text-[10px] text-muted-foreground">
+                                  Content-Typ
+                                </p>
+                                <Select
+                                  value={d.content_type || undefined}
+                                  onValueChange={(v) => {
+                                    if (v !== null)
+                                      update(i, { content_type: v });
+                                  }}
+                                >
+                                  <SelectTrigger className="h-7 w-full text-xs">
+                                    <SelectValue placeholder="Typ wählen" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {CONTENT_TYPES.map((t) => (
+                                      <SelectItem key={t} value={t}>
+                                        {t}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+
+                            <div className="pb-1">
+                              <p className="mb-1 text-[10px] text-muted-foreground">
+                                Plattform
+                              </p>
+                              <Select
+                                value={d.platform || undefined}
+                                onValueChange={(v) => {
+                                  if (v !== null) update(i, { platform: v });
+                                }}
+                              >
+                                <SelectTrigger className="h-7 w-full text-xs">
+                                  <SelectValue placeholder="Plattform wählen" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {PLATFORMS.map((p) => (
+                                    <SelectItem key={p} value={p}>
+                                      {p}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-1.5 pb-1">
+                              <div>
+                                <p className="mb-1 text-[10px] text-muted-foreground">
+                                  Draft-Deadline
+                                </p>
+                                <Input
+                                  type="date"
+                                  value={d.draft_deadline}
+                                  className="h-7 px-2 text-xs"
+                                  onChange={(e) =>
+                                    update(i, { draft_deadline: e.target.value })
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <p className="mb-1 text-[10px] text-muted-foreground">
+                                  Live-Datum
+                                </p>
+                                <Input
+                                  type="date"
+                                  value={d.live_date}
+                                  className="h-7 px-2 text-xs"
+                                  onChange={(e) =>
+                                    update(i, { live_date: e.target.value })
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </AccordionContent>
+                        </AccordionPrimitive.Item>
+                      );
+                    })}
+                  </AccordionPrimitive.Root>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-1.5"
+                    onClick={addDeliverable}
+                  >
+                    <Plus className="h-3 w-3" />
+                    Deliverable hinzufügen
+                  </Button>
+                </div>
+              );
+            }}
+          </form.Field>
         </TabsContent>
       </Tabs>
 
+      {(errorList.length > 0 || submitError) && (
+        <div className="mb-2 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          {submitError ? (
+            <p>{submitError}</p>
+          ) : (
+            <ul className="list-inside list-disc space-y-0.5">
+              {errorList.map((msg) => (
+                <li key={msg}>{msg}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       <div className="mt-2 flex flex-col gap-2">
-        <Button className="w-full" onClick={handleCreate}>
-          Anfrage erstellen
+        <Button
+          className="w-full"
+          disabled={saving}
+          onClick={() => form.handleSubmit()}
+        >
+          {saving ? "Wird angelegt…" : "Anfrage erstellen"}
         </Button>
         <Button variant="outline" className="w-full">
           Erst antworten, ohne anzulegen

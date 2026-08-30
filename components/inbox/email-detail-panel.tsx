@@ -48,8 +48,8 @@ import {
   formatFullDate,
   getDisplayName,
   getInitial,
-  getSenderColor,
 } from "./utils";
+import { Avatar } from "@/components/ui/avatar-creator";
 
 // ─── Chip templates ───────────────────────────────────────────────────────────
 
@@ -348,7 +348,6 @@ export function EmailDetailPanel({
 
   const displayName = getDisplayName(thread.sender_name, thread.sender_email);
   const initial = getInitial(thread.sender_name, thread.sender_email);
-  const avatarColor = getSenderColor(thread.sender_email);
 
   const recipientLabel =
     thread.recipient_email ??
@@ -523,12 +522,8 @@ export function EmailDetailPanel({
 
           {/* Sender header */}
           <div className="mt-6 flex items-start gap-3">
-            <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-              style={{ backgroundColor: avatarColor }}
-            >
-              {initial}
-            </div>
+            <Avatar initials={initial} className="h-9 w-9 text-sm" />
+
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-4">
                 <div className="flex items-center gap-2">
@@ -601,16 +596,11 @@ export function EmailDetailPanel({
               {conversationMessages.map((msg) => {
                 const msgName = getDisplayName(msg.sender_name, msg.sender_email);
                 const msgInitial = getInitial(msg.sender_name, msg.sender_email);
-                const msgColor = getSenderColor(msg.sender_email);
                 return (
                   <div key={msg.id} className="mt-6 border-t border-[#E7E7E7] pt-6">
                     <div className="flex items-start gap-3">
-                      <div
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                        style={{ backgroundColor: msgColor }}
-                      >
-                        {msgInitial}
-                      </div>
+                      <Avatar initials={msgInitial} className="h-9 w-9 text-sm" />
+
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline justify-between gap-4">
                           <span className="text-sm font-semibold">{msgName}</span>

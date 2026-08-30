@@ -57,7 +57,7 @@ import type { Creator } from "@/domains/creators"
 type EventType = "shoot" | "travel" | "deadline" | "brand" | "internal" | "posting"
 type Recurrence = "none" | "daily" | "weekly" | "monthly" | "yearly"
 
-type TeamMember = { id: string; display_name: string | null; initials: string | null; color: string | null; role: string }
+type TeamMember = { id: string; display_name: string | null; initials: string | null; role: string }
 
 type DbEvent = {
   id: string
@@ -127,7 +127,6 @@ const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const HOUR_HEIGHT = 64 // px per hour in time-grid views
 
-const MEMBER_COLORS = ["#6366f1", "#ec4899", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#14b8a6"]
 
 const EMPTY_FORM: FormState = {
   title: "",
@@ -194,10 +193,6 @@ function getInitials(name: string): string {
     .toUpperCase()
 }
 
-function getMemberColor(id: string): string {
-  const sum = id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)
-  return MEMBER_COLORS[sum % MEMBER_COLORS.length]
-}
 
 function formatTime(date: Date): string {
   return date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
@@ -625,7 +620,7 @@ function ListView({
                   <div className="flex shrink-0 items-center gap-2">
                     {ev.creator && (
                       <span
-                        className="inline-flex size-7 items-center justify-center rounded-full text-[11px] font-semibold text-white bg-neutral-800"
+                        className="inline-flex size-7 items-center justify-center rounded-full text-[11px] font-semibold text-brand bg-brand/10"
                         title={ev.creator.full_name}
                       >
                         {ev.creator.initials}
@@ -832,15 +827,13 @@ function EventDialog({
                     {activeAttendees.map((id) => {
                       const m = teamMembers.find((tm) => tm.id === id)
                       if (!m) return null
-                      const bg = m.color ?? getMemberColor(id)
                       const abbr = m.initials ?? getInitials(m.display_name ?? "")
                       return (
                         <span
                           key={id}
-                          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium text-white"
-                          style={{ backgroundColor: bg }}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand"
                         >
-                          <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-white/20 text-[9px] font-bold">
+                          <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-brand/20 text-[9px] font-bold">
                             {abbr}
                           </span>
                           {m.display_name ?? abbr}
@@ -860,7 +853,6 @@ function EventDialog({
                   <div className="space-y-0.5">
                     {teamMembers.map((member) => {
                       const active = activeAttendees.includes(member.id)
-                      const color = member.color ?? getMemberColor(member.id)
                       const initials = member.initials ?? getInitials(member.display_name ?? "")
                       return (
                         <button
@@ -872,10 +864,7 @@ function EventDialog({
                             active ? "bg-muted" : "hover:bg-muted/60",
                           )}
                         >
-                          <span
-                            className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
-                            style={{ backgroundColor: color }}
-                          >
+                          <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-brand/10 text-[11px] font-semibold text-brand">
                             {initials}
                           </span>
                           <span className="flex-1 truncate text-left">{member.display_name ?? initials}</span>
@@ -1026,7 +1015,7 @@ function EventDialog({
                     <SelectTrigger>
                       {displayCreator ? (
                         <span className="flex items-center gap-2 text-sm">
-                          <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white bg-neutral-800">
+                          <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-brand bg-brand/10">
                             {displayCreator.initials}
                           </span>
                           {displayCreator.full_name}
@@ -1040,7 +1029,7 @@ function EventDialog({
                       {creators.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           <span className="flex items-center gap-2">
-                            <span className="inline-flex size-4 items-center justify-center rounded-full bg-neutral-800 text-[9px] font-semibold text-white">
+                            <span className="inline-flex size-4 items-center justify-center rounded-full bg-brand/10 text-[9px] font-semibold text-brand">
                               {c.initials}
                             </span>
                             {c.full_name}
@@ -1374,7 +1363,7 @@ export function EventManager() {
                 const c = creators.find((x) => x.id === filterCreator)
                 return c ? (
                   <span className="flex items-center gap-2">
-                    <span className="inline-flex size-4 items-center justify-center rounded-full bg-neutral-800 text-[9px] font-semibold text-white">
+                    <span className="inline-flex size-4 items-center justify-center rounded-full bg-brand/10 text-[9px] font-semibold text-brand">
                       {c.initials}
                     </span>
                     {c.full_name}
@@ -1388,7 +1377,7 @@ export function EventManager() {
             {creators.map((c) => (
               <SelectItem key={c.id} value={c.id}>
                 <span className="flex items-center gap-2">
-                  <span className="inline-flex size-4 items-center justify-center rounded-full bg-neutral-800 text-[9px] font-semibold text-white">
+                  <span className="inline-flex size-4 items-center justify-center rounded-full bg-brand/10 text-[9px] font-semibold text-brand">
                     {c.initials}
                   </span>
                   {c.full_name}

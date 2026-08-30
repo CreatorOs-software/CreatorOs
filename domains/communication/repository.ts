@@ -18,7 +18,7 @@ export const CommunicationRepository = {
       supabase
         .from("email_threads")
         .select(
-          "id, agency_id, sender_email, sender_name, recipient_email, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id, system_labels, label_status, conversation_id, message_id, in_reply_to, references_header, thread_labels:email_thread_labels(label:email_labels(id, name, color))",
+          "id, agency_id, sender_email, sender_name, recipient_email, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id, system_labels, label_status, conversation_id, message_id, in_reply_to, references_header, conversation:conversations(anfrage_id, anfrage:anfragen(linked_deal_id)), thread_labels:email_thread_labels(label:email_labels(id, name, color))",
         )
         .eq("agency_id", agencyId)
         .order("received_at", { ascending: false })
@@ -43,7 +43,10 @@ export const CommunicationRepository = {
     const threads = (threadsRes.data ?? []).map((row: any) => ({
       ...row,
       labels: (row.thread_labels ?? []).map((tl: { label: EmailLabel | null }) => tl.label).filter(Boolean),
+      anfrage_id: row.conversation?.anfrage_id ?? null,
+      deal_id: row.conversation?.anfrage?.linked_deal_id ?? null,
       thread_labels: undefined,
+      conversation: undefined,
     })) as EmailThread[];
 
     return {
@@ -119,6 +122,20 @@ export const CommunicationRepository = {
     return data.id as string;
   },
 
+  async setConversationAnfrage(
+    supabase: SupabaseClient,
+    conversationId: string,
+    anfrageId: string,
+    agencyId: string,
+  ): Promise<void> {
+    const { error } = await supabase
+      .from("conversations")
+      .update({ anfrage_id: anfrageId })
+      .eq("id", conversationId)
+      .eq("agency_id", agencyId);
+    if (error) throw new Error(error.message);
+  },
+
   async findConversationMessages(
     supabase: SupabaseClient,
     conversationId: string,
@@ -128,7 +145,7 @@ export const CommunicationRepository = {
     const { data, error } = await supabase
       .from("email_threads")
       .select(
-        "id, agency_id, sender_email, sender_name, recipient_email, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id, system_labels, label_status, conversation_id, message_id, in_reply_to, references_header, thread_labels:email_thread_labels(label:email_labels(id, name, color))",
+        "id, agency_id, sender_email, sender_name, recipient_email, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id, system_labels, label_status, conversation_id, message_id, in_reply_to, references_header, conversation:conversations(anfrage_id, anfrage:anfragen(linked_deal_id)), thread_labels:email_thread_labels(label:email_labels(id, name, color))",
       )
       .eq("conversation_id", conversationId)
       .eq("agency_id", agencyId)
@@ -141,7 +158,10 @@ export const CommunicationRepository = {
     return (data ?? []).map((row: any) => ({
       ...row,
       labels: (row.thread_labels ?? []).map((tl: { label: EmailLabel | null }) => tl.label).filter(Boolean),
+      anfrage_id: row.conversation?.anfrage_id ?? null,
+      deal_id: row.conversation?.anfrage?.linked_deal_id ?? null,
       thread_labels: undefined,
+      conversation: undefined,
     })) as EmailThread[];
   },
 

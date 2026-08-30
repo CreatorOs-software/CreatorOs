@@ -1,9 +1,10 @@
 "use client";
 
-import { Archive, Loader2, Star, Trash2 } from "lucide-react";
+import { Archive, Briefcase, Loader2, Star, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Thread } from "./types";
-import { formatDate, getDisplayName, getInitial, getSenderColor } from "./utils";
+import { formatDate, getDisplayName, getInitial } from "./utils";
+import { Avatar } from "@/components/ui/avatar-creator";
 import { SYSTEM_LABELS } from "./constants";
 
 const SYSTEM_LABEL_COLOR: Record<string, string> = Object.fromEntries(
@@ -22,7 +23,6 @@ type Props = {
 export function ThreadItem({ thread, isSelected, onClick, onStar, onArchive, onDelete }: Props) {
   const displayName = getDisplayName(thread.sender_name, thread.sender_email);
   const initial = getInitial(thread.sender_name, thread.sender_email);
-  const avatarColor = getSenderColor(thread.sender_email);
 
   return (
     <div
@@ -36,12 +36,8 @@ export function ThreadItem({ thread, isSelected, onClick, onStar, onArchive, onD
       <div className="flex w-full items-center gap-4">
         {/* Avatar */}
         <div className="relative shrink-0">
-          <div
-            className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
-            style={{ backgroundColor: avatarColor }}
-          >
-            {initial}
-          </div>
+          <Avatar initials={initial} size="sm" />
+
           {thread.unread && !isSelected && (
             <span className="border-background absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 bg-[#006FFE]" />
           )}
@@ -59,6 +55,12 @@ export function ThreadItem({ thread, isSelected, onClick, onStar, onArchive, onD
               )}
               {thread.starred && (
                 <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+              )}
+              {thread.anfrage_id && (
+                <Briefcase
+                  className="h-3 w-3 shrink-0 text-brand"
+                  aria-label="Mit Anfrage verknüpft"
+                />
               )}
             </div>
             <span className="text-nowrap text-xs font-normal opacity-70 transition-opacity group-hover:opacity-0">

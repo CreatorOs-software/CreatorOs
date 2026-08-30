@@ -21,7 +21,6 @@ export type DealField<TName extends keyof DealFormValues & string> = FieldApi<
 export type BrandOption = {
   id: string;
   company_name: string;
-  color: string;
   short_code: string;
 };
 

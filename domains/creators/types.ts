@@ -44,7 +44,6 @@ export type Brand = {
   agency_id: string;
   company_name: string;
   short_code: string;
-  color: string;
   industry: string | null;
   contact_name: string | null;
   contact_email: string | null;

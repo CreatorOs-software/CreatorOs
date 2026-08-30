@@ -338,7 +338,7 @@ export function IntegrationsPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     {assignedCreator && (
                       <span
-                        className="w-6 h-6 rounded-lg bg-neutral-800 inline-flex items-center justify-center text-[10px] font-bold text-white"
+                        className="w-6 h-6 rounded-lg bg-zinc-100 inline-flex items-center justify-center text-[10px] font-bold text-zinc-500"
                         title={assignedCreator.full_name}
                       >
                         {assignedCreator.initials}
