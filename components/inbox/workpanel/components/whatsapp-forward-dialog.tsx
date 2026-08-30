@@ -1,7 +1,10 @@
 "use client";
 
 import { type ReactElement, useRef, useState } from "react";
-import { AlertTriangle, MessageCircle, Send, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { AlertTriangle, Loader2, MessageCircle, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -17,6 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { QueryKeys } from "@/lib/query-keys";
+import { normalizeE164 } from "@/lib/formatters";
+import type { WhatsAppConnectionPublic } from "@/domains/whatsapp/types";
 import type { Thread, Creator } from "../../types";
 import { InsertTemplatePopover } from "../../templates/insert-template-popover";
 import { useVariableSlashMenu } from "../../templates/variable-slash-menu";
@@ -74,10 +80,20 @@ export function WhatsappForwardDialog({
   const [message, setMessage] = useState("");
   const [aiUsed, setAiUsed] = useState(false);
   const [unresolved, setUnresolved] = useState<string[]>([]);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
+
+  const { data: connData } = useQuery<{ connection: WhatsAppConnectionPublic }>({
+    queryKey: QueryKeys.whatsapp.connection(),
+    queryFn: () => fetch("/api/admin/whatsapp").then((r) => r.json()),
+    staleTime: 5 * 60_000,
+  });
+  const connected = connData?.connection?.connected === true;
 
   const creator = creators.find((c) => c.id === creatorId) ?? null;
   const name = creator ? firstName(creator.full_name) : "Creator";
+  const phoneValid = !!normalizeE164(creator?.phone ?? null);
 
   const slashMenu = useVariableSlashMenu({
     mode: "resolve",
@@ -92,15 +108,35 @@ export function WhatsappForwardDialog({
     setAiUsed(true);
   }
 
-  function send() {
-    if (!message.trim()) return;
-    window.open(
-      `https://wa.me/?text=${encodeURIComponent(message)}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
-    setOpen(false);
+  async function send() {
+    if (!message.trim() || !creator || !phoneValid || !connected || sending) return;
+    setSending(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/whatsapp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          creatorId: creator.id,
+          threadId: thread.id,
+          body: message.trim(),
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "Senden fehlgeschlagen");
+        return;
+      }
+      toast.success(`WhatsApp an ${name} gesendet.`);
+      setOpen(false);
+      setMessage("");
+      setAiUsed(false);
+    } finally {
+      setSending(false);
+    }
   }
+
+  const canSend = !!message.trim() && !!creator && phoneValid && connected && !sending;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -186,6 +222,7 @@ export function WhatsappForwardDialog({
               setMessage(e.target.value);
               setAiUsed(false);
               setUnresolved([]);
+              setError(null);
               slashMenu.handleChange(e);
             }}
             onKeyDown={(e) => {
@@ -199,16 +236,40 @@ export function WhatsappForwardDialog({
         </div>
 
         <div className="flex items-center gap-2 border-t border-border px-4 py-3">
-          <span className="text-[11px] text-muted-foreground">
-            Geht per WhatsApp an {name}.
+          <span className="min-w-0 flex-1 text-[11px] text-muted-foreground">
+            {error ? (
+              <span className="text-destructive">{error}</span>
+            ) : creator && !phoneValid ? (
+              <>
+                Für {creator.full_name} ist keine WhatsApp-Nummer hinterlegt.{" "}
+                <Link
+                  href={`/creators/edit-form/${creator.id}`}
+                  className="underline hover:text-foreground"
+                >
+                  Nummer ergänzen
+                </Link>
+              </>
+            ) : !connected ? (
+              <>
+                Kein WhatsApp-Absender verbunden.{" "}
+                <Link
+                  href="/admin/settings/integrations"
+                  className="underline hover:text-foreground"
+                >
+                  In den Einstellungen verbinden
+                </Link>
+              </>
+            ) : (
+              <>Geht per WhatsApp an {name}.</>
+            )}
           </span>
-          <Button
-            className="ml-auto gap-1.5"
-            disabled={!message.trim()}
-            onClick={send}
-          >
-            <Send className="h-3.5 w-3.5" />
-            Per WhatsApp senden
+          <Button className="gap-1.5" disabled={!canSend} onClick={send}>
+            {sending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Send className="h-3.5 w-3.5" />
+            )}
+            {sending ? "Sendet…" : "Per WhatsApp senden"}
           </Button>
         </div>
       </DialogContent>

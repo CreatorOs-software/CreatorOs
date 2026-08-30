@@ -34,6 +34,8 @@ function toFormValues(creator: Creator): CreatorFormValues {
     nachname,
     handle: creator.handle ?? "",
     email: creator.email ?? "",
+    phone: creator.phone ?? "",
+    whatsapp_opt_in: creator.whatsapp_opt_in ?? false,
     street: creator.street ?? "",
     postal_code: creator.postal_code ?? "",
     city: creator.city ?? "",

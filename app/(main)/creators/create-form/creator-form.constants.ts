@@ -40,6 +40,8 @@ export const INITIAL_VALUES: CreatorFormValues = {
   nachname: "",
   handle: "",
   email: "",
+  phone: "",
+  whatsapp_opt_in: false,
   street: "",
   postal_code: "",
   city: "",

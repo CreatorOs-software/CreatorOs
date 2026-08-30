@@ -11,8 +11,6 @@ import {
   Building2,
   User,
   Calendar,
-  Wallet,
-  Star,
   Inbox,
   Users,
   Settings2,
@@ -193,14 +191,9 @@ export function AppSidebar() {
       icon: <FolderOpen className="h-5 w-5 shrink-0 text-current" />,
     },
     {
-      label: "Invoice",
-      href: "/salary",
-      icon: <Wallet className="h-5 w-5 shrink-0 text-current" />,
-    },
-    {
-      label: "Reviews",
-      href: "/reviews",
-      icon: <Star className="h-5 w-5 shrink-0 text-current" />,
+      label: "Settings",
+      href: "/settings",
+      icon: <Settings2 className="h-5 w-5 shrink-0 text-current" />,
     },
   ];
 
