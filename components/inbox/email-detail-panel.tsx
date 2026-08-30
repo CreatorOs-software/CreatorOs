@@ -4,11 +4,12 @@ import DOMPurify from "dompurify";
 import Image from "next/image";
 import {
   Archive,
+  AlertTriangle,
   Check,
   ChevronLeft,
   ChevronRight,
   Copy,
-  FileText,
+  FilePlus,
   Forward,
   Loader2,
   MoreHorizontal,
@@ -20,7 +21,6 @@ import {
   Tag,
   Trash2,
   X,
-  Zap,
 } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,15 +31,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import type { Thread } from "./types";
 import type { EmailLabel } from "@/domains/communication";
 import { SYSTEM_LABELS } from "./constants";
@@ -50,102 +41,8 @@ import {
   getInitial,
 } from "./utils";
 import { Avatar } from "@/components/ui/avatar-creator";
-
-// ─── Chip templates ───────────────────────────────────────────────────────────
-
-type ChipKind =
-  | "interesse"
-  | "gegenangebot"
-  | "rueckfragen"
-  | "absage"
-  | "creator";
-
-const CHIPS: { id: ChipKind; label: string }[] = [
-  { id: "interesse", label: "Interesse + Mediakit" },
-  { id: "gegenangebot", label: "Gegenangebot" },
-  { id: "rueckfragen", label: "Rückfragen" },
-  { id: "absage", label: "Freundliche Absage" },
-  { id: "creator", label: "An Creator weiterleiten" },
-];
-
-function getChipReply(kind: ChipKind, thread: Thread): string {
-  const first =
-    getDisplayName(thread.sender_name, thread.sender_email).split(" ")[0] ??
-    "there";
-  switch (kind) {
-    case "interesse":
-      return `Hallo ${first},\n\nvielen Dank für Ihre Anfrage – grundsätzlich können wir uns eine Zusammenarbeit gut vorstellen, das Thema passt inhaltlich sehr gut.\n\nAnbei unser aktuelles Mediakit mit Reichweiten und Referenzen. Für das beschriebene Paket würden wir bei ca. 5.500 € netto einsteigen, inkl. der üblichen Nutzungsrechte (organisch, 6 Monate DACH). Paid-Nutzung und Exklusivität besprechen wir separat.\n\nPasst das als Grundlage?\n\nBeste Grüße`;
-    case "gegenangebot":
-      return `Hallo ${first},\n\ndanke für euer Angebot. Für den beschriebenen Umfang liegen wir bei 5.800 € netto – die Produktion ist deutlich aufwendiger als ein reiner Story-Slot.\n\nAlternativ können wir beim genannten Budget bleiben und das Paket entsprechend anpassen.\n\nSagt gern, welche Variante euch lieber wäre.\n\nBeste Grüße`;
-    case "rueckfragen":
-      return `Hallo ${first},\n\ndanke für die Anfrage. Bevor ich ein konkretes Angebot schicke, zwei kurze Rückfragen:\n\n1. In welchem Zeitraum soll der Content live gehen?\n2. Ist eine Paid-Nutzung (Whitelisting/Ads) geplant, und wenn ja, für wie lange?\n\nDanach kommt das Angebot zeitnah.\n\nBeste Grüße`;
-    case "absage":
-      return `Hallo ${first},\n\nvielen Dank für das Interesse. Leider passt es aktuell nicht – im genannten Zeitraum besteht bereits eine Kooperation in derselben Kategorie.\n\nMeldet euch gerne zu einem späteren Zeitpunkt.\n\nBeste Grüße`;
-    case "creator":
-      return `Hey,\n\nAnfrage reingekommen: ${thread.sender_name ?? thread.sender_email} – Betreff: ${thread.subject}.\n\nSag mir kurz Bescheid ob du grundsätzlich Interesse hast – dann mache ich das Angebot fertig.\n\nLG`;
-  }
-}
-
-// ─── SaveTemplateDialog ───────────────────────────────────────────────────────
-
-function SaveTemplateDialog({ body }: { body: string }) {
-  const [title, setTitle] = useState("");
-
-  function handleSave() {
-    if (!title.trim()) return;
-    // TODO: persist to DB
-    console.log("Template saved:", { title, body });
-    setTitle("");
-  }
-
-  return (
-    <Dialog>
-      <DialogTrigger
-        disabled={!body.trim()}
-        className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        <FileText className="h-3.5 w-3.5" />
-        Vorlage
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Als Vorlage speichern</DialogTitle>
-          <DialogDescription>
-            Gib der Vorlage einen Namen damit du sie später schnell wiederfinden
-            kannst.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="mt-2 flex flex-col gap-3">
-          <input
-            autoFocus
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSave();
-            }}
-            placeholder="z. B. Interesse + Mediakit"
-            className="h-9 w-full rounded-lg bg-muted px-3 text-sm outline-none focus:ring-1 focus:ring-foreground/20"
-          />
-          <div className="line-clamp-3 rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-            {body}
-          </div>
-        </div>
-        <div className="mt-4 flex items-center justify-end gap-2">
-          <DialogClose className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground">
-            Abbrechen
-          </DialogClose>
-          <DialogClose
-            onClick={handleSave}
-            disabled={!title.trim()}
-            className="rounded-lg bg-foreground px-3 py-1.5 text-xs font-medium text-background disabled:opacity-40"
-          >
-            Speichern
-          </DialogClose>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
+import { InsertTemplatePopover } from "./templates/insert-template-popover";
+import { NeueTemplateDialog } from "./templates/neue-template-dialog";
 
 // ─── ReplyComposer ────────────────────────────────────────────────────────────
 
@@ -163,13 +60,10 @@ function ReplyComposer({
   onAfterSend,
 }: ReplyComposerProps) {
   const [reply, setReply] = useState("");
-  const [usedChip, setUsedChip] = useState(false);
+  const [insertedTemplate, setInsertedTemplate] = useState(false);
+  const [unresolved, setUnresolved] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
-
-  function applyChip(kind: ChipKind) {
-    setReply(getChipReply(kind, thread));
-    setUsedChip(true);
-  }
+  const [savingAsTemplate, setSavingAsTemplate] = useState(false);
 
   async function handleSend() {
     if (!reply.trim() || sending) return;
@@ -225,25 +119,21 @@ function ReplyComposer({
         </div>
       )}
 
-      {/* Chips */}
-      <div className="flex flex-wrap gap-1.5 border-b border-[#E7E7E7] px-4 py-2.5">
-        {CHIPS.map((chip) => (
-          <button
-            key={chip.id}
-            onClick={() => applyChip(chip.id)}
-            className="flex items-center gap-1 rounded-full border border-[#E7E7E7] px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted"
-          >
-            <Zap className="h-3 w-3 text-[#8B5CF6]" />
-            {chip.label}
-          </button>
-        ))}
-      </div>
-
-      {/* AI hint */}
-      {usedChip && (
+      {/* Vorlage einfügen hint */}
+      {insertedTemplate && unresolved.length === 0 && (
         <div className="flex items-center gap-2 border-b border-[#E7E7E7] bg-[#F3EDFE] px-4 py-2 text-xs font-medium text-[#6829D4]">
-          <Zap className="h-3 w-3" />
-          Vorschlag eingefügt – bitte gegenlesen, du sendest.
+          <Sparkles className="h-3 w-3" />
+          Vorlage eingefügt – bitte gegenlesen, du sendest.
+        </div>
+      )}
+
+      {/* Unresolved variable warning */}
+      {unresolved.length > 0 && (
+        <div className="flex items-center gap-2 border-b border-[#E7E7E7] bg-amber-50 px-4 py-2 text-xs font-medium text-amber-700">
+          <AlertTriangle className="h-3 w-3" />
+          {unresolved.length}{" "}
+          {unresolved.length === 1 ? "Variable konnte" : "Variablen konnten"}{" "}
+          nicht aufgelöst werden ({unresolved.map((v) => `\${${v}}`).join(", ")})
         </div>
       )}
 
@@ -253,12 +143,15 @@ function ReplyComposer({
         value={reply}
         onChange={(e) => {
           setReply(e.target.value);
-          if (!e.target.value) setUsedChip(false);
+          if (!e.target.value) {
+            setInsertedTemplate(false);
+            setUnresolved([]);
+          }
         }}
         onKeyDown={(e) => {
           if ((e.metaKey || e.ctrlKey) && e.key === "Enter") handleSend();
         }}
-        placeholder="Antwort schreiben … oder oben einen Vorschlag wählen."
+        placeholder="Antwort schreiben … oder unten eine Vorlage wählen."
         className="min-h-32 w-full resize-none bg-transparent px-4 py-3 text-sm outline-none"
       />
 
@@ -269,7 +162,24 @@ function ReplyComposer({
             <Paperclip className="h-3.5 w-3.5" />
             Mediakit anhängen
           </button>
-          <SaveTemplateDialog body={reply} />
+          <InsertTemplatePopover
+            channel="email"
+            threadId={thread.id}
+            onInsert={(result) => {
+              setReply(result.body);
+              setInsertedTemplate(true);
+              setUnresolved(result.unresolved);
+            }}
+          />
+          <button
+            type="button"
+            disabled={!reply.trim()}
+            onClick={() => setSavingAsTemplate(true)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <FilePlus className="h-3.5 w-3.5" />
+            Vorlage erstellen
+          </button>
         </div>
         <button
           disabled={!reply.trim() || sending}
@@ -280,6 +190,12 @@ function ReplyComposer({
           {sending ? "Senden…" : "Senden"}
         </button>
       </div>
+
+      <NeueTemplateDialog
+        open={savingAsTemplate}
+        onClose={() => setSavingAsTemplate(false)}
+        initialValue={{ body: reply, channel: "email" }}
+      />
     </div>
   );
 }

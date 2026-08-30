@@ -129,6 +129,21 @@ export class SocialAccountService {
     return this.repo.findByCreator(creatorId);
   }
 
+  async getCurrentMetricsForCreator(creatorId: string): Promise<{
+    accounts: CreatorAccount[];
+    currentByAccount: Map<string, MetricsCurrent>;
+  }> {
+    const [accounts, allCurrent] = await Promise.all([
+      this.repo.findByCreator(creatorId),
+      this.repo.findCurrentMetrics(creatorId),
+    ]);
+
+    return {
+      accounts,
+      currentByAccount: new Map(allCurrent.map((m) => [m.creator_account_id, m])),
+    };
+  }
+
   async getMetricsForCreator(
     creatorId: string,
     fromDate: string,

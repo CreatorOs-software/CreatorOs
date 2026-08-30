@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import { MessageCircle, Send, Sparkles } from "lucide-react";
+import { AlertTriangle, MessageCircle, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Thread, Creator } from "../../types";
+import { InsertTemplatePopover } from "../../templates/insert-template-popover";
 
 export type ForwardContext = {
   brand?: string | null;
@@ -60,30 +61,6 @@ function buildSummary(name: string, thread: Thread, ctx: ForwardContext): string
   return lines.join("\n");
 }
 
-function templates(name: string, thread: Thread, ctx: ForwardContext) {
-  const brand = ctx.brand || thread.sender_name || "einer Brand";
-  return [
-    {
-      value: "anfrage",
-      label: "Anfrage weiterleiten",
-      build: () =>
-        `Hey ${name},\n\nneue Anfrage von ${brand} reingekommen. Sag kurz Bescheid, ob das grundsätzlich für dich passt.`,
-    },
-    {
-      value: "nachfrage",
-      label: "Kurz nachfragen",
-      build: () =>
-        `Hey ${name},\n\nkurze Rückfrage zu ${brand}: Wie sieht es zeitlich bei dir aus?`,
-    },
-    {
-      value: "feedback",
-      label: "Feedback weitergeben",
-      build: () =>
-        `Hey ${name},\n\nFeedback von ${brand} ist da:\n\n– \n\nSchaffst du das bis Ende der Woche?`,
-    },
-  ];
-}
-
 export function WhatsappForwardDialog({
   thread,
   creators,
@@ -95,15 +72,10 @@ export function WhatsappForwardDialog({
   const [creatorId, setCreatorId] = useState(initialCreatorId ?? "");
   const [message, setMessage] = useState("");
   const [aiUsed, setAiUsed] = useState(false);
+  const [unresolved, setUnresolved] = useState<string[]>([]);
 
   const creator = creators.find((c) => c.id === creatorId) ?? null;
   const name = creator ? firstName(creator.full_name) : "Creator";
-  const tpls = templates(name, thread, context);
-
-  function pickTemplate(text: string) {
-    setMessage(text);
-    setAiUsed(false);
-  }
 
   function summarize() {
     setMessage(buildSummary(name, thread, context));
@@ -160,17 +132,17 @@ export function WhatsappForwardDialog({
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
-          <div className="flex flex-wrap gap-1.5">
-            {tpls.map((t) => (
-              <button
-                key={t.value}
-                type="button"
-                onClick={() => pickTemplate(t.build())}
-                className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
-              >
-                {t.label}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <InsertTemplatePopover
+              channel="whatsapp"
+              creatorId={creatorId || undefined}
+              onInsert={(result) => {
+                setMessage(result.body);
+                setAiUsed(false);
+                setUnresolved(result.unresolved);
+              }}
+              trigger={<span>Vorlage einfügen</span>}
+            />
             <button
               type="button"
               onClick={summarize}
@@ -187,11 +159,21 @@ export function WhatsappForwardDialog({
             </p>
           )}
 
+          {unresolved.length > 0 && (
+            <p className="flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+              <AlertTriangle className="h-3 w-3" />
+              {unresolved.length}{" "}
+              {unresolved.length === 1 ? "Variable konnte" : "Variablen konnten"}{" "}
+              nicht aufgelöst werden ({unresolved.map((v) => `\${${v}}`).join(", ")})
+            </p>
+          )}
+
           <Textarea
             value={message}
             onChange={(e) => {
               setMessage(e.target.value);
               setAiUsed(false);
+              setUnresolved([]);
             }}
             rows={9}
             placeholder="Nachricht an den Creator … oder oben eine Vorlage wählen."
