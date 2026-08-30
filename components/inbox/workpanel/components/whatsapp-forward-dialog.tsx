@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactElement, useState } from "react";
+import { type ReactElement, useRef, useState } from "react";
 import { AlertTriangle, MessageCircle, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import type { Thread, Creator } from "../../types";
 import { InsertTemplatePopover } from "../../templates/insert-template-popover";
+import { useVariableSlashMenu } from "../../templates/variable-slash-menu";
 
 export type ForwardContext = {
   brand?: string | null;
@@ -73,9 +74,18 @@ export function WhatsappForwardDialog({
   const [message, setMessage] = useState("");
   const [aiUsed, setAiUsed] = useState(false);
   const [unresolved, setUnresolved] = useState<string[]>([]);
+  const messageRef = useRef<HTMLTextAreaElement>(null);
 
   const creator = creators.find((c) => c.id === creatorId) ?? null;
   const name = creator ? firstName(creator.full_name) : "Creator";
+
+  const slashMenu = useVariableSlashMenu({
+    mode: "resolve",
+    resolveContext: { creatorId: creatorId || undefined },
+    textareaRef: messageRef,
+    onReplace: setMessage,
+    onUnresolved: (paths) => setUnresolved((prev) => [...new Set([...prev, ...paths])]),
+  });
 
   function summarize() {
     setMessage(buildSummary(name, thread, context));
@@ -169,16 +179,23 @@ export function WhatsappForwardDialog({
           )}
 
           <Textarea
+            ref={messageRef}
+            readOnly={slashMenu.loading}
             value={message}
             onChange={(e) => {
               setMessage(e.target.value);
               setAiUsed(false);
               setUnresolved([]);
+              slashMenu.handleChange(e);
+            }}
+            onKeyDown={(e) => {
+              slashMenu.handleKeyDown(e);
             }}
             rows={9}
-            placeholder="Nachricht an den Creator … oder oben eine Vorlage wählen."
+            placeholder="Nachricht an den Creator … oder / für Variablen, oben eine Vorlage wählen."
             className="min-h-44 text-sm"
           />
+          {slashMenu.menu}
         </div>
 
         <div className="flex items-center gap-2 border-t border-border px-4 py-3">

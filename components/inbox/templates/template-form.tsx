@@ -15,6 +15,7 @@ import { Braces } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Template, TemplateChannel } from "@/domains/templates";
 import { VARIABLE_REGISTRY, type VariableGroup } from "@/lib/templates/variable-registry";
+import { useVariableSlashMenu } from "./variable-slash-menu";
 
 export type TemplateFormValue = {
   name: string;
@@ -102,6 +103,11 @@ export function TemplateForm({
   showSubject: boolean;
 }) {
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const slashMenu = useVariableSlashMenu({
+    mode: "literal",
+    textareaRef: bodyRef,
+    onReplace: (next) => onChange({ body: next }),
+  });
 
   function insertAtCursor(path: string) {
     const el = bodyRef.current;
@@ -180,10 +186,17 @@ export function TemplateForm({
         <Textarea
           ref={bodyRef}
           value={value.body}
-          onChange={(e) => onChange({ body: e.target.value })}
-          placeholder={"Hallo ${creator.firstName},\n\n…"}
+          onChange={(e) => {
+            onChange({ body: e.target.value });
+            slashMenu.handleChange(e);
+          }}
+          onKeyDown={(e) => {
+            slashMenu.handleKeyDown(e);
+          }}
+          placeholder={"Hallo ${creator.firstName}, … oder tippe / für Variablen"}
           className={cn("min-h-40 font-mono text-[13px]")}
         />
+        {slashMenu.menu}
       </div>
     </div>
   );

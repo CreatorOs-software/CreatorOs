@@ -3,8 +3,7 @@ import type { Template, TemplateInsert, TemplatePatch } from "./types";
 
 export type ThreadRefs = {
   integration_id: string;
-  anfrage_id: string | null;
-  deal_id: string | null;
+  brand_id: string | null;
 };
 
 export const TemplateRepository = {
@@ -74,7 +73,7 @@ export const TemplateRepository = {
   async findThreadRefs(supabase: SupabaseClient, threadId: string): Promise<ThreadRefs | null> {
     const { data, error } = await supabase
       .from("email_threads")
-      .select("integration_id, anfrage_id, deal_id")
+      .select("integration_id, brand_id")
       .eq("id", threadId)
       .maybeSingle();
     if (error) throw error;
@@ -89,32 +88,6 @@ export const TemplateRepository = {
       .maybeSingle();
     if (error) throw error;
     return (data?.creator_id as string | null) ?? null;
-  },
-
-  async findAnfrageRefs(
-    supabase: SupabaseClient,
-    anfrageId: string,
-  ): Promise<{ creator_id: string | null; brand_id: string | null } | null> {
-    const { data, error } = await supabase
-      .from("anfragen")
-      .select("creator_id, brand_id")
-      .eq("id", anfrageId)
-      .maybeSingle();
-    if (error) throw error;
-    return data ?? null;
-  },
-
-  async findDealRefs(
-    supabase: SupabaseClient,
-    dealId: string,
-  ): Promise<{ creator_id: string | null; brand_id: string | null } | null> {
-    const { data, error } = await supabase
-      .from("deals")
-      .select("creator_id, brand_id")
-      .eq("id", dealId)
-      .maybeSingle();
-    if (error) throw error;
-    return data ?? null;
   },
 
   async findBrandBasics(

@@ -34,6 +34,10 @@ export const QueryKeys = {
     all: () => ["integrations"] as const,
     list: () => ["integrations", "list"] as const,
   },
+  whatsapp: {
+    all: () => ["whatsapp"] as const,
+    connection: () => ["whatsapp", "connection"] as const,
+  },
   todos: {
     all: () => ["todos"] as const,
   },

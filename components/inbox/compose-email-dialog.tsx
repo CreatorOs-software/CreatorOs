@@ -1,9 +1,10 @@
 "use client";
 
-import { Command, Plus, Sparkles, X } from "lucide-react";
+import { AlertTriangle, Command, Plus, Sparkles, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useVariableSlashMenu } from "./templates/variable-slash-menu";
 
 // ─── Email tag input helpers ──────────────────────────────────────────────────
 
@@ -96,6 +97,15 @@ export function ComposeEmailDialog({ open, onOpenChange, integrationId, initialT
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [unresolved, setUnresolved] = useState<string[]>([]);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const slashMenu = useVariableSlashMenu({
+    mode: "resolve",
+    resolveContext: { integrationId: integrationId ?? undefined },
+    textareaRef: bodyRef,
+    onReplace: setBody,
+    onUnresolved: (paths) => setUnresolved((prev) => [...new Set([...prev, ...paths])]),
+  });
 
   function handleClose() {
     onOpenChange(false);
@@ -203,16 +213,35 @@ export function ComposeEmailDialog({ open, onOpenChange, integrationId, initialT
             </button>
           </div>
 
+          {/* Unresolved variable warning */}
+          {unresolved.length > 0 && (
+            <div className="flex items-center gap-2 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+              <AlertTriangle className="h-3 w-3" />
+              {unresolved.length}{" "}
+              {unresolved.length === 1 ? "Variable konnte" : "Variablen konnten"}{" "}
+              nicht aufgelöst werden ({unresolved.map((v) => `\${${v}}`).join(", ")})
+            </div>
+          )}
+
           {/* Body */}
           <div className="min-h-55 bg-white px-3 py-3">
             <textarea
+              ref={bodyRef}
               autoFocus
+              readOnly={slashMenu.loading}
               value={body}
-              onChange={(e) => setBody(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && e.metaKey) void handleSend(); }}
-              placeholder="Nachricht schreiben…"
+              onChange={(e) => {
+                setBody(e.target.value);
+                slashMenu.handleChange(e);
+              }}
+              onKeyDown={(e) => {
+                if (slashMenu.handleKeyDown(e)) return;
+                if (e.key === "Enter" && e.metaKey) void handleSend();
+              }}
+              placeholder="Nachricht schreiben… (/ für Variablen)"
               className="h-full min-h-55 w-full resize-none bg-transparent text-sm outline-none placeholder:text-[#8C8C8C]"
             />
+            {slashMenu.menu}
           </div>
 
           {/* Bottom actions */}

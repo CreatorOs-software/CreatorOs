@@ -22,7 +22,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { QueryKeys } from "@/lib/query-keys";
@@ -43,6 +43,7 @@ import {
 import { Avatar } from "@/components/ui/avatar-creator";
 import { InsertTemplatePopover } from "./templates/insert-template-popover";
 import { NeueTemplateDialog } from "./templates/neue-template-dialog";
+import { useVariableSlashMenu } from "./templates/variable-slash-menu";
 
 // ─── ReplyComposer ────────────────────────────────────────────────────────────
 
@@ -64,6 +65,14 @@ function ReplyComposer({
   const [unresolved, setUnresolved] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const [savingAsTemplate, setSavingAsTemplate] = useState(false);
+  const replyRef = useRef<HTMLTextAreaElement>(null);
+  const slashMenu = useVariableSlashMenu({
+    mode: "resolve",
+    resolveContext: { threadId: thread.id },
+    textareaRef: replyRef,
+    onReplace: setReply,
+    onUnresolved: (paths) => setUnresolved((prev) => [...new Set([...prev, ...paths])]),
+  });
 
   async function handleSend() {
     if (!reply.trim() || sending) return;
@@ -139,7 +148,9 @@ function ReplyComposer({
 
       {/* Textarea */}
       <textarea
+        ref={replyRef}
         autoFocus
+        readOnly={slashMenu.loading}
         value={reply}
         onChange={(e) => {
           setReply(e.target.value);
@@ -147,13 +158,16 @@ function ReplyComposer({
             setInsertedTemplate(false);
             setUnresolved([]);
           }
+          slashMenu.handleChange(e);
         }}
         onKeyDown={(e) => {
+          if (slashMenu.handleKeyDown(e)) return;
           if ((e.metaKey || e.ctrlKey) && e.key === "Enter") handleSend();
         }}
-        placeholder="Antwort schreiben … oder unten eine Vorlage wählen."
+        placeholder="Antwort schreiben … oder / für Variablen, unten eine Vorlage wählen."
         className="min-h-32 w-full resize-none bg-transparent px-4 py-3 text-sm outline-none"
       />
+      {slashMenu.menu}
 
       {/* Footer */}
       <div className="flex items-center justify-between border-t border-[#E7E7E7] px-4 py-2.5">

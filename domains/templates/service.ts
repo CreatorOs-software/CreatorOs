@@ -1,8 +1,10 @@
+import type { AuthContext } from "@/domains/auth";
 import { getAuthContext } from "@/domains/auth";
 import { createClient } from "@/lib/supabase/server";
 import { CreatorRepository } from "@/domains/creators/repository";
 import { SocialAccountRepository } from "@/domains/social-accounts/repository";
 import { renderResult } from "@/lib/templates/resolve";
+import { VARIABLE_MAP } from "@/lib/templates/variable-registry";
 import { TemplateRepository } from "./repository";
 import type {
   AccountContext,
@@ -51,48 +53,77 @@ export const TemplateService = {
       throw new Error("Template not found");
     }
 
-    const { creatorId, brandId } = await resolveRefs(supabase, input);
-
-    const [creator, brand, agencyName] = await Promise.all([
-      creatorId ? buildCreatorContext(supabase, creatorId) : Promise.resolve(null),
-      brandId ? buildBrandContext(supabase, brandId) : Promise.resolve(null),
-      TemplateRepository.findAgencyName(supabase, auth.agencyId),
-    ]);
-
-    const account: AccountContext = {
-      agencyName,
-      userName: auth.displayName ?? "",
-      userEmail: auth.email ?? "",
-    };
-
-    const ctx: TemplateContext = { creator, brand, account };
-
+    const ctx = await buildTemplateContext(supabase, auth, input);
     return renderResult(template.subject, template.body, ctx);
+  },
+
+  /** Resolves a single `${path}` variable against the same context render() uses. */
+  async resolveVariable(path: string, input: RenderInput): Promise<{ value: string | null }> {
+    const supabase = await createClient();
+    const auth = await getAuthContext(supabase);
+
+    const entry = VARIABLE_MAP.get(path);
+    if (!entry) return { value: null };
+
+    const ctx = await buildTemplateContext(supabase, auth, input);
+    const raw = entry.resolve(ctx);
+    if (raw === null || raw === undefined || raw === "") return { value: null };
+
+    return { value: entry.format ? entry.format(raw) : String(raw) };
   },
 };
 
+async function buildTemplateContext(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  auth: AuthContext,
+  input: RenderInput,
+): Promise<TemplateContext> {
+  const { creatorId, brandId } = await resolveRefs(supabase, input);
+
+  const [creator, brand, agencyName] = await Promise.all([
+    creatorId ? buildCreatorContext(supabase, creatorId) : Promise.resolve(null),
+    brandId ? buildBrandContext(supabase, brandId) : Promise.resolve(null),
+    TemplateRepository.findAgencyName(supabase, auth.agencyId),
+  ]);
+
+  const account: AccountContext = {
+    agencyName,
+    userName: auth.displayName ?? "",
+    userEmail: auth.email ?? "",
+  };
+
+  return { creator, brand, account };
+}
+
+/**
+ * "creator" always means the creator whose mailbox we're acting in — the
+ * mailbox (email_integrations.creator_id) is the single source of truth,
+ * not whatever creator happens to be attached to a linked Anfrage/Deal (in
+ * practice they coincide, since a mailbox only ever handles its own
+ * creator's mail, but the mailbox is what's authoritative).
+ *
+ * "brand" has no mailbox equivalent — it only comes from the thread's own
+ * `brand_id` (set by the AI extraction/labeling pipeline or manually).
+ */
 async function resolveRefs(
   supabase: Awaited<ReturnType<typeof createClient>>,
   input: RenderInput,
 ): Promise<{ creatorId: string | null; brandId: string | null }> {
   let creatorId = input.creatorId ?? null;
   let brandId = input.brandId ?? null;
-  if (creatorId || brandId || !input.threadId) return { creatorId, brandId };
 
-  const thread = await TemplateRepository.findThreadRefs(supabase, input.threadId);
-  if (!thread) return { creatorId, brandId };
-
-  const refs = thread.anfrage_id
-    ? await TemplateRepository.findAnfrageRefs(supabase, thread.anfrage_id)
-    : thread.deal_id
-      ? await TemplateRepository.findDealRefs(supabase, thread.deal_id)
-      : null;
-
-  creatorId = refs?.creator_id ?? null;
-  brandId = refs?.brand_id ?? null;
+  const needsThread = (!creatorId || !brandId) && !!input.threadId;
+  const thread = needsThread ? await TemplateRepository.findThreadRefs(supabase, input.threadId!) : null;
 
   if (!creatorId) {
-    creatorId = await TemplateRepository.findIntegrationCreatorId(supabase, thread.integration_id);
+    const integrationId = input.integrationId ?? thread?.integration_id ?? null;
+    if (integrationId) {
+      creatorId = await TemplateRepository.findIntegrationCreatorId(supabase, integrationId);
+    }
+  }
+
+  if (!brandId && thread) {
+    brandId = thread.brand_id;
   }
 
   return { creatorId, brandId };

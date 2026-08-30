@@ -25,6 +25,8 @@ export type TemplatePatch = Partial<TemplateInsert>;
 
 export type RenderInput = {
   threadId?: string;
+  /** The mailbox to resolve "creator" against when there's no thread yet (e.g. composing a new email). */
+  integrationId?: string;
   creatorId?: string;
   brandId?: string;
 };

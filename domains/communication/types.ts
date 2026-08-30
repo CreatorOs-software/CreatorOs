@@ -54,6 +54,7 @@ export type InboxCreator = {
   id: string;
   full_name: string;
   initials: string;
+  phone: string | null;
 };
 
 export type InboxIntegration = {

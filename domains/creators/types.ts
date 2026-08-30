@@ -12,6 +12,9 @@ export type Creator = {
   niche: string[];
   bio: string | null;
   email: string | null;
+  phone: string | null;
+  whatsapp_opt_in: boolean;
+  whatsapp_opt_in_at: string | null;
   street: string | null;
   postal_code: string | null;
   city: string | null;
