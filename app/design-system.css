@@ -18,13 +18,13 @@
   --card-dark-foreground: oklch(100% 0 0);
 
   /* Primary — black CTA */
-  --primary: oklch(9% 0 0);
+  --primary: oklch(0.4374 0.0699 201.69);
   --primary-foreground: oklch(100% 0 0);
   --primary-muted: oklch(25% 0 0);
 
   /* Secondary — #F0F0F0 slightly visible gray (chips, esc-button bg) */
-  --secondary: oklch(70.5% 0.213 47.604);
-  --secondary-foreground: oklch(100% 0.00011 271.152);
+  --secondary: oklch(91.583% 0.0001 271.152);
+  --secondary-foreground: oklch(0% 0 0);
 
   /* Accent — shadcn convention: hover bg (light gray), not brand color */
   --accent: oklch(95.5% 0 0);
@@ -33,7 +33,7 @@
   --accent-gold: oklch(9% 0 0);
 
   /* Muted — #FAFAFA content panel bg + #8C8C8C placeholder/secondary text */
-  --muted: oklch(98.8% 0 0);
+  --muted: oklch(95.815% 0.00011 271.152);
   --muted-foreground: oklch(60% 0 0); /* #8C8C8C */
 
   /* UI Elements */
@@ -41,7 +41,7 @@
   --border-light: oklch(94% 0 0);
 
   /* Brand — amber accent (#F59E0D), used for unread badges + primary links */
-  --brand: oklch(70.5% 0.213 47.604);
+  --brand: oklch(0.4374 0.0699 201.69);
   --brand-foreground: oklch(9% 0 0);
   --input: oklch(98.8% 0 0); /* clearly visible gray input background */
   --ring: oklch(9% 0 0);

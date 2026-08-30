@@ -28,7 +28,6 @@ type BrandListItem = {
   id: string;
   company_name: string;
   short_code: string;
-  color: string;
   industry: string | null;
   deal_count: number;
   active_deal_count: number;
@@ -39,19 +38,6 @@ type BrandListItem = {
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
-
-const PRESET_COLORS = [
-  "#3b82f6",
-  "#ef4444",
-  "#f97316",
-  "#22c55e",
-  "#8b5cf6",
-  "#ec4899",
-  "#06b6d4",
-  "#eab308",
-  "#6b7280",
-  "#0f172a",
-];
 
 function autoShortCode(name: string): string {
   const words = name.trim().split(/\s+/);
@@ -64,23 +50,20 @@ function autoShortCode(name: string): string {
 // ── Brand Avatar ───────────────────────────────────────────────────────────────
 
 function BrandAvatar({
-  color,
   short_code,
   size = "sm",
 }: {
-  color: string;
   short_code: string;
   size?: "sm" | "md" | "lg";
 }) {
   return (
     <span
       className={cn(
-        "rounded-lg shrink-0 inline-flex items-center justify-center font-bold text-white",
+        "rounded-lg shrink-0 inline-flex items-center justify-center font-bold bg-zinc-100 text-zinc-500",
         size === "sm" && "w-7 h-7 text-[10px]",
         size === "md" && "w-9 h-9 text-xs",
         size === "lg" && "w-14 h-14 text-lg",
       )}
-      style={{ background: color }}
     >
       {short_code}
     </span>
@@ -100,7 +83,6 @@ function NeueBrandDialog({
 }) {
   const [name, setName] = useState("");
   const [shortCode, setShortCode] = useState("");
-  const [color, setColor] = useState(PRESET_COLORS[0]);
   const [industry, setIndustry] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -122,7 +104,6 @@ function NeueBrandDialog({
         body: JSON.stringify({
           company_name: name.trim(),
           short_code: shortCode.trim() || autoShortCode(name),
-          color,
           industry: industry.trim() || null,
         }),
       });
@@ -139,7 +120,6 @@ function NeueBrandDialog({
       });
       setName("");
       setShortCode("");
-      setColor(PRESET_COLORS[0]);
       setIndustry("");
       onClose();
     } finally {
@@ -196,30 +176,9 @@ function NeueBrandDialog({
             </div>
           </div>
 
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-2 block">
-              Farbe
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {PRESET_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setColor(c)}
-                  className={cn(
-                    "w-7 h-7 rounded-lg transition-all",
-                    color === c && "ring-2 ring-offset-2 ring-ring",
-                  )}
-                  style={{ background: c }}
-                />
-              ))}
-            </div>
-          </div>
-
           {name.trim() && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
               <BrandAvatar
-                color={color}
                 short_code={shortCode || autoShortCode(name)}
                 size="md"
               />
@@ -257,7 +216,7 @@ const brandColumns: ColumnDef<BrandListItem>[] = [
       const b = row.original;
       return (
         <div className="flex items-center gap-3 min-w-0">
-          <BrandAvatar color={b.color} short_code={b.short_code} />
+          <BrandAvatar short_code={b.short_code} />
           <div className="min-w-0">
             <p className="text-sm font-medium truncate">{b.company_name}</p>
             <div className="flex items-center gap-1.5">

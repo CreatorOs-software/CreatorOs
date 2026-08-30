@@ -9,7 +9,7 @@ const DEAL_SELECT = `
   campaign_start, campaign_end, contract_status, contract_date, contract_url,
   rights, approval_info, delivery_info, guidelines, tracking_assets,
   exclusivity_info, embargo, whitelisting,
-  brands(company_name, color, short_code, contact_name, contact_email)
+  brands(company_name, short_code, contact_name, contact_email)
 `;
 
 export const DealRepository = {

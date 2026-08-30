@@ -34,6 +34,8 @@ function toFormValues(creator: Creator): CreatorFormValues {
     nachname,
     handle: creator.handle ?? "",
     email: creator.email ?? "",
+    phone: creator.phone ?? "",
+    whatsapp_opt_in: creator.whatsapp_opt_in ?? false,
     street: creator.street ?? "",
     postal_code: creator.postal_code ?? "",
     city: creator.city ?? "",
@@ -139,7 +141,7 @@ export function EditCreatorWizard({ creator }: EditCreatorWizardProps) {
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div className="flex items-center gap-2.5">
-              <span className="w-7 h-7 rounded-lg inline-flex items-center justify-center text-xs font-bold text-white shrink-0 bg-neutral-800">
+              <span className="w-7 h-7 rounded-lg inline-flex items-center justify-center text-xs font-bold text-zinc-500 shrink-0 bg-zinc-100">
                 {creator.initials}
               </span>
               <div>

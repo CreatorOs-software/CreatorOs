@@ -17,7 +17,7 @@ type Deal = {
   priority: string;
   deadline: string | null;
   campaign_type: string | null;
-  brands: { company_name: string; color: string; short_code: string } | null;
+  brands: { company_name: string; short_code: string } | null;
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────

@@ -40,16 +40,12 @@ export const STATUS_META: Record<
 // ── Cell components ────────────────────────────────────────────────────────────
 
 export function AnfrageBrandAvatar({ anfrage }: { anfrage: Anfrage }) {
-  const color = anfrage.brands?.color ?? "#6b7280";
   const code =
     anfrage.brands?.short_code ??
     anfrage.brand_name?.slice(0, 2).toUpperCase() ??
     "?";
   return (
-    <span
-      className="w-6 h-6 rounded-md shrink-0 inline-flex items-center justify-center text-white text-[9px] font-bold"
-      style={{ background: color }}
-    >
+    <span className="w-6 h-6 rounded-md shrink-0 inline-flex items-center justify-center bg-zinc-100 text-zinc-500 text-[9px] font-bold">
       {code}
     </span>
   );

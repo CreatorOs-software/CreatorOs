@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Avatar } from "@/components/ui/avatar-creator";
 import { cn } from "@/lib/utils";
 import { PERMISSION_GROUPS, EMPTY_PERMISSIONS } from "@/domains/auth/permissions";
 import type { AgencyMember, AgencyInvitation } from "@/domains/members";
@@ -148,12 +149,7 @@ function InviteLinkBanner({ token, onDismiss }: { token: string; onDismiss: () =
 function MemberRow({ member }: { member: AgencyMember }) {
   return (
     <div className="flex items-center gap-3 py-3">
-      <span
-        className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold text-white shrink-0"
-        style={{ background: member.color || "#6b7280" }}
-      >
-        {member.initials}
-      </span>
+      <Avatar initials={member.initials} size="sm" variant="team" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{member.display_name ?? "—"}</p>
         <p className="text-xs text-muted-foreground">

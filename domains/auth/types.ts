@@ -18,6 +18,7 @@ export type PermissionMap = Record<Permission, boolean>;
 
 export type AuthContext = {
   userId: string;
+  email: string | null;
   agencyId: string;
   displayName: string | null;
   role: Role;

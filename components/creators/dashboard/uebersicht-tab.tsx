@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Calendar, User } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Avatar } from "@/components/ui/avatar-creator";
 import { cn } from "@/lib/utils";
 import type { DealFull, Invoice } from "./types";
 import { fmtMoney } from "./constants";
@@ -29,7 +30,7 @@ type TodoItem = {
   done: boolean;
   due_date: string | null;
   priority: Priority | null;
-  assignee: { id: string; full_name: string; initials: string; color: string } | null;
+  assignee: { id: string; full_name: string; initials: string } | null;
 };
 
 const PRIORITY_CFG: Record<Priority, { label: string; dot: string; badge: string }> = {
@@ -355,12 +356,11 @@ function TodosWidget({ creatorId }: { creatorId: string }) {
                   <User className="size-3.5" /> Zugewiesen
                 </span>
                 <span className="flex items-center gap-1.5 text-xs font-medium">
-                  <span
-                    className="inline-flex size-5 items-center justify-center rounded-full text-[9px] font-bold text-white"
-                    style={{ backgroundColor: selected.assignee.color }}
-                  >
-                    {selected.assignee.initials}
-                  </span>
+                  <Avatar
+                    initials={selected.assignee.initials}
+                    variant="team"
+                    className="size-5 text-[9px]"
+                  />
                   {selected.assignee.full_name}
                 </span>
               </div>

@@ -191,6 +191,8 @@ async function resolveConversation(
       .eq("agency_id", agency_id)
       .in("message_id", refs)
       .not("conversation_id", "is", null)
+      .order("received_at", { ascending: false })
+      .limit(1)
       .maybeSingle<{ conversation_id: string }>();
 
     if (sibling?.conversation_id) return sibling.conversation_id;

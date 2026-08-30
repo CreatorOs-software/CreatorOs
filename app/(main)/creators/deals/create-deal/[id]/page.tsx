@@ -15,11 +15,11 @@ export default async function CreateDealPage({
     CreatorRepository.findById(supabase, id),
     supabase
       .from("brands")
-      .select("id, company_name, color, short_code")
+      .select("id, company_name, short_code")
       .eq("agency_id", agencyId),
     supabase
       .from("creators")
-      .select("id, full_name, color, initials")
+      .select("id, full_name, initials")
       .eq("agency_id", agencyId)
       .order("full_name"),
     supabase

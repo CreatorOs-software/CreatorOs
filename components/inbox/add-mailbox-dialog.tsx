@@ -21,6 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Avatar } from "@/components/ui/avatar-creator";
 import { QueryKeys } from "@/lib/query-keys";
 import { GOOGLE_PATHS } from "./constants";
 import type { Creator } from "@/domains/creators";
@@ -438,9 +439,7 @@ function CreatorStep({ integrationEmail, creators, assigning, onAssign }: Creato
                     : "border-[#E7E7E7] hover:bg-muted/50",
                 )}
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-800 text-[11px] font-bold text-white">
-                  {c.initials}
-                </span>
+                <Avatar initials={c.initials} size="sm" />
                 <span className="min-w-0 flex-1 truncate text-xs font-medium">{c.full_name}</span>
                 {selected === c.id && (
                   <Check className="h-3.5 w-3.5 shrink-0 text-foreground" />

@@ -35,6 +35,7 @@ export async function getAuthContext(supabase: SupabaseClient): Promise<AuthCont
 
   return {
     userId: user.id,
+    email: user.email ?? null,
     agencyId: profile.agency_id as string,
     displayName: (profile.display_name as string | null) ?? null,
     role,

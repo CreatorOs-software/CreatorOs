@@ -114,7 +114,6 @@ export type DealFull = {
   whitelisting: WhitelistingInfo | null;
   brands: {
     company_name: string;
-    color: string;
     short_code: string;
     contact_name: string | null;
     contact_email: string | null;

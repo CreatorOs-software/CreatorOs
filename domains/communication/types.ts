@@ -39,6 +39,8 @@ export type EmailThread = {
   message_id: string | null;
   in_reply_to: string | null;
   references_header: string | null;
+  anfrage_id: string | null;
+  deal_id: string | null;
 };
 
 export type ThreadPatch = {
@@ -52,6 +54,7 @@ export type InboxCreator = {
   id: string;
   full_name: string;
   initials: string;
+  phone: string | null;
 };
 
 export type InboxIntegration = {

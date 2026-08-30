@@ -40,6 +40,26 @@ export function daysUntil(dateStr: string): number {
   return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86_400_000);
 }
 
+// ─── Phone numbers (E.164) ───────────────────────────────────────────────────
+
+/** `true` for a well-formed E.164 number like "+4915112345678". */
+export function isValidE164(value: string): boolean {
+  return /^\+[1-9]\d{6,14}$/.test(value);
+}
+
+/**
+ * Best-effort cleanup of a hand-typed phone number into E.164.
+ * Strips spaces / dashes / parens / slashes, turns a leading "00" into "+".
+ * Returns `null` when the result still isn't valid E.164 (e.g. a national
+ * "0…" number with no country code — we don't guess a country).
+ */
+export function normalizeE164(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  let s = raw.replace(/[\s()/\-.]/g, "");
+  if (s.startsWith("00")) s = "+" + s.slice(2);
+  return isValidE164(s) ? s : null;
+}
+
 // ─── Duration formatting ──────────────────────────────────────────────────────
 
 /** Seconds → "M:SS": 125 → "2:05" */

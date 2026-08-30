@@ -7,7 +7,7 @@ const ANFRAGE_SELECT = `
   deliverables, payment_items, fee, guidelines, tracking_assets,
   format, budget_requested, budget_offer, source, status,
   rejection_reason, notes, linked_deal_id, created_at, updated_at,
-  brands(company_name, color, short_code, contact_name, contact_email)
+  brands(company_name, short_code, contact_name, contact_email)
 `;
 
 export const AnfrageRepository = {

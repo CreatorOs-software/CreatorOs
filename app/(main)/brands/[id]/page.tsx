@@ -90,7 +90,6 @@ type BrandDetail = {
   id: string;
   company_name: string;
   short_code: string;
-  color: string;
   industry: string | null;
   notes: string | null;
   created_at: string;
@@ -151,23 +150,20 @@ const ANFRAGE_STATUS: Record<
 // ── Small shared components ────────────────────────────────────────────────────
 
 function BrandAvatar({
-  color,
   short_code,
   size = "lg",
 }: {
-  color: string;
   short_code: string;
   size?: "sm" | "md" | "lg";
 }) {
   return (
     <span
       className={cn(
-        "rounded-xl shrink-0 inline-flex items-center justify-center font-bold text-white",
+        "rounded-xl shrink-0 inline-flex items-center justify-center font-bold bg-zinc-100 text-zinc-500",
         size === "sm" && "w-7 h-7 text-[10px] rounded-lg",
         size === "md" && "w-9 h-9 text-xs rounded-lg",
         size === "lg" && "w-14 h-14 text-xl",
       )}
-      style={{ background: color }}
     >
       {short_code}
     </span>
@@ -176,7 +172,7 @@ function BrandAvatar({
 
 function CreatorAvatar({ creator }: { creator: CreatorMin }) {
   return (
-    <span className="w-8 h-8 rounded-full shrink-0 inline-flex items-center justify-center text-white text-[10px] font-bold bg-neutral-800">
+    <span className="w-8 h-8 rounded-full shrink-0 inline-flex items-center justify-center text-zinc-500 text-[10px] font-bold bg-zinc-100">
       {creator.initials}
     </span>
   );
@@ -862,7 +858,7 @@ function GapSection({ creators }: { creators: CreatorMin[] }) {
             href={`/creators/dashboard/${c.id}`}
             className="inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-full border border-border bg-background hover:bg-muted transition-colors text-xs font-medium"
           >
-            <span className="w-5 h-5 rounded-full inline-flex items-center justify-center text-white text-[9px] font-bold shrink-0 bg-neutral-800">
+            <span className="w-5 h-5 rounded-full inline-flex items-center justify-center text-zinc-500 text-[9px] font-bold shrink-0 bg-zinc-100">
               {c.initials}
             </span>
             {c.full_name}
@@ -985,7 +981,7 @@ export default function BrandDetailPage() {
       <Card className="rounded-2xl p-6 gap-0">
         <div className="flex items-start justify-between gap-6">
           <div className="flex items-center gap-4">
-            <BrandAvatar color={brand.color} short_code={brand.short_code} />
+            <BrandAvatar short_code={brand.short_code} />
             <div>
               <h1 className="text-xl font-semibold leading-tight">
                 {brand.company_name}

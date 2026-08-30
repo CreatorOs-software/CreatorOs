@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Invoice } from "./types";
 
-const INVOICE_SELECT = `id, number, amount, status, issued_at, due_date, paid_at, brands(company_name, color, short_code)`;
+const INVOICE_SELECT = `id, number, amount, status, issued_at, due_date, paid_at, brands(company_name, short_code)`;
 
 export const InvoiceRepository = {
   async findByCreator(supabase: SupabaseClient, creatorId: string): Promise<Invoice[]> {

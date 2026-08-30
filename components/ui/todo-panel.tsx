@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
 import { FloatingWindow } from "@/components/ui/floating-window";
+import { Avatar } from "@/components/ui/avatar-creator";
 import {
   Select,
   SelectContent,
@@ -26,7 +27,6 @@ type TodoAssignee = {
   id: string;
   full_name: string;
   initials: string;
-  color: string;
 };
 
 type TodoItem = {
@@ -272,7 +272,7 @@ export function TodoPanel() {
                     const c = creators.find((x) => x.id === form.assignee_id);
                     return c ? (
                       <span className="flex items-center gap-2 text-sm">
-                        <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white bg-neutral-800">
+                        <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-zinc-500 bg-zinc-100">
                           {c.initials}
                         </span>
                         {c.full_name}
@@ -292,7 +292,7 @@ export function TodoPanel() {
               <SelectContent>
                 {creators.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
-                    <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white bg-neutral-800">
+                    <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-zinc-500 bg-zinc-100">
                       {c.initials}
                     </span>
                     {c.full_name}
@@ -392,7 +392,7 @@ export function TodoPanel() {
                 const c = creators.find((x) => x.id === filterCreator);
                 return c ? (
                   <span className="flex items-center gap-1.5 truncate">
-                    <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white bg-neutral-800">
+                    <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-zinc-500 bg-zinc-100">
                       {c.initials}
                     </span>
                     <span className="truncate">{c.full_name}</span>
@@ -410,7 +410,7 @@ export function TodoPanel() {
             {creators.map((c) => (
               <SelectItem key={c.id} value={c.id} className="text-xs">
                 <span
-                  className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white bg-neutral-800"
+                  className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-zinc-500 bg-zinc-100"
                 >
                   {c.initials}
                 </span>
@@ -560,13 +560,11 @@ export function TodoPanel() {
                         </span>
                       )}
                       {item.assignee && (
-                        <span
-                          className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                          style={{ backgroundColor: item.assignee.color }}
-                          title={item.assignee.full_name}
-                        >
-                          {item.assignee.initials}
-                        </span>
+                        <Avatar
+                          initials={item.assignee.initials}
+                          variant="team"
+                          className="size-6 text-[10px]"
+                        />
                       )}
                     </div>
                   )}

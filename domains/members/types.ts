@@ -4,7 +4,6 @@ export type AgencyUser = {
   id: string;
   display_name: string | null;
   initials: string | null;
-  color: string | null;
   role: string;
 };
 
@@ -12,7 +11,6 @@ export type AgencyMember = {
   id: string;
   display_name: string | null;
   initials: string;
-  color: string;
   role: Role;
   permissions: PermissionMap;
   created_at: string;

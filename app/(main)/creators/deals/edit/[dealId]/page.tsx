@@ -25,18 +25,18 @@ export default async function EditDealPage({
          guidelines, tracking_assets,
          rights, exclusivity_info, embargo, whitelisting,
          contract_status, contract_date, contract_url,
-         brands(company_name, color, short_code, contact_name, contact_email)`,
+         brands(company_name, short_code, contact_name, contact_email)`,
       )
       .eq("id", dealId)
       .eq("agency_id", agencyId)
       .single(),
     supabase
       .from("brands")
-      .select("id, company_name, color, short_code")
+      .select("id, company_name, short_code")
       .eq("agency_id", agencyId),
     supabase
       .from("creators")
-      .select("id, full_name, color, initials")
+      .select("id, full_name, initials")
       .eq("agency_id", agencyId)
       .order("full_name"),
     supabase

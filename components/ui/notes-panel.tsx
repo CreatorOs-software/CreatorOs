@@ -215,7 +215,7 @@ export function NotesPanel() {
                     <div className="flex items-center gap-1">
                       {creator && (
                         <span
-                          className="inline-flex size-4 items-center justify-center rounded-full text-[9px] font-bold text-white bg-neutral-800"
+                          className="inline-flex size-4 items-center justify-center rounded-full text-[9px] font-bold text-zinc-500 bg-zinc-100"
                           title={creator.full_name}
                         >
                           {creator.initials}
@@ -223,8 +223,7 @@ export function NotesPanel() {
                       )}
                       {brand && (
                         <span
-                          className="inline-flex h-4 items-center rounded px-1 text-[9px] font-bold text-white"
-                          style={{ backgroundColor: brand.color ?? undefined }}
+                          className="inline-flex h-4 items-center rounded bg-zinc-100 px-1 text-[9px] font-bold text-zinc-500"
                           title={brand.company_name}
                         >
                           {brand.short_code}
@@ -266,7 +265,7 @@ export function NotesPanel() {
                       <SelectValue>
                         {assignedCreator ? (
                           <span className="flex items-center gap-1.5">
-                            <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white bg-neutral-800">
+                            <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-zinc-500 bg-zinc-100">
                               {assignedCreator.initials}
                             </span>
                             {assignedCreator.full_name}
@@ -282,7 +281,7 @@ export function NotesPanel() {
                       </SelectItem>
                       {creators.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
-                          <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white bg-neutral-800">
+                          <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-zinc-500 bg-zinc-100">
                             {c.initials}
                           </span>
                           {c.full_name}
@@ -299,10 +298,7 @@ export function NotesPanel() {
                       <SelectValue>
                         {assignedBrand ? (
                           <span className="flex items-center gap-1.5">
-                            <span
-                              className="inline-flex h-4 items-center rounded px-1 text-[9px] font-bold text-white"
-                              style={{ backgroundColor: assignedBrand.color ?? undefined }}
-                            >
+                            <span className="inline-flex h-4 items-center rounded bg-zinc-100 px-1 text-[9px] font-bold text-zinc-500">
                               {assignedBrand.short_code}
                             </span>
                             {assignedBrand.company_name}
@@ -318,10 +314,7 @@ export function NotesPanel() {
                       </SelectItem>
                       {brands.map((b) => (
                         <SelectItem key={b.id} value={b.id}>
-                          <span
-                            className="inline-flex h-5 items-center rounded px-1.5 text-[10px] font-bold text-white"
-                            style={{ backgroundColor: b.color ?? undefined }}
-                          >
+                          <span className="inline-flex h-5 items-center rounded bg-zinc-100 px-1.5 text-[10px] font-bold text-zinc-500">
                             {b.short_code}
                           </span>
                           {b.company_name}

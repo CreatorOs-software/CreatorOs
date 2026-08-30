@@ -19,7 +19,6 @@ import { Auflister } from "@/components/ui/auflister";
 import type { Anfrage } from "../types";
 import { anfrageColumns, daysSince, isEndState } from "./anfragen-columns";
 import { AnfrageDialog } from "./anfrage-dialog";
-import { NeueAnfrageDialog } from "./neue-anfrage-dialog";
 
 export function AnfragenPanel({
   initialAnfragen,
@@ -31,20 +30,15 @@ export function AnfragenPanel({
   "use no memo";
   const router = useRouter();
   const [selected, setSelected] = useState<Anfrage | null>(null);
-  const [neueOpen, setNeueOpen] = useState(false);
   const [showClosed, setShowClosed] = useState(false);
   const [localUpdates, setLocalUpdates] = useState<Record<string, Anfrage>>({});
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
-  const [localCreated, setLocalCreated] = useState<Anfrage[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Anfrage | null>(null);
   const [formatFilter, setFormatFilter] = useState<Set<string>>(new Set());
 
-  const allAnfragen: Anfrage[] = [
-    ...localCreated.filter((a) => !initialAnfragen.some((b) => b.id === a.id)),
-    ...initialAnfragen
-      .filter((a) => !deletedIds.has(a.id))
-      .map((a) => localUpdates[a.id] ?? a),
-  ];
+  const allAnfragen: Anfrage[] = initialAnfragen
+    .filter((a) => !deletedIds.has(a.id))
+    .map((a) => localUpdates[a.id] ?? a);
 
   const availableFormats = [
     ...new Set(allAnfragen.map((a) => a.format).filter(Boolean) as string[]),
@@ -66,10 +60,6 @@ export function AnfragenPanel({
   function handleDeleted(id: string) {
     setDeletedIds((prev) => new Set([...prev, id]));
     setSelected(null);
-  }
-
-  function handleCreated(a: Anfrage) {
-    setLocalCreated((prev) => [a, ...prev]);
   }
 
   async function handleConfirmDelete() {
@@ -111,7 +101,7 @@ export function AnfragenPanel({
           columns={anfrageColumns}
           emptyText="Noch keine Anfragen – klicke auf »+ Neue Anfrage«"
           onRowClick={setSelected}
-          onEdit={setSelected}
+          onEdit={(a) => router.push(`/creators/anfragen/edit/${a.id}`)}
           onDelete={setDeleteTarget}
           searchPlaceholder="Anfrage suchen…"
           filterContent={
@@ -176,7 +166,7 @@ export function AnfragenPanel({
             <Button
               variant="default"
               className="gap-1.5 h-7 text-xs"
-              onClick={() => setNeueOpen(true)}
+              onClick={() => router.push(`/creators/anfragen/create-anfrage/${creatorId}`)}
             >
               <Plus className="w-3 h-3" />
               Neue Anfrage
@@ -192,13 +182,6 @@ export function AnfragenPanel({
         onClose={() => setSelected(null)}
         onUpdated={handleUpdated}
         onDeleted={handleDeleted}
-        creatorId={creatorId}
-      />
-
-      <NeueAnfrageDialog
-        open={neueOpen}
-        onClose={() => setNeueOpen(false)}
-        onCreated={handleCreated}
         creatorId={creatorId}
       />
 

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sheet";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { Loader2, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
@@ -125,6 +125,16 @@ export function CreatorSheet({
                     ? ` · ${creator.niche.join(", ")}`
                     : ""}
                 </p>
+                {creator.phone && (
+                  <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                    {creator.phone}
+                    {creator.whatsapp_opt_in && (
+                      <span className="rounded-full bg-brand/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-brand">
+                        WA
+                      </span>
+                    )}
+                  </p>
+                )}
                 <span
                   className={cn(
                     "inline-block mt-2 text-[10px] px-1.5 py-0.5 rounded-full font-medium",

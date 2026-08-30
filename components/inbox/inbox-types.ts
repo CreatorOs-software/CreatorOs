@@ -57,25 +57,6 @@ export function mailboxInitials(email: string) {
     .join("");
 }
 
-const SENDER_COLORS = [
-  "#006FFE",
-  "#8B5CF6",
-  "#39AE4A",
-  "#F59E0D",
-  "#F43F5E",
-  "#0EA5E9",
-  "#EC4899",
-  "#14B8A6",
-];
-
-export function getSenderColor(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return SENDER_COLORS[Math.abs(hash) % SENDER_COLORS.length]!;
-}
-
 export function senderInitials(
   name: string | null | undefined,
   email: string,

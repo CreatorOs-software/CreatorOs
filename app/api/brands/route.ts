@@ -6,7 +6,6 @@ import { BrandService } from "@/domains/brands";
 const createSchema = z.object({
   company_name: z.string().min(1),
   short_code: z.string().min(1).max(4),
-  color: z.string().min(1),
   industry: z.string().nullable().optional(),
 });
 

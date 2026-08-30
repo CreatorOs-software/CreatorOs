@@ -18,7 +18,7 @@ export const CommunicationRepository = {
       supabase
         .from("email_threads")
         .select(
-          "id, agency_id, sender_email, sender_name, recipient_email, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id, system_labels, label_status, conversation_id, message_id, in_reply_to, references_header, thread_labels:email_thread_labels(label:email_labels(id, name, color))",
+          "id, agency_id, sender_email, sender_name, recipient_email, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id, system_labels, label_status, conversation_id, message_id, in_reply_to, references_header, conversation:conversations(anfrage_id, anfrage:anfragen(linked_deal_id)), thread_labels:email_thread_labels(label:email_labels(id, name, color))",
         )
         .eq("agency_id", agencyId)
         .order("received_at", { ascending: false })
@@ -30,7 +30,7 @@ export const CommunicationRepository = {
         .eq("status", "connected"),
       supabase
         .from("creators")
-        .select("id, full_name, initials")
+        .select("id, full_name, initials, phone")
         .eq("agency_id", agencyId),
       supabase
         .from("email_labels")
@@ -43,7 +43,10 @@ export const CommunicationRepository = {
     const threads = (threadsRes.data ?? []).map((row: any) => ({
       ...row,
       labels: (row.thread_labels ?? []).map((tl: { label: EmailLabel | null }) => tl.label).filter(Boolean),
+      anfrage_id: row.conversation?.anfrage_id ?? null,
+      deal_id: row.conversation?.anfrage?.linked_deal_id ?? null,
       thread_labels: undefined,
+      conversation: undefined,
     })) as EmailThread[];
 
     return {
@@ -70,14 +73,67 @@ export const CommunicationRepository = {
   async findThread(
     supabase: SupabaseClient,
     id: string,
-  ): Promise<Pick<EmailThread, "id" | "agency_id" | "sender_email" | "subject" | "gmail_thread_id" | "integration_id" | "conversation_id"> | null> {
+  ): Promise<Pick<EmailThread, "id" | "agency_id" | "sender_email" | "subject" | "gmail_thread_id" | "integration_id" | "conversation_id" | "message_id"> | null> {
     const { data } = await supabase
       .from("email_threads")
-      .select("id, agency_id, sender_email, sender_name, subject, gmail_thread_id, integration_id, conversation_id")
+      .select("id, agency_id, sender_email, sender_name, subject, gmail_thread_id, integration_id, conversation_id, message_id")
       .eq("id", id)
       .maybeSingle();
 
     return data ?? null;
+  },
+
+  /** Returns the thread's conversation_id, creating a conversation and linking the thread if none exists yet. */
+  async ensureThreadConversation(
+    supabase: SupabaseClient,
+    thread: {
+      id: string;
+      agency_id: string;
+      integration_id: string;
+      subject: string;
+      gmail_thread_id: string | null;
+      conversation_id: string | null;
+    },
+  ): Promise<string> {
+    if (thread.conversation_id) return thread.conversation_id;
+
+    const canonical = thread.subject.replace(/^(Re|Fwd|Fw|Aw|Antwort):\s*/gi, "").trim();
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from("conversations")
+      .insert({
+        agency_id: thread.agency_id,
+        integration_id: thread.integration_id,
+        provider_thread_id: thread.gmail_thread_id,
+        subject_canonical: canonical || thread.subject,
+        first_email_at: now,
+        last_email_at: now,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+
+    await supabase
+      .from("email_threads")
+      .update({ conversation_id: data.id })
+      .eq("id", thread.id);
+
+    return data.id as string;
+  },
+
+  async setConversationAnfrage(
+    supabase: SupabaseClient,
+    conversationId: string,
+    anfrageId: string,
+    agencyId: string,
+  ): Promise<void> {
+    const { error } = await supabase
+      .from("conversations")
+      .update({ anfrage_id: anfrageId })
+      .eq("id", conversationId)
+      .eq("agency_id", agencyId);
+    if (error) throw new Error(error.message);
   },
 
   async findConversationMessages(
@@ -89,7 +145,7 @@ export const CommunicationRepository = {
     const { data, error } = await supabase
       .from("email_threads")
       .select(
-        "id, agency_id, sender_email, sender_name, recipient_email, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id, system_labels, label_status, conversation_id, message_id, in_reply_to, references_header, thread_labels:email_thread_labels(label:email_labels(id, name, color))",
+        "id, agency_id, sender_email, sender_name, recipient_email, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id, system_labels, label_status, conversation_id, message_id, in_reply_to, references_header, conversation:conversations(anfrage_id, anfrage:anfragen(linked_deal_id)), thread_labels:email_thread_labels(label:email_labels(id, name, color))",
       )
       .eq("conversation_id", conversationId)
       .eq("agency_id", agencyId)
@@ -102,7 +158,10 @@ export const CommunicationRepository = {
     return (data ?? []).map((row: any) => ({
       ...row,
       labels: (row.thread_labels ?? []).map((tl: { label: EmailLabel | null }) => tl.label).filter(Boolean),
+      anfrage_id: row.conversation?.anfrage_id ?? null,
+      deal_id: row.conversation?.anfrage?.linked_deal_id ?? null,
       thread_labels: undefined,
+      conversation: undefined,
     })) as EmailThread[];
   },
 
@@ -207,6 +266,9 @@ export const CommunicationRepository = {
       starred: boolean;
       priority: string;
       conversation_id?: string | null;
+      message_id?: string | null;
+      in_reply_to?: string | null;
+      references_header?: string | null;
     },
   ): Promise<void> {
     const { error } = await supabase.from("email_threads").insert(row);

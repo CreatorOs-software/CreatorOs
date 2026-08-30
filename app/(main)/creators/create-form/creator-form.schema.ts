@@ -9,6 +9,12 @@ export const creatorFormSchema = z.object({
     .refine((v) => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), {
       message: "Ungültige E-Mail-Adresse",
     }),
+  phone: z
+    .string()
+    .refine((v) => v === "" || /^\+?[0-9 ()/\-.]{6,20}$/.test(v), {
+      message: "Ungültige Telefonnummer",
+    }),
+  whatsapp_opt_in: z.boolean(),
   street: z.string(),
   postal_code: z.string(),
   city: z.string(),
@@ -40,7 +46,7 @@ export const creatorFormSchema = z.object({
 export type CreatorFormValues = z.infer<typeof creatorFormSchema>;
 
 export const STEP_FIELDS = {
-  1: ["vorname", "nachname", "handle", "email", "street", "postal_code", "city", "country"],
+  1: ["vorname", "nachname", "handle", "email", "phone", "whatsapp_opt_in", "street", "postal_code", "city", "country"],
   2: ["niche", "bio", "status"],
   3: ["goal_value", "goal_type", "goal_period", "weitere_ziele", "min_kooperation_betrag", "wunsche_anforderungen"],
   4: ["platforms", "followers", "monthly_revenue"],
@@ -58,6 +64,12 @@ export const STEP_SCHEMAS = {
       .refine((v) => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), {
         message: "Ungültige E-Mail-Adresse",
       }),
+    phone: z
+      .string()
+      .refine((v) => v === "" || /^\+?[0-9 ()/\-.]{6,20}$/.test(v), {
+        message: "Ungültige Telefonnummer",
+      }),
+    whatsapp_opt_in: z.boolean(),
     street: z.string(),
     postal_code: z.string(),
     city: z.string(),

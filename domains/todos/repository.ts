@@ -3,7 +3,7 @@ import type { Todo, TodoCreateInput, TodoPatch } from "./types";
 
 const TODO_SELECT = `
   id, title, done, due_date, priority, created_at,
-  assignee:assignee_id (id, full_name, initials, color)
+  assignee:assignee_id (id, full_name, initials)
 `;
 
 const PURGE_CUTOFF_MS = 3 * 24 * 60 * 60 * 1000;

@@ -57,7 +57,7 @@ import type { Creator } from "@/domains/creators"
 type EventType = "shoot" | "travel" | "deadline" | "brand" | "internal" | "posting"
 type Recurrence = "none" | "daily" | "weekly" | "monthly" | "yearly"
 
-type TeamMember = { id: string; display_name: string | null; initials: string | null; color: string | null; role: string }
+type TeamMember = { id: string; display_name: string | null; initials: string | null; role: string }
 
 type DbEvent = {
   id: string
@@ -106,13 +106,13 @@ type FormState = {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const TYPE_CONFIG: Record<EventType, { label: string; bg: string; dot: string; pill: string }> = {
-  shoot:    { label: "Shoot",    bg: "bg-purple-500", dot: "bg-purple-500", pill: "bg-purple-100 text-purple-700 border-purple-200" },
-  travel:   { label: "Reise",   bg: "bg-blue-500",   dot: "bg-blue-500",   pill: "bg-blue-100 text-blue-700 border-blue-200" },
-  deadline: { label: "Deadline", bg: "bg-red-500",    dot: "bg-red-500",    pill: "bg-red-100 text-red-700 border-red-200" },
-  brand:    { label: "Brand",    bg: "bg-orange-500", dot: "bg-orange-500", pill: "bg-orange-100 text-orange-700 border-orange-200" },
-  internal: { label: "Intern",   bg: "bg-green-500",  dot: "bg-green-500",  pill: "bg-green-100 text-green-700 border-green-200" },
-  posting:  { label: "Posting",  bg: "bg-pink-500",   dot: "bg-pink-500",   pill: "bg-pink-100 text-pink-700 border-pink-200" },
+const TYPE_CONFIG: Record<EventType, { label: string; bg: string; border: string; dot: string; pill: string }> = {
+  shoot:    { label: "Shoot",    bg: "bg-purple-500", border: "border-l-purple-500", dot: "bg-purple-500", pill: "bg-purple-100 text-purple-700 border-purple-200" },
+  travel:   { label: "Reise",   bg: "bg-blue-500",   border: "border-l-blue-500",   dot: "bg-blue-500",   pill: "bg-blue-100 text-blue-700 border-blue-200" },
+  deadline: { label: "Deadline", bg: "bg-red-500",    border: "border-l-red-500",    dot: "bg-red-500",    pill: "bg-red-100 text-red-700 border-red-200" },
+  brand:    { label: "Brand",    bg: "bg-orange-500", border: "border-l-orange-500", dot: "bg-orange-500", pill: "bg-orange-100 text-orange-700 border-orange-200" },
+  internal: { label: "Intern",   bg: "bg-green-500",  border: "border-l-green-500",  dot: "bg-green-500",  pill: "bg-green-100 text-green-700 border-green-200" },
+  posting:  { label: "Posting",  bg: "bg-pink-500",   border: "border-l-pink-500",   dot: "bg-pink-500",   pill: "bg-pink-100 text-pink-700 border-pink-200" },
 }
 
 const ALL_TYPES = Object.keys(TYPE_CONFIG) as EventType[]
@@ -127,7 +127,6 @@ const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const HOUR_HEIGHT = 64 // px per hour in time-grid views
 
-const MEMBER_COLORS = ["#6366f1", "#ec4899", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#14b8a6"]
 
 const EMPTY_FORM: FormState = {
   title: "",
@@ -194,10 +193,6 @@ function getInitials(name: string): string {
     .toUpperCase()
 }
 
-function getMemberColor(id: string): string {
-  const sum = id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)
-  return MEMBER_COLORS[sum % MEMBER_COLORS.length]
-}
 
 function formatTime(date: Date): string {
   return date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
@@ -242,12 +237,12 @@ function EventChip({
       onDragEnd={onDragEnd}
       onClick={() => onClick(event)}
       className={cn(
-        "cursor-pointer truncate rounded px-1.5 text-sm font-medium text-white transition-all hover:brightness-110 hover:shadow-md",
-        cfg.bg,
+        "cursor-pointer truncate rounded border-l-2 bg-accent px-1.5 text-sm font-medium text-accent-foreground transition-all hover:bg-accent/70 hover:shadow-sm",
+        cfg.border,
         compact ? "py-0.5" : "py-1",
       )}
     >
-      {!compact && <span className="mr-1 opacity-80">{formatTime(event.startTime)}</span>}
+      {!compact && <span className="mr-1 text-muted-foreground">{formatTime(event.startTime)}</span>}
       {event.title}
     </div>
   )
@@ -364,8 +359,8 @@ function TimeGridEvent({
   return (
     <div
       className={cn(
-        "absolute inset-x-0.5 overflow-hidden rounded-md px-1.5 py-0.5 cursor-pointer text-white",
-        cfg.bg,
+        "absolute inset-x-0.5 overflow-hidden rounded-md border-l-2 bg-accent px-1.5 py-0.5 cursor-pointer text-accent-foreground",
+        cfg.border,
       )}
       style={{ top: 0, bottom: 0 }}
       onClick={() => onClick(event)}
@@ -374,7 +369,7 @@ function TimeGridEvent({
       onDragEnd={onDragEnd}
     >
       <p className="truncate text-xs font-semibold leading-tight">{event.title}</p>
-      <p className="text-[10px] leading-tight opacity-80">
+      <p className="text-[10px] leading-tight text-muted-foreground">
         {formatTime(event.startTime)}–{formatTime(event.endTime)}
       </p>
     </div>
@@ -625,7 +620,7 @@ function ListView({
                   <div className="flex shrink-0 items-center gap-2">
                     {ev.creator && (
                       <span
-                        className="inline-flex size-7 items-center justify-center rounded-full text-[11px] font-semibold text-white bg-neutral-800"
+                        className="inline-flex size-7 items-center justify-center rounded-full text-[11px] font-semibold text-brand bg-brand/10"
                         title={ev.creator.full_name}
                       >
                         {ev.creator.initials}
@@ -832,15 +827,13 @@ function EventDialog({
                     {activeAttendees.map((id) => {
                       const m = teamMembers.find((tm) => tm.id === id)
                       if (!m) return null
-                      const bg = m.color ?? getMemberColor(id)
                       const abbr = m.initials ?? getInitials(m.display_name ?? "")
                       return (
                         <span
                           key={id}
-                          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium text-white"
-                          style={{ backgroundColor: bg }}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand"
                         >
-                          <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-white/20 text-[9px] font-bold">
+                          <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-brand/20 text-[9px] font-bold">
                             {abbr}
                           </span>
                           {m.display_name ?? abbr}
@@ -860,7 +853,6 @@ function EventDialog({
                   <div className="space-y-0.5">
                     {teamMembers.map((member) => {
                       const active = activeAttendees.includes(member.id)
-                      const color = member.color ?? getMemberColor(member.id)
                       const initials = member.initials ?? getInitials(member.display_name ?? "")
                       return (
                         <button
@@ -872,10 +864,7 @@ function EventDialog({
                             active ? "bg-muted" : "hover:bg-muted/60",
                           )}
                         >
-                          <span
-                            className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
-                            style={{ backgroundColor: color }}
-                          >
+                          <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-brand/10 text-[11px] font-semibold text-brand">
                             {initials}
                           </span>
                           <span className="flex-1 truncate text-left">{member.display_name ?? initials}</span>
@@ -1026,7 +1015,7 @@ function EventDialog({
                     <SelectTrigger>
                       {displayCreator ? (
                         <span className="flex items-center gap-2 text-sm">
-                          <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white bg-neutral-800">
+                          <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-brand bg-brand/10">
                             {displayCreator.initials}
                           </span>
                           {displayCreator.full_name}
@@ -1040,7 +1029,7 @@ function EventDialog({
                       {creators.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           <span className="flex items-center gap-2">
-                            <span className="inline-flex size-4 items-center justify-center rounded-full bg-neutral-800 text-[9px] font-semibold text-white">
+                            <span className="inline-flex size-4 items-center justify-center rounded-full bg-brand/10 text-[9px] font-semibold text-brand">
                               {c.initials}
                             </span>
                             {c.full_name}
@@ -1374,7 +1363,7 @@ export function EventManager() {
                 const c = creators.find((x) => x.id === filterCreator)
                 return c ? (
                   <span className="flex items-center gap-2">
-                    <span className="inline-flex size-4 items-center justify-center rounded-full bg-neutral-800 text-[9px] font-semibold text-white">
+                    <span className="inline-flex size-4 items-center justify-center rounded-full bg-brand/10 text-[9px] font-semibold text-brand">
                       {c.initials}
                     </span>
                     {c.full_name}
@@ -1388,7 +1377,7 @@ export function EventManager() {
             {creators.map((c) => (
               <SelectItem key={c.id} value={c.id}>
                 <span className="flex items-center gap-2">
-                  <span className="inline-flex size-4 items-center justify-center rounded-full bg-neutral-800 text-[9px] font-semibold text-white">
+                  <span className="inline-flex size-4 items-center justify-center rounded-full bg-brand/10 text-[9px] font-semibold text-brand">
                     {c.initials}
                   </span>
                   {c.full_name}

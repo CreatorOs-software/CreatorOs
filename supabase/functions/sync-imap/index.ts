@@ -489,6 +489,8 @@ async function syncFolder(
     const preview = body.slice(0, 240).replace(/\s+/g, " ").trim();
     const received_at = msg.headers["date"] ? safeDate(msg.headers["date"]) : new Date().toISOString();
     const messageId = msg.headers["message-id"];
+    const inReplyTo = msg.headers["in-reply-to"]?.trim() || null;
+    const referencesHeader = msg.headers["references"]?.trim() || null;
 
     if (messageId) {
       const { data: dup } = await db
@@ -499,7 +501,12 @@ async function syncFolder(
         .maybeSingle();
 
       if (dup) {
-        const patch: Record<string, unknown> = { integration_id: row.id };
+        const patch: Record<string, unknown> = {
+          integration_id: row.id,
+          message_id: messageId ?? null,
+          in_reply_to: inReplyTo,
+          references_header: referencesHeader,
+        };
         if (!dup.body && body) {
           patch.body = body || preview;
           patch.body_html = bodyHtml;
@@ -519,6 +526,9 @@ async function syncFolder(
       agency_id: row.agency_id,
       integration_id: row.id,
       gmail_thread_id: messageId ?? `imap-${row.id}-${info.folder.toLowerCase()}-${msg.uid}`,
+      message_id: messageId ?? null,
+      in_reply_to: inReplyTo,
+      references_header: referencesHeader,
       folder: info.folder,
       sender_email: email,
       sender_name: name,

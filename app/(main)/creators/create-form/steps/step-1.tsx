@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, FileText, X, Plus } from "lucide-react";
 import type {
   CreatorForm,
@@ -157,6 +158,55 @@ export function Step1({
                         </p>
                       )}
                     </>
+                  )}
+                </form.Field>
+              </div>
+
+              <div className="sm:col-span-3">
+                <form.Field name="phone">
+                  {(field: CreatorField<"phone">) => (
+                    <>
+                      <Label htmlFor="phone" className="text-sm font-medium">
+                        Telefon / WhatsApp
+                      </Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="+49 151 12345678"
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        onBlur={field.handleBlur}
+                        className="mt-2"
+                      />
+                      {errors.phone && (
+                        <p
+                          data-field-error
+                          className="mt-1.5 text-xs text-destructive"
+                        >
+                          {errors.phone}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </form.Field>
+              </div>
+
+              <div className="sm:col-span-6">
+                <form.Field name="whatsapp_opt_in">
+                  {(field: CreatorField<"whatsapp_opt_in">) => (
+                    <label className="flex items-start gap-2.5 text-sm">
+                      <Checkbox
+                        checked={field.state.value}
+                        onCheckedChange={(checked) =>
+                          field.handleChange(checked === true)
+                        }
+                        className="mt-0.5"
+                      />
+                      <span className="leading-snug text-muted-foreground">
+                        WhatsApp-Kontakt erlaubt — der Creator hat zugestimmt, über
+                        WhatsApp kontaktiert zu werden.
+                      </span>
+                    </label>
                   )}
                 </form.Field>
               </div>

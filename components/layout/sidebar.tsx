@@ -11,8 +11,6 @@ import {
   Building2,
   User,
   Calendar,
-  Wallet,
-  Star,
   Inbox,
   Users,
   Settings2,
@@ -112,7 +110,7 @@ function ProfileSection() {
           alt={name}
           className="w-full h-full object-cover"
         />
-        <Avatar.Fallback className="w-full h-full rounded-full bg-yellow-400 flex items-center justify-center text-xs font-bold text-black">
+        <Avatar.Fallback className="w-full h-full rounded-full bg-brand/10 flex items-center justify-center text-xs font-bold text-brand">
           {initials}
         </Avatar.Fallback>
       </Avatar.Root>
@@ -167,7 +165,7 @@ export function AppSidebar() {
         <div className="relative">
           <Inbox className="h-5 w-5 shrink-0 text-current" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-brand" />
           )}
         </div>
       ),
@@ -193,14 +191,9 @@ export function AppSidebar() {
       icon: <FolderOpen className="h-5 w-5 shrink-0 text-current" />,
     },
     {
-      label: "Invoice",
-      href: "/salary",
-      icon: <Wallet className="h-5 w-5 shrink-0 text-current" />,
-    },
-    {
-      label: "Reviews",
-      href: "/reviews",
-      icon: <Star className="h-5 w-5 shrink-0 text-current" />,
+      label: "Settings",
+      href: "/settings",
+      icon: <Settings2 className="h-5 w-5 shrink-0 text-current" />,
     },
   ];
 
@@ -233,7 +226,7 @@ export function AppSidebar() {
                   className={cn(
                     "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-[13px] transition-colors",
                     isActive
-                      ? "bg-sidebar-accent font-medium text-white"
+                      ? "bg-muted font-medium text-foreground"
                       : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                   )}
                 />
@@ -262,8 +255,8 @@ export function AppSidebar() {
                     link={item}
                     className={cn(
                       isActive
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "hover:bg-sidebar-accent/50",
+                        ? "bg-muted font-medium text-foreground"
+                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                     )}
                   />
                 );

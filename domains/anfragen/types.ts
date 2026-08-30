@@ -69,7 +69,6 @@ export type Anfrage = {
   updated_at: string;
   brands: {
     company_name: string;
-    color: string;
     short_code: string;
     contact_name: string | null;
     contact_email: string | null;

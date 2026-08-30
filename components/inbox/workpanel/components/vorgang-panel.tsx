@@ -5,9 +5,10 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import type { Creator } from "../../types";
+import type { Creator, Thread } from "../../types";
 import type { WorkPanelState, LocalVorgang } from "../types";
 import { SectionLabel } from "./shared";
+import { WhatsappForwardDialog } from "./whatsapp-forward-dialog";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -56,10 +57,11 @@ function Nudge({ kind, title, body }: { kind: NudgeKind; title: string; body: st
 type Props = {
   vorgang: LocalVorgang;
   creators: Creator[];
+  thread: Thread | null;
   onSetWorkState: (s: WorkPanelState) => void;
 };
 
-export function VorgangPanel({ vorgang, creators, onSetWorkState }: Props) {
+export function VorgangPanel({ vorgang, creators, thread, onSetWorkState }: Props) {
   const creator = creators.find((c) => c.id === vorgang.creatorId);
 
   function update(patch: Partial<LocalVorgang>) {
@@ -138,10 +140,23 @@ export function VorgangPanel({ vorgang, creators, onSetWorkState }: Props) {
 
       <section className="flex flex-col gap-2">
         <Button className="w-full">Brand antworten</Button>
-        {creator && (
-          <Button variant="secondary" className="w-full">
-            {creator.full_name.split(" ")[0]} fragen
-          </Button>
+        {creator && thread && (
+          <WhatsappForwardDialog
+            key={thread.id}
+            thread={thread}
+            creators={creators}
+            creatorId={vorgang.creatorId}
+            context={{
+              brand: vorgang.brand,
+              title: vorgang.title,
+              budget: vorgang.honorar,
+            }}
+            trigger={
+              <Button variant="secondary" className="w-full">
+                {creator.full_name.split(" ")[0]} fragen
+              </Button>
+            }
+          />
         )}
         <Button variant="outline" className="w-full">
           Deal-Akte öffnen

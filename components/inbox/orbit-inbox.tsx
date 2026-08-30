@@ -83,7 +83,9 @@ export function OrbitInbox() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [integrations.length]);
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    () => localStorage.getItem("inbox:selectedThreadId"),
+  );
   const [selectedIntegrationId, setSelectedIntegrationId] = useState<string | null>(
     () => localStorage.getItem("inbox:selectedIntegrationId"),
   );
@@ -98,6 +100,12 @@ export function OrbitInbox() {
   const [composeOpen, setComposeOpen] = useState(false);
   const [activeLabelId, setActiveLabelId] = useState<string | null>(null);
   const [workStates, setWorkStates] = useState<Record<string, WorkPanelState>>({});
+
+  // Persist the open thread so the inbox reopens where the user left off.
+  useEffect(() => {
+    if (selectedId) localStorage.setItem("inbox:selectedThreadId", selectedId);
+    else localStorage.removeItem("inbox:selectedThreadId");
+  }, [selectedId]);
 
   // Derive effective integration: user pick → first available → null
   const effectiveIntegrationId = (

@@ -79,17 +79,18 @@ export const CommunicationService = {
     const ccList = input.cc?.split(",").map((e) => e.trim()).filter(Boolean) ?? [];
     const bccList = input.bcc?.split(",").map((e) => e.trim()).filter(Boolean) ?? [];
 
+    let messageId: string | null = null;
     try {
       await client.connect();
       await client.login();
-      await client.send({
+      ({ messageId } = await client.send({
         from: { name: integ.display_name ?? displayName ?? null, email: integ.email },
         to: toList,
         cc: ccList.length ? ccList : undefined,
         bcc: bccList.length ? bccList : undefined,
         subject: input.subject,
         text: input.body,
-      });
+      }));
       await client.quit();
     } finally {
       await client.close();
@@ -111,6 +112,7 @@ export const CommunicationService = {
         unread: false,
         starred: false,
         priority: "med",
+        message_id: messageId,
       });
     } catch {}
   },
@@ -140,27 +142,40 @@ export const CommunicationService = {
     const subject = thread.subject.toLowerCase().startsWith("re:")
       ? thread.subject
       : `Re: ${thread.subject}`;
-    const inReplyTo = thread.gmail_thread_id?.startsWith("<") ? thread.gmail_thread_id : null;
+    const parentMessageId =
+      thread.message_id ??
+      (thread.gmail_thread_id?.startsWith("<") ? thread.gmail_thread_id : null);
     const ccList = cc?.filter(Boolean) ?? [];
 
+    let messageId: string | null = null;
     try {
       await client.connect();
       await client.login();
-      await client.send({
+      ({ messageId } = await client.send({
         from: { name: integ.display_name ?? displayName ?? null, email: integ.email },
         to: [thread.sender_email],
         cc: ccList.length ? ccList : undefined,
         subject,
         text: body,
-        inReplyTo,
-        references: inReplyTo,
-      });
+        inReplyTo: parentMessageId,
+        references: parentMessageId,
+      }));
       await client.quit();
     } finally {
       await client.close();
     }
 
     await CommunicationRepository.patchThread(supabase, threadId, { unread: false });
+
+    // Ensure the reply lands in a conversation so the customer's answer to it gets grouped.
+    const conversationId = await CommunicationRepository.ensureThreadConversation(supabase, {
+      id: thread.id,
+      agency_id: thread.agency_id,
+      integration_id: thread.integration_id,
+      subject: thread.subject,
+      gmail_thread_id: thread.gmail_thread_id,
+      conversation_id: thread.conversation_id,
+    }).catch(() => thread.conversation_id ?? null);
 
     // best-effort — email is already delivered; a DB failure here must not cause the caller to retry and resend
     try {
@@ -178,8 +193,36 @@ export const CommunicationService = {
         unread: false,
         starred: false,
         priority: "med",
-        conversation_id: thread.conversation_id ?? null,
+        conversation_id: conversationId,
+        message_id: messageId,
+        in_reply_to: parentMessageId,
+        references_header: parentMessageId,
       });
     } catch {}
+  },
+
+  async linkThreadToAnfrage(threadId: string, anfrageId: string): Promise<void> {
+    const supabase = await createClient();
+    const { agencyId } = await getAuthContext(supabase);
+
+    const thread = await CommunicationRepository.findThread(supabase, threadId);
+    if (!thread) throw new CommunicationError("Thread not found");
+    if (thread.agency_id !== agencyId) throw new CommunicationError("Kein Zugriff");
+
+    const conversationId = await CommunicationRepository.ensureThreadConversation(supabase, {
+      id: thread.id,
+      agency_id: thread.agency_id,
+      integration_id: thread.integration_id,
+      subject: thread.subject,
+      gmail_thread_id: thread.gmail_thread_id,
+      conversation_id: thread.conversation_id,
+    });
+
+    await CommunicationRepository.setConversationAnfrage(
+      supabase,
+      conversationId,
+      anfrageId,
+      agencyId,
+    );
   },
 };

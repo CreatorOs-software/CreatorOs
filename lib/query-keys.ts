@@ -18,6 +18,10 @@ export const QueryKeys = {
     all: () => ["brands"] as const,
     list: () => ["brands", "list"] as const,
   },
+  templates: {
+    all: () => ["templates"] as const,
+    list: () => ["templates", "list"] as const,
+  },
   members: {
     list: () => ["agency-users"] as const,
   },
@@ -29,6 +33,10 @@ export const QueryKeys = {
   integrations: {
     all: () => ["integrations"] as const,
     list: () => ["integrations", "list"] as const,
+  },
+  whatsapp: {
+    all: () => ["whatsapp"] as const,
+    connection: () => ["whatsapp", "connection"] as const,
   },
   todos: {
     all: () => ["todos"] as const,
