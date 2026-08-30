@@ -5,10 +5,11 @@ import { MessageCircle, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -83,7 +84,7 @@ function templates(name: string, thread: Thread, ctx: ForwardContext) {
   ];
 }
 
-export function WhatsappForwardPopover({
+export function WhatsappForwardDialog({
   thread,
   creators,
   creatorId: initialCreatorId,
@@ -93,10 +94,21 @@ export function WhatsappForwardPopover({
   const [open, setOpen] = useState(false);
   const [creatorId, setCreatorId] = useState(initialCreatorId ?? "");
   const [message, setMessage] = useState("");
+  const [aiUsed, setAiUsed] = useState(false);
 
   const creator = creators.find((c) => c.id === creatorId) ?? null;
   const name = creator ? firstName(creator.full_name) : "Creator";
   const tpls = templates(name, thread, context);
+
+  function pickTemplate(text: string) {
+    setMessage(text);
+    setAiUsed(false);
+  }
+
+  function summarize() {
+    setMessage(buildSummary(name, thread, context));
+    setAiUsed(true);
+  }
 
   function send() {
     if (!message.trim()) return;
@@ -109,76 +121,98 @@ export function WhatsappForwardPopover({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={setOpen}>
       {trigger ? (
-        <PopoverTrigger render={trigger} />
+        <DialogTrigger render={trigger} />
       ) : (
-        <PopoverTrigger render={<Button variant="secondary" className="w-full gap-1.5" />}>
+        <DialogTrigger render={<Button variant="secondary" className="w-full gap-1.5" />}>
           <MessageCircle className="h-3.5 w-3.5" />
           An {name} weiterleiten
-        </PopoverTrigger>
+        </DialogTrigger>
       )}
 
-      <PopoverContent align="start" className="w-80 gap-3">
-        <div>
-          <p className="text-sm font-medium">Per WhatsApp an Creator</p>
-          <p className="text-xs text-muted-foreground">
-            Zusammenfassung der Mail an den Creator schicken.
-          </p>
+      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+          <DialogTitle className="text-sm">Per WhatsApp weiterleiten</DialogTitle>
+          <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
+            WhatsApp
+          </span>
         </div>
 
-        <Select
-          value={creatorId || ""}
-          onValueChange={(v) => v !== null && setCreatorId(v)}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="— Creator wählen —" />
-          </SelectTrigger>
-          <SelectContent>
-            {creators.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.full_name}
-              </SelectItem>
+        <div className="flex items-center gap-2 border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
+          <span>An:</span>
+          <Select
+            value={creatorId || ""}
+            onValueChange={(v) => v !== null && setCreatorId(v)}
+          >
+            <SelectTrigger className="h-7 w-52 text-xs">
+              <SelectValue placeholder="— Creator wählen —" />
+            </SelectTrigger>
+            <SelectContent>
+              {creators.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.full_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="truncate">· {thread.subject}</span>
+        </div>
+
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
+          <div className="flex flex-wrap gap-1.5">
+            {tpls.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                onClick={() => pickTemplate(t.build())}
+                className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+              >
+                {t.label}
+              </button>
             ))}
-          </SelectContent>
-        </Select>
-
-        <div className="flex flex-wrap gap-1.5">
-          {tpls.map((t) => (
             <button
-              key={t.value}
               type="button"
-              onClick={() => setMessage(t.build())}
-              className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+              onClick={summarize}
+              className="inline-flex items-center gap-1 rounded-full bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand transition-colors hover:bg-brand/15"
             >
-              {t.label}
+              <Sparkles className="h-3 w-3" />
+              Eckdaten zusammenfassen
             </button>
-          ))}
+          </div>
+
+          {aiUsed && (
+            <p className="rounded-lg bg-brand/10 px-3 py-2 text-xs text-brand">
+              Vorschlag eingefügt – bitte gegenlesen, du sendest.
+            </p>
+          )}
+
+          <Textarea
+            value={message}
+            onChange={(e) => {
+              setMessage(e.target.value);
+              setAiUsed(false);
+            }}
+            rows={9}
+            placeholder="Nachricht an den Creator … oder oben eine Vorlage wählen."
+            className="min-h-44 text-sm"
+          />
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full gap-1.5"
-          onClick={() => setMessage(buildSummary(name, thread, context))}
-        >
-          <Sparkles className="h-3.5 w-3.5 text-brand" />
-          Eckdaten zusammenfassen
-        </Button>
-
-        <Textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          rows={7}
-          placeholder="Nachricht an den Creator … oder Vorlage wählen."
-          className="text-sm"
-        />
-
-        <Button className="w-full gap-1.5" disabled={!message.trim()} onClick={send}>
-          <Send className="h-3.5 w-3.5" />
-          Per WhatsApp senden
-        </Button>
-      </PopoverContent>
-    </Popover>
+        <div className="flex items-center gap-2 border-t border-border px-4 py-3">
+          <span className="text-[11px] text-muted-foreground">
+            Geht per WhatsApp an {name}.
+          </span>
+          <Button
+            className="ml-auto gap-1.5"
+            disabled={!message.trim()}
+            onClick={send}
+          >
+            <Send className="h-3.5 w-3.5" />
+            Per WhatsApp senden
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

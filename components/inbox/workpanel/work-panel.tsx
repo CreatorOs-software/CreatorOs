@@ -14,9 +14,9 @@ import { NewBrandPanel } from "./components/new-brand-panel";
 import { ExtractedPanel } from "./components/extracted-panel";
 import { VorgangPanel } from "./components/vorgang-panel";
 import {
-  WhatsappForwardPopover,
+  WhatsappForwardDialog,
   type ForwardContext,
-} from "./components/whatsapp-forward-popover";
+} from "./components/whatsapp-forward-dialog";
 import type { AnalyseResult } from "@/app/api/inbox/[id]/analyse/route";
 
 function forwardContextFromState(state: WorkPanelState): {
@@ -266,7 +266,7 @@ export function WorkPanel({
 
       {open && selected && (
         <div className="shrink-0 border-t border-border px-4 py-3">
-          <WhatsappForwardPopover
+          <WhatsappForwardDialog
             key={selected.id}
             thread={selected}
             creators={creators}

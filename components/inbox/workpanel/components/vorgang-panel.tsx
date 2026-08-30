@@ -8,7 +8,7 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import type { Creator, Thread } from "../../types";
 import type { WorkPanelState, LocalVorgang } from "../types";
 import { SectionLabel } from "./shared";
-import { WhatsappForwardPopover } from "./whatsapp-forward-popover";
+import { WhatsappForwardDialog } from "./whatsapp-forward-dialog";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -141,7 +141,7 @@ export function VorgangPanel({ vorgang, creators, thread, onSetWorkState }: Prop
       <section className="flex flex-col gap-2">
         <Button className="w-full">Brand antworten</Button>
         {creator && thread && (
-          <WhatsappForwardPopover
+          <WhatsappForwardDialog
             key={thread.id}
             thread={thread}
             creators={creators}
