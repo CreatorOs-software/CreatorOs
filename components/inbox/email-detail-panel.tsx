@@ -42,6 +42,7 @@ import {
 } from "./utils";
 import { Avatar } from "@/components/ui/avatar-creator";
 import { TemplateQuickInsert } from "./templates/template-quick-insert";
+import { AiActionsMenu } from "./ai-actions-menu";
 import { NeueTemplateDialog } from "./templates/neue-template-dialog";
 import { useVariableSlashMenu } from "./templates/variable-slash-menu";
 import { VariablePicker } from "./templates/variable-picker";
@@ -147,17 +148,20 @@ function ReplyComposer({
         </div>
       )}
 
-      {/* Vorlagen als Chips (bzw. Dropdown ab >4) */}
-      <TemplateQuickInsert
-        channel="email"
-        threadId={thread.id}
-        onInsert={(result) => {
-          setReply(result.body);
-          setInsertedTemplate(true);
-          setUnresolved(result.unresolved);
-        }}
-        className="border-b border-[#E7E7E7] px-4 py-2"
-      />
+      {/* Vorlagen als Chips (bzw. Dropdown ab >4) + KI-Aktionen rechts */}
+      <div className="flex items-center gap-2 border-b border-[#E7E7E7] px-4 py-2">
+        <TemplateQuickInsert
+          channel="email"
+          threadId={thread.id}
+          onInsert={(result) => {
+            setReply(result.body);
+            setInsertedTemplate(true);
+            setUnresolved(result.unresolved);
+          }}
+          className="min-w-0 flex-1"
+        />
+        <AiActionsMenu className="ml-auto" />
+      </div>
 
       {/* Textarea */}
       <textarea

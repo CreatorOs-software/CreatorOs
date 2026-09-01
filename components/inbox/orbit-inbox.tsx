@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, Eye, Inbox, Loader2, MoreVertical, RefreshCcw, Search } from "lucide-react";
+import { ChevronLeft, Eye, Inbox, Loader2, MoreVertical, RefreshCcw, Search, Sparkles } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -482,11 +482,11 @@ export function OrbitInbox() {
                 className={cn(
                   "flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-medium uppercase transition-colors",
                   autoLabel
-                    ? "border-transparent bg-muted text-foreground"
+                    ? "border-transparent bg-brand/10 text-brand hover:bg-brand/15"
                     : "border-[#E7E7E7] text-muted-foreground hover:bg-muted/50",
                 )}
               >
-                <span className={cn("h-1.5 w-1.5 rounded-full", autoLabel ? "bg-green-400" : "bg-red-400")} />
+                <Sparkles className={cn("h-3 w-3", autoLabel ? "text-brand" : "text-muted-foreground")} />
                 Auto Label
               </button>
               <button

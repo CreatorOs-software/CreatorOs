@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Plus, Trash2, ChevronDown } from "lucide-react";
+import { Sparkles, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { useForm } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/lib/query-keys";
@@ -53,6 +53,12 @@ const PLATFORMS = [
   "Blog",
 ];
 
+// Always visible (required for submit).
+const ALWAYS_SHOWN = ["brand", "creatorId"];
+// Optional "Übersicht" fields, hidden until detected or revealed. "campaign"
+// stands for the combined Kampagnenstart/-ende grid.
+const OPTIONAL_OVERVIEW = ["contact", "product", "budget", "period", "campaign"];
+
 type Props = {
   data: ExtractedEmailData;
   creators: Creator[];
@@ -94,6 +100,7 @@ export function ExtractedPanel({ data, creators, threadId, onSetWorkState }: Pro
   const [errors, setErrors] = useState<ExtractedErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showMore, setShowMore] = useState(false);
 
   const form = useForm({
     defaultValues: {
@@ -174,6 +181,12 @@ export function ExtractedPanel({ data, creators, threadId, onSetWorkState }: Pro
   const uncertain = (f: string) => data.uncertainFields.includes(f);
   const errorList = Object.values(errors);
 
+  const isShown = (f: string) =>
+    showMore || ALWAYS_SHOWN.includes(f) || data.detectedFields.includes(f);
+  const hiddenCount = OPTIONAL_OVERVIEW.filter(
+    (f) => !ALWAYS_SHOWN.includes(f) && !data.detectedFields.includes(f),
+  ).length;
+
   return (
     <div>
       <div className="mb-4 flex items-center gap-1.5">
@@ -230,20 +243,22 @@ export function ExtractedPanel({ data, creators, threadId, onSetWorkState }: Pro
             )}
           </form.Field>
 
-          <form.Field name="contact">
-            {(field: ExtractedField<"contact">) => (
-              <FormField label="Ansprechpartner" uncertain={uncertain("contact")}>
-                <Input
-                  value={field.state.value}
-                  className={cn(
-                    uncertain("contact") &&
-                      "border-dashed border-amber-300 bg-amber-50",
-                  )}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-              </FormField>
-            )}
-          </form.Field>
+          {isShown("contact") && (
+            <form.Field name="contact">
+              {(field: ExtractedField<"contact">) => (
+                <FormField label="Ansprechpartner" uncertain={uncertain("contact")}>
+                  <Input
+                    value={field.state.value}
+                    className={cn(
+                      uncertain("contact") &&
+                        "border-dashed border-amber-300 bg-amber-50",
+                    )}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                </FormField>
+              )}
+            </form.Field>
+          )}
 
           <form.Field name="creatorId">
             {(field: ExtractedField<"creatorId">) => (
@@ -291,84 +306,109 @@ export function ExtractedPanel({ data, creators, threadId, onSetWorkState }: Pro
             )}
           </form.Field>
 
-          <form.Field name="product">
-            {(field: ExtractedField<"product">) => (
-              <FormField label="Produkt" uncertain={uncertain("product")}>
-                <Input
-                  value={field.state.value}
-                  placeholder="z. B. Daily Greens"
-                  className={cn(
-                    uncertain("product") &&
-                      "border-dashed border-amber-300 bg-amber-50",
-                  )}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-              </FormField>
-            )}
-          </form.Field>
-
-          <form.Field name="budget">
-            {(field: ExtractedField<"budget">) => (
-              <FormField label="Budget (Brand)" uncertain={uncertain("budget")}>
-                <Input
-                  value={field.state.value?.toString() ?? ""}
-                  placeholder="z. B. 5500"
-                  className={cn(
-                    uncertain("budget") &&
-                      "border-dashed border-amber-300 bg-amber-50",
-                  )}
-                  onChange={(e) =>
-                    field.handleChange(
-                      e.target.value
-                        ? parseFloat(e.target.value.replace(/[^0-9.]/g, ""))
-                        : null,
-                    )
-                  }
-                />
-              </FormField>
-            )}
-          </form.Field>
-
-          <form.Field name="period">
-            {(field: ExtractedField<"period">) => (
-              <FormField label="Zeitraum" uncertain={uncertain("period")}>
-                <Input
-                  value={field.state.value}
-                  placeholder="steht nicht in der Mail"
-                  className={cn(
-                    uncertain("period") &&
-                      "border-dashed border-amber-300 bg-amber-50",
-                  )}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-              </FormField>
-            )}
-          </form.Field>
-
-          <div className="grid grid-cols-2 gap-2">
-            <form.Field name="campaign_start">
-              {(field: ExtractedField<"campaign_start">) => (
-                <FormField label="Kampagnenstart">
+          {isShown("product") && (
+            <form.Field name="product">
+              {(field: ExtractedField<"product">) => (
+                <FormField label="Produkt" uncertain={uncertain("product")}>
                   <Input
-                    type="date"
                     value={field.state.value}
+                    placeholder="z. B. Daily Greens"
+                    className={cn(
+                      uncertain("product") &&
+                        "border-dashed border-amber-300 bg-amber-50",
+                    )}
                     onChange={(e) => field.handleChange(e.target.value)}
                   />
                 </FormField>
               )}
             </form.Field>
-            <form.Field name="campaign_end">
-              {(field: ExtractedField<"campaign_end">) => (
-                <FormField label="Kampagnenende">
+          )}
+
+          {isShown("budget") && (
+            <form.Field name="budget">
+              {(field: ExtractedField<"budget">) => (
+                <FormField label="Budget (Brand)" uncertain={uncertain("budget")}>
                   <Input
-                    type="date"
+                    value={field.state.value?.toString() ?? ""}
+                    placeholder="z. B. 5500"
+                    className={cn(
+                      uncertain("budget") &&
+                        "border-dashed border-amber-300 bg-amber-50",
+                    )}
+                    onChange={(e) =>
+                      field.handleChange(
+                        e.target.value
+                          ? parseFloat(e.target.value.replace(/[^0-9.]/g, ""))
+                          : null,
+                      )
+                    }
+                  />
+                </FormField>
+              )}
+            </form.Field>
+          )}
+
+          {isShown("period") && (
+            <form.Field name="period">
+              {(field: ExtractedField<"period">) => (
+                <FormField label="Zeitraum" uncertain={uncertain("period")}>
+                  <Input
                     value={field.state.value}
+                    placeholder="steht nicht in der Mail"
+                    className={cn(
+                      uncertain("period") &&
+                        "border-dashed border-amber-300 bg-amber-50",
+                    )}
                     onChange={(e) => field.handleChange(e.target.value)}
                   />
                 </FormField>
               )}
             </form.Field>
-          </div>
+          )}
+
+          {isShown("campaign") && (
+            <div className="grid grid-cols-2 gap-2">
+              <form.Field name="campaign_start">
+                {(field: ExtractedField<"campaign_start">) => (
+                  <FormField label="Kampagnenstart">
+                    <Input
+                      type="date"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                    />
+                  </FormField>
+                )}
+              </form.Field>
+              <form.Field name="campaign_end">
+                {(field: ExtractedField<"campaign_end">) => (
+                  <FormField label="Kampagnenende">
+                    <Input
+                      type="date"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                    />
+                  </FormField>
+                )}
+              </form.Field>
+            </div>
+          )}
+
+          {hiddenCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-expanded={showMore}
+              onClick={() => setShowMore((v) => !v)}
+              className="mt-1 w-full text-xs text-muted-foreground"
+            >
+              {showMore ? "Weniger Felder" : `+ Weitere Felder (${hiddenCount})`}
+              {showMore ? (
+                <ChevronUp className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          )}
         </TabsContent>
 
         <TabsContent value="deliverables" className="mt-3">

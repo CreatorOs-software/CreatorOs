@@ -89,7 +89,7 @@ export const IntegrationRepository = {
   async softDelete(supabase: SupabaseClient, id: string): Promise<void> {
     const { error } = await supabase
       .from("email_integrations")
-      .update({ status: "disconnected", deleted_at: new Date().toISOString() })
+      .update({ status: "disconnected" })
       .eq("id", id);
 
     if (error) throw new Error(error.message);

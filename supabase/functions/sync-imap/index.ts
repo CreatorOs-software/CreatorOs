@@ -15,6 +15,17 @@ const MAX_OTHER = 15;
 const LOOKBACK_DAYS = 90;
 const SPAM_TRASH_DAYS = 30;
 
+// A single flaky run (connection refused, timeout) shouldn't hide the mailbox
+// from the Inbox. Only escalate status to 'error' after this many consecutive
+// failures — or immediately when the server rejects the credentials.
+const SYNC_FAILURE_THRESHOLD = 3;
+
+function isAuthFailure(msg: string): boolean {
+  return /LOGIN failed|AUTHENTICATIONFAILED|authentication failed|invalid credentials|\[AUTH/i.test(
+    msg,
+  );
+}
+
 function getJwtRole(authHeader: string): string | null {
   try {
     const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
@@ -441,6 +452,7 @@ type IntegrationRow = {
   imap_username: string;
   imap_password: string;
   last_uid: number | null;
+  sync_failure_count: number | null;
 };
 
 async function syncFolder(
@@ -619,6 +631,7 @@ async function pullImap(row: IntegrationRow): Promise<{ pulled: number; skipped:
     last_sync_at: new Date().toISOString(),
     status: "connected",
     last_sync_error: null,
+    sync_failure_count: 0,
     last_uid: newInboxHighestUid,
   }).eq("id", row.id);
 
@@ -650,8 +663,10 @@ Deno.serve(async (req) => {
 
   let query = db
     .from("email_integrations")
-    .select("id, agency_id, email, imap_host, imap_port, imap_secure, imap_username, imap_password, last_uid")
-    .eq("status", "connected")
+    .select("id, agency_id, email, imap_host, imap_port, imap_secure, imap_username, imap_password, last_uid, sync_failure_count")
+    // include 'error' so a mailbox that hit a transient failure gets retried
+    // and can heal itself on the next successful run
+    .in("status", ["connected", "error"])
     .in("provider", ["imap", "gmail", "outlook"])
     .not("imap_host", "is", null)
     .not("imap_username", "is", null);
@@ -668,11 +683,24 @@ Deno.serve(async (req) => {
       results.push({ id: row.id, email: row.email, ...res });
     } catch (e) {
       const msg = String(e instanceof Error ? e.message : e).slice(0, 500);
+      const nextCount = (row.sync_failure_count ?? 0) + 1;
+      const escalate = isAuthFailure(msg) || nextCount >= SYNC_FAILURE_THRESHOLD;
       await db
         .from("email_integrations")
-        .update({ status: "error", last_sync_error: msg })
+        .update({
+          last_sync_error: msg,
+          sync_failure_count: nextCount,
+          // stay 'connected' for transient blips so the Inbox keeps the mailbox
+          ...(escalate ? { status: "error" } : {}),
+        })
         .eq("id", row.id);
-      results.push({ id: row.id, email: row.email, error: msg });
+      results.push({
+        id: row.id,
+        email: row.email,
+        error: msg,
+        failureCount: nextCount,
+        escalatedToError: escalate,
+      });
     }
   }
 

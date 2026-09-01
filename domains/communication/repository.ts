@@ -27,7 +27,9 @@ export const CommunicationRepository = {
         .from("email_integrations")
         .select("id, email, display_name, provider, status, creator_id, auto_label")
         .eq("agency_id", agencyId)
-        .eq("status", "connected"),
+        // Keep a mailbox visible during a transient sync error — only a
+        // deliberate disconnect ('disconnected') removes it from the Inbox.
+        .in("status", ["connected", "error"]),
       supabase
         .from("creators")
         .select("id, full_name, initials, phone")

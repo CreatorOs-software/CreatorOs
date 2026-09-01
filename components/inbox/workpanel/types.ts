@@ -19,6 +19,8 @@ export type ExtractedEmailData = {
   campaign_end: string;
   deliverables: ExtractedDeliverable[];
   uncertainFields: string[];
+  /** Field names the AI actually returned a value for; drives which fields show by default. */
+  detectedFields: string[];
 };
 
 export type LocalVorgang = {

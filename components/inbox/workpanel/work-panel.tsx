@@ -83,6 +83,15 @@ async function runAnalyse(threadId: string): Promise<WorkPanelState> {
       ...(!data.period                    ? ["period"]       : []),
       ...(aiDeliverables.length === 0     ? ["deliverables"] : []),
     ],
+    detectedFields:    [
+      ...(data.brand_name != null         ? ["brand"]        : []),
+      ...(data.creator_id != null         ? ["creatorId"]    : []),
+      ...(data.contact?.trim()            ? ["contact"]      : []),
+      ...(data.product?.trim()            ? ["product"]      : []),
+      ...(data.budget != null             ? ["budget"]       : []),
+      ...(data.period?.trim()             ? ["period"]       : []),
+      ...(aiDeliverables.length > 0       ? ["deliverables"] : []),
+    ],
   };
 
   if (data.brand_is_new) {
@@ -240,6 +249,7 @@ export function WorkPanel({
                     campaign_end: "",
                     deliverables: [],
                     uncertainFields: [],
+                    detectedFields: [],
                   },
                 })
               }

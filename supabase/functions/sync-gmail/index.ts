@@ -11,6 +11,17 @@ const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
 
+// A single flaky run shouldn't hide the mailbox from the Inbox. Only escalate
+// status to 'error' after this many consecutive failures — or immediately when
+// the OAuth grant is rejected (reconnect genuinely required).
+const SYNC_FAILURE_THRESHOLD = 3;
+
+function isAuthFailure(msg: string): boolean {
+  return /Token refresh failed|No refresh token|invalid_grant|reconnect required|Gmail API 401|invalid_token/i.test(
+    msg,
+  );
+}
+
 type IntegrationRow = {
   id: string;
   agency_id: string;
@@ -18,6 +29,7 @@ type IntegrationRow = {
   access_token: string | null;
   refresh_token: string | null;
   token_expires_at: string | null;
+  sync_failure_count: number | null;
 };
 
 // ---- OAuth helpers ----------------------------------------
@@ -198,6 +210,7 @@ async function pullGmail(integration: IntegrationRow): Promise<{ pulled: number;
     last_sync_at: new Date().toISOString(),
     status: "connected",
     last_sync_error: null,
+    sync_failure_count: 0,
   }).eq("id", integration.id);
 
   return { pulled, skipped };
@@ -225,8 +238,9 @@ Deno.serve(async (req) => {
 
   let query = db
     .from("email_integrations")
-    .select("id, agency_id, email, access_token, refresh_token, token_expires_at")
-    .eq("status", "connected")
+    .select("id, agency_id, email, access_token, refresh_token, token_expires_at, sync_failure_count")
+    // include 'error' so a transiently-failed mailbox gets retried and heals
+    .in("status", ["connected", "error"])
     .eq("provider", "gmail")
     .not("refresh_token", "is", null);
 
@@ -242,11 +256,23 @@ Deno.serve(async (req) => {
       results.push({ id: row.id, email: row.email, ...res });
     } catch (e) {
       const msg = String(e instanceof Error ? e.message : e).slice(0, 500);
+      const nextCount = (row.sync_failure_count ?? 0) + 1;
+      const escalate = isAuthFailure(msg) || nextCount >= SYNC_FAILURE_THRESHOLD;
       await db
         .from("email_integrations")
-        .update({ status: "error", last_sync_error: msg })
+        .update({
+          last_sync_error: msg,
+          sync_failure_count: nextCount,
+          ...(escalate ? { status: "error" } : {}),
+        })
         .eq("id", row.id);
-      results.push({ id: row.id, email: row.email, error: msg });
+      results.push({
+        id: row.id,
+        email: row.email,
+        error: msg,
+        failureCount: nextCount,
+        escalatedToError: escalate,
+      });
     }
   }
 
