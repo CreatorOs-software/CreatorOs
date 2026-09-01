@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -10,12 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Braces } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Template, TemplateChannel } from "@/domains/templates";
-import { VARIABLE_REGISTRY, type VariableGroup } from "@/lib/templates/variable-registry";
 import { useVariableSlashMenu } from "./variable-slash-menu";
+import { VariablePicker } from "./variable-picker";
 
 export type TemplateFormValue = {
   name: string;
@@ -30,12 +28,6 @@ const CHANNEL_LABELS: Record<TemplateChannel, string> = {
   general: "Allgemein",
 };
 
-const GROUP_LABELS: Record<VariableGroup, string> = {
-  creator: "Creator",
-  brand: "Brand",
-  account: "Account",
-};
-
 export function templateToFormValue(
   t?: Template | null,
   overrides?: Partial<TemplateFormValue>,
@@ -47,50 +39,6 @@ export function templateToFormValue(
     body: t?.body ?? "",
     ...overrides,
   };
-}
-
-function VariablePicker({ onPick }: { onPick: (path: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const groups: VariableGroup[] = ["creator", "brand", "account"];
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-        type="button"
-      >
-        <Braces className="h-3.5 w-3.5" />
-        Variable einfügen
-      </PopoverTrigger>
-      <PopoverContent className="w-72 p-0" align="start">
-        <div className="max-h-80 overflow-y-auto py-1">
-          {groups.map((group) => (
-            <div key={group}>
-              <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {GROUP_LABELS[group]}
-              </p>
-              {VARIABLE_REGISTRY.filter((v) => v.group === group).map((v) => (
-                <button
-                  key={v.path}
-                  type="button"
-                  onClick={() => {
-                    onPick(v.path);
-                    setOpen(false);
-                  }}
-                  className="flex w-full flex-col items-start px-3 py-1.5 text-left hover:bg-muted"
-                >
-                  <span className="text-xs font-medium">{v.label}</span>
-                  <span className="font-mono text-[10px] text-muted-foreground">
-                    {"${" + v.path + "}"}
-                  </span>
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
 }
 
 export function TemplateForm({
@@ -108,24 +56,6 @@ export function TemplateForm({
     textareaRef: bodyRef,
     onReplace: (next) => onChange({ body: next }),
   });
-
-  function insertAtCursor(path: string) {
-    const el = bodyRef.current;
-    const snippet = "${" + path + "}";
-    if (!el) {
-      onChange({ body: value.body + snippet });
-      return;
-    }
-    const start = el.selectionStart ?? el.value.length;
-    const end = el.selectionEnd ?? el.value.length;
-    const next = value.body.slice(0, start) + snippet + value.body.slice(end);
-    onChange({ body: next });
-    requestAnimationFrame(() => {
-      el.focus();
-      const pos = start + snippet.length;
-      el.setSelectionRange(pos, pos);
-    });
-  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -181,7 +111,7 @@ export function TemplateForm({
           <label className="block text-xs font-medium text-muted-foreground">
             Text *
           </label>
-          <VariablePicker onPick={insertAtCursor} />
+          <VariablePicker onPick={slashMenu.insertVariable} />
         </div>
         <Textarea
           ref={bodyRef}

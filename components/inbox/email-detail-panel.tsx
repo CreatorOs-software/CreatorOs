@@ -41,9 +41,10 @@ import {
   getInitial,
 } from "./utils";
 import { Avatar } from "@/components/ui/avatar-creator";
-import { InsertTemplatePopover } from "./templates/insert-template-popover";
+import { TemplateQuickInsert } from "./templates/template-quick-insert";
 import { NeueTemplateDialog } from "./templates/neue-template-dialog";
 import { useVariableSlashMenu } from "./templates/variable-slash-menu";
+import { VariablePicker } from "./templates/variable-picker";
 
 // ─── ReplyComposer ────────────────────────────────────────────────────────────
 
@@ -146,6 +147,18 @@ function ReplyComposer({
         </div>
       )}
 
+      {/* Vorlagen als Chips (bzw. Dropdown ab >4) */}
+      <TemplateQuickInsert
+        channel="email"
+        threadId={thread.id}
+        onInsert={(result) => {
+          setReply(result.body);
+          setInsertedTemplate(true);
+          setUnresolved(result.unresolved);
+        }}
+        className="border-b border-[#E7E7E7] px-4 py-2"
+      />
+
       {/* Textarea */}
       <textarea
         ref={replyRef}
@@ -164,7 +177,7 @@ function ReplyComposer({
           if (slashMenu.handleKeyDown(e)) return;
           if ((e.metaKey || e.ctrlKey) && e.key === "Enter") handleSend();
         }}
-        placeholder="Antwort schreiben … oder / für Variablen, unten eine Vorlage wählen."
+        placeholder="Antwort schreiben … oder / für Variablen, oben eine Vorlage wählen."
         className="min-h-32 w-full resize-none bg-transparent px-4 py-3 text-sm outline-none"
       />
       {slashMenu.menu}
@@ -176,15 +189,7 @@ function ReplyComposer({
             <Paperclip className="h-3.5 w-3.5" />
             Mediakit anhängen
           </button>
-          <InsertTemplatePopover
-            channel="email"
-            threadId={thread.id}
-            onInsert={(result) => {
-              setReply(result.body);
-              setInsertedTemplate(true);
-              setUnresolved(result.unresolved);
-            }}
-          />
+          <VariablePicker onPick={slashMenu.insertVariable} />
           <button
             type="button"
             disabled={!reply.trim()}
@@ -198,7 +203,7 @@ function ReplyComposer({
         <button
           disabled={!reply.trim() || sending}
           onClick={handleSend}
-          className="flex items-center gap-1.5 rounded-lg bg-foreground px-4 py-1.5 text-xs font-semibold text-background disabled:opacity-40"
+          className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-40"
         >
           {sending && <Loader2 className="h-3 w-3 animate-spin" />}
           {sending ? "Senden…" : "Senden"}

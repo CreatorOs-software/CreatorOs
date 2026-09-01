@@ -104,6 +104,10 @@ async function runAnalyse(threadId: string): Promise<WorkPanelState> {
 type Props = {
   selected: Thread | null;
   open: boolean;
+  /** Width in px when open. Controlled by the drag handle in OrbitInbox. */
+  width?: number;
+  /** Suppresses the width transition while the user drags the handle. */
+  resizing?: boolean;
   integrations: Integration[];
   creators: Creator[];
   workState: WorkPanelState;
@@ -114,11 +118,16 @@ type Props = {
   onPatch: (id: string, patch: Partial<Thread>) => void;
 };
 
+const COLLAPSED_WIDTH = 40;
+const DEFAULT_WIDTH = 320;
+
 // ─── WorkPanel ────────────────────────────────────────────────────────────────
 
 export function WorkPanel({
   selected,
   open,
+  width = DEFAULT_WIDTH,
+  resizing = false,
   creators,
   workState,
   analyseCount,
@@ -156,9 +165,10 @@ export function WorkPanel({
 
   return (
     <div
+      style={{ width: open ? width : COLLAPSED_WIDTH }}
       className={cn(
-        "flex shrink-0 flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300",
-        open ? "w-80" : "w-10",
+        "flex shrink-0 flex-col overflow-hidden rounded-2xl border border-border bg-card",
+        !resizing && "transition-[width] duration-300",
       )}
     >
       <div
