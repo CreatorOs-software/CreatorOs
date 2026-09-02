@@ -12,6 +12,14 @@ export const AnfrageService = {
     return AnfrageRepository.findByCreator(supabase, creatorId);
   },
 
+  async getAnfrage(id: string): Promise<Anfrage> {
+    const supabase = await createClient();
+    const { agencyId } = await getAuthContext(supabase);
+    const anfrage = await AnfrageRepository.findById(supabase, id, agencyId);
+    if (!anfrage) throw new AnfrageError("Anfrage nicht gefunden");
+    return anfrage;
+  },
+
   async createAnfrage(
     creatorId: string,
     input: Omit<AnfrageCreateInput, "creator_id">,

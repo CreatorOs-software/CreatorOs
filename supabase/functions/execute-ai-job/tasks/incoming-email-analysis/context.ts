@@ -16,10 +16,12 @@ export type EmailAnalysisContext = {
     known_brands: { company_name: string; industry: string | null }[];
     creators:     { id: string; full_name: string; niche: string[]; min_budget: number | null }[];
   };
+  /** Snapshot of the already-linked Anfrage (follow-up merge). Orientation only. */
+  currentAnfrage: Record<string, unknown> | null;
 };
 
 export async function buildEmailAnalysisContext(
-  payload:  { email_thread_id: string },
+  payload:  { email_thread_id: string; current_anfrage?: Record<string, unknown> | null },
   agencyId: string,
   db:       SupabaseClient,
 ): Promise<EmailAnalysisContext> {
@@ -77,6 +79,7 @@ export async function buildEmailAnalysisContext(
       prior_emails_count: priorEmailsCount,
       has_linked_anfrage: hasLinkedAnfrage,
     },
+    currentAnfrage: payload.current_anfrage ?? null,
     agency: {
       known_brands: (brandsRes.data ?? []).map((b) => ({
         company_name: b.company_name,

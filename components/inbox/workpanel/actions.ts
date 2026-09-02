@@ -8,6 +8,7 @@ import {
   Gauge,
   Handshake,
   ReceiptText,
+  RefreshCw,
   Send,
   Sparkles,
   SquarePen,
@@ -25,7 +26,8 @@ export type WorkPanelActionId =
   | "assign"
   | "not-coop"
   | "anfrage-edit"
-  | "deal-open";
+  | "deal-open"
+  | "reanalyse";
 
 // Canonical render order for the label-driven flow — keeps the main-action
 // block visually consistent regardless of how a label maps its actions.
@@ -58,6 +60,7 @@ export const ACTION_META: Record<
   "not-coop": { label: "Keine Anfrage – nicht scannen", variant: "outline", icon: Ban },
   "anfrage-edit": { label: "Anfrage bearbeiten", variant: "default", icon: SquarePen },
   "deal-open": { label: "Deal öffnen", variant: "default", icon: Handshake },
+  reanalyse: { label: "Neue Infos übernehmen", variant: "secondary", icon: RefreshCw },
 };
 
 // "Zu bestehendem Vorgang zuordnen" is always a main action.
@@ -85,7 +88,7 @@ export function resolveActions(
   if (link?.dealId || link?.anfrageId) {
     const primary: WorkPanelActionId = link.dealId ? "deal-open" : "anfrage-edit";
     return {
-      main: [primary, "assign"],
+      main: [primary, "reanalyse", "assign"],
       more: ACTION_ORDER.filter(
         (id) => id !== "assign" && !HIDDEN_WHEN_LINKED.includes(id),
       ),
