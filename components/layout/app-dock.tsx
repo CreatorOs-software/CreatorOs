@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
   Bell,
   CheckSquare,
@@ -12,10 +13,12 @@ import {
   Settings2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { QueryKeys } from "@/lib/query-keys";
 import { GlassEffect, GlassFilter } from "@/components/ui/liquid-glass";
 import { FloatingWindow } from "@/components/ui/floating-window";
 import { TodoPanel } from "@/components/ui/todo-panel";
 import { NotesPanel } from "@/components/ui/notes-panel";
+import { NotificationsPanel } from "@/components/notifications/notifications-panel";
 import { useDock, type PanelId } from "./dock-context";
 
 type DockItem =
@@ -79,6 +82,14 @@ export function AppDock() {
   const { dockVisible, activePanel, setActivePanel } = useDock();
   const pathname = usePathname();
 
+  const { data: notifData } = useQuery<{ unreadCount: number }>({
+    queryKey: QueryKeys.notifications.all(),
+    queryFn: () => fetch("/api/notifications").then((r) => r.json()),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+  const unreadCount = notifData?.unreadCount ?? 0;
+
   function handlePanelToggle(panel: PanelId) {
     setActivePanel(activePanel === panel ? null : panel);
   }
@@ -103,6 +114,8 @@ export function AppDock() {
               <TodoPanel />
             ) : activePanel === "notizen" ? (
               <NotesPanel />
+            ) : activePanel === "benachrichtigungen" ? (
+              <NotificationsPanel />
             ) : (
               <>
                 <FloatingWindow.Header title={panelConfig[activePanel].title} />
@@ -144,13 +157,16 @@ export function AppDock() {
                         pathname.startsWith(item.href + "/")
                       : item.panel === activePanel;
 
+                  const showUnreadDot =
+                    item.panel === "benachrichtigungen" && unreadCount > 0;
+
                   const iconNode = (
                     <motion.div
                       whileHover={{ scale: 1.2, y: -5 }}
                       whileTap={{ scale: 0.95 }}
                       transition={springTransition}
                       className={cn(
-                        "w-10 h-10 flex items-center justify-center rounded-xl transition-colors duration-200",
+                        "relative w-10 h-10 flex items-center justify-center rounded-xl transition-colors duration-200",
                         isActive ? "bg-black" : "hover:bg-white/20",
                       )}
                     >
@@ -160,6 +176,9 @@ export function AppDock() {
                           isActive ? "text-white" : "text-black/65",
                         )}
                       />
+                      {showUnreadDot && (
+                        <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-red-500 ring-2 ring-white" />
+                      )}
                     </motion.div>
                   );
 

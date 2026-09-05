@@ -110,10 +110,11 @@ export function IdlePanel({
       {main.map((id) => (
         <Button
           key={id}
-          className="w-full"
+          className="w-full gap-1.5"
           variant={ACTION_META[id].variant}
           onClick={handlers[id]}
         >
+          {ACTION_META[id].ai && <Sparkles className="h-3.5 w-3.5" />}
           {ACTION_META[id].label}
         </Button>
       ))}

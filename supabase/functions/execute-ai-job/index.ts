@@ -3,6 +3,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { PROMPT_REGISTRY, getAdapter } from "./registry.ts";
 import { buildEmailAnalysisContext } from "./tasks/incoming-email-analysis/context.ts";
+import { maybeEmitInboundNotification } from "./notify.ts";
 
 type Payload = {
   email_thread_id: string;
@@ -21,6 +22,9 @@ type ThreadRow = {
   references_header: string | null;
   system_labels: string[];
   integration_id: string;
+  folder: string | null;
+  sender_email: string | null;
+  sender_name: string | null;
 };
 
 Deno.serve(async (req) => {
@@ -103,7 +107,7 @@ Deno.serve(async (req) => {
     const { data: thread, error: threadErr } = await db
       .from("email_threads")
       .select(
-        "id, subject, gmail_thread_id, message_id, in_reply_to, references_header, system_labels, integration_id",
+        "id, subject, gmail_thread_id, message_id, in_reply_to, references_header, system_labels, integration_id, folder, sender_email, sender_name",
       )
       .eq("id", email_thread_id)
       .single<ThreadRow>();
@@ -123,6 +127,15 @@ Deno.serve(async (req) => {
 
     // Deterministic LAUFEND when conversation has a linked anfrage
     const deterministicLabels: string[] = conv?.anfrage_id ? ["LAUFEND"] : [];
+
+    // 3b. Movement-Notification — Antwort auf verknüpfte Anfrage, sonst Mail
+    // von bekannter Brand. Läuft unabhängig von AUTO_LABEL, best-effort.
+    await maybeEmitInboundNotification(db, {
+      thread,
+      agencyId: agency_id,
+      conversationId,
+      anfrageId: conv?.anfrage_id ?? null,
+    });
 
     // 4. Check integration's AUTO_LABEL flag
     const { data: integration } = await db
