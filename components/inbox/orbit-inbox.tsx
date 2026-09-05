@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { WorkPanel } from "./workpanel/work-panel";
 import { InboxSidebar } from "./inbox-sidebar";
@@ -98,8 +99,11 @@ export function OrbitInbox() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [integrations.length]);
 
+  // Deeplink aus der Glocke: /inbox?thread=<id> überschreibt den zuletzt
+  // geöffneten Thread einmalig beim Laden.
+  const searchParams = useSearchParams();
   const [selectedId, setSelectedId] = useState<string | null>(
-    () => localStorage.getItem("inbox:selectedThreadId"),
+    () => searchParams.get("thread") ?? localStorage.getItem("inbox:selectedThreadId"),
   );
   const [selectedIntegrationId, setSelectedIntegrationId] = useState<string | null>(
     () => localStorage.getItem("inbox:selectedIntegrationId"),

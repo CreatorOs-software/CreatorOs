@@ -14,6 +14,11 @@ const PREFETCH_QUERIES: UseQueryOptions[] = [
     queryFn: () => fetch("/api/creators/list").then((r) => r.json()),
     staleTime: 5 * 60_000,
   },
+  {
+    queryKey: QueryKeys.notifications.all(),
+    queryFn: () => fetch("/api/notifications").then((r) => r.json()),
+    staleTime: 30_000,
+  },
 ];
 
 export function Prefetch() {

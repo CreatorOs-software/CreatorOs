@@ -47,20 +47,26 @@ const ACTION_ORDER: WorkPanelActionId[] = [
 
 export const ACTION_META: Record<
   WorkPanelActionId,
-  { label: string; variant: "default" | "secondary" | "outline"; icon: LucideIcon }
+  {
+    label: string;
+    variant: "default" | "secondary" | "outline";
+    icon: LucideIcon;
+    /** KI-driven action — surfaced with the Sparkles icon. */
+    ai?: boolean;
+  }
 > = {
-  analyse: { label: "Als Kooperationsanfrage lesen", variant: "default", icon: Sparkles },
-  "invoice-ai": { label: "Rechnung mit KI lesen", variant: "default", icon: ReceiptText },
+  analyse: { label: "Als Kooperationsanfrage lesen", variant: "default", icon: Sparkles, ai: true },
+  "invoice-ai": { label: "Rechnung mit KI lesen", variant: "default", icon: ReceiptText, ai: true },
   manual: { label: "Anfrage anlegen", variant: "secondary", icon: FilePlus2 },
   mediakit: { label: "Media Kit senden", variant: "secondary", icon: Send },
-  "price-check": { label: "Preis Check", variant: "outline", icon: BadgeEuro },
-  "brand-check": { label: "Brand prüfen", variant: "outline", icon: Building2 },
-  capacity: { label: "Auslastung", variant: "outline", icon: Gauge },
+  "price-check": { label: "Preis Check", variant: "outline", icon: BadgeEuro, ai: true },
+  "brand-check": { label: "Brand prüfen", variant: "outline", icon: Building2, ai: true },
+  capacity: { label: "Auslastung", variant: "outline", icon: Gauge, ai: true },
   assign: { label: "Zu bestehendem Vorgang zuordnen", variant: "outline", icon: FolderInput },
   "not-coop": { label: "Keine Anfrage – nicht scannen", variant: "outline", icon: Ban },
   "anfrage-edit": { label: "Anfrage bearbeiten", variant: "default", icon: SquarePen },
   "deal-open": { label: "Deal öffnen", variant: "default", icon: Handshake },
-  reanalyse: { label: "Neue Infos übernehmen", variant: "secondary", icon: RefreshCw },
+  reanalyse: { label: "Neue Infos übernehmen", variant: "secondary", icon: RefreshCw, ai: true },
 };
 
 // "Zu bestehendem Vorgang zuordnen" is always a main action.
