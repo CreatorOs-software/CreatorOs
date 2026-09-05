@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Thread, Integration, Creator } from "../types";
-import type { WorkPanelState } from "./types";
+import type { WorkPanelState, ExtractedEmailData } from "./types";
 import { IdlePanel } from "./components/idle-panel";
 import { ScanningPanel } from "./components/scanning-panel";
 import { NotCoopPanel } from "./components/not-coop-panel";
@@ -48,8 +48,38 @@ function forwardContextFromState(state: WorkPanelState): {
   return { creatorId: null, context: {} };
 }
 
-async function runAnalyse(threadId: string): Promise<WorkPanelState> {
-  const res = await fetch(`/api/inbox/${threadId}/analyse`, { method: "POST" });
+const EMPTY_EXTRACTED: ExtractedEmailData = {
+  brand: "",
+  contact: "",
+  creatorId: null,
+  creatorConfidence: 0,
+  title: "",
+  product: "",
+  budget: null,
+  budgetOffer: null,
+  fee: null,
+  period: "",
+  campaign_start: "",
+  campaign_end: "",
+  notes: "",
+  deliverables: [],
+  paymentItems: [],
+  guidelines: { labeling: "", wording: "", nogo: "", hashtags: [] },
+  trackingAssets: { discountCode: "", affiliateLinks: [], utmParams: "" },
+  uncertainFields: [],
+  detectedFields: [],
+};
+
+async function runAnalyse(
+  threadId: string,
+  mode: "create" | "merge",
+  anfrageId?: string,
+): Promise<WorkPanelState> {
+  const res = await fetch(`/api/inbox/${threadId}/analyse`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mode }),
+  });
   if (!res.ok) {
     const text = await res.text().catch(() => "(no body)");
     throw new Error(`Analyse fehlgeschlagen (${res.status}): ${text}`);
@@ -60,30 +90,83 @@ async function runAnalyse(threadId: string): Promise<WorkPanelState> {
     count:             d.count,
     content_type:      d.content_type,
     platform:          d.platform,
-    draft_deadline:    "",
-    freigabe_deadline: "",
-    live_date:         "",
+    draft_deadline:    d.draft_deadline ?? "",
+    freigabe_deadline: d.freigabe_deadline ?? "",
+    live_date:         d.live_date ?? "",
   }));
+
+  const g = data.guidelines;
+  const t = data.tracking_assets;
+  const paymentItems = (data.payment_items ?? []).map((p) => ({
+    label:       p.label,
+    amount:      p.amount,
+    invoiceDate: p.invoice_date ?? "",
+    paymentTerm: p.payment_term,
+  }));
+
+  const guidelines = {
+    labeling: g?.labeling ?? "",
+    wording:  g?.wording ?? "",
+    nogo:     g?.nogo ?? "",
+    hashtags: g?.hashtags ?? [],
+  };
+  const trackingAssets = {
+    discountCode:   t?.discount_code ?? "",
+    affiliateLinks: t?.affiliate_links ?? [],
+    utmParams:      t?.utm_params ?? "",
+  };
+  const guidelinesDetected = !!(g && (g.labeling || g.wording || g.nogo || (g.hashtags?.length ?? 0) > 0));
+  const trackingDetected = !!(t && (t.discount_code || t.utm_params || (t.affiliate_links?.length ?? 0) > 0));
 
   const extractedData = {
     brand:             data.brand_name ?? "",
     contact:           data.contact ?? "",
     creatorId:         data.creator_id,
     creatorConfidence: data.creator_confidence,
+    title:             data.title ?? "",
     product:           data.product ?? "",
     budget:            data.budget,
+    budgetOffer:       data.budget_offer,
+    fee:               data.fee,
     period:            data.period ?? "",
-    campaign_start:    "",
-    campaign_end:      "",
+    campaign_start:    data.campaign_start ?? "",
+    campaign_end:      data.campaign_end ?? "",
+    notes:             data.notes ?? "",
     deliverables:      aiDeliverables,
+    paymentItems,
+    guidelines,
+    trackingAssets,
     uncertainFields:   [
-      ...(!data.creator_id                ? ["creatorId"]    : []),
-      ...(!data.product                   ? ["product"]      : []),
-      ...(!data.budget                    ? ["budget"]       : []),
-      ...(!data.period                    ? ["period"]       : []),
-      ...(aiDeliverables.length === 0     ? ["deliverables"] : []),
+      ...(!data.creator_id            ? ["creatorId"]    : []),
+      ...(!data.product              ? ["product"]      : []),
+      ...(data.budget == null        ? ["budget"]       : []),
+      ...(!data.period              ? ["period"]       : []),
+      ...(aiDeliverables.length === 0 ? ["deliverables"] : []),
+    ],
+    detectedFields:    [
+      ...(data.brand_name != null         ? ["brand"]          : []),
+      ...(data.creator_id != null         ? ["creatorId"]      : []),
+      ...(data.contact?.trim()            ? ["contact"]        : []),
+      ...(data.title?.trim()              ? ["title"]          : []),
+      ...(data.product?.trim()            ? ["product"]        : []),
+      ...(data.budget != null             ? ["budget"]         : []),
+      ...(data.budget_offer != null       ? ["budgetOffer"]    : []),
+      ...(data.fee != null                ? ["fee"]            : []),
+      ...(data.period?.trim()             ? ["period"]         : []),
+      ...(data.campaign_start?.trim() || data.campaign_end?.trim() ? ["campaign"] : []),
+      ...(data.notes?.trim()              ? ["notes"]          : []),
+      ...(aiDeliverables.length > 0       ? ["deliverables"]   : []),
+      ...(paymentItems.length > 0         ? ["paymentItems"]   : []),
+      ...(guidelinesDetected              ? ["guidelines"]     : []),
+      ...(trackingDetected                ? ["trackingAssets"] : []),
     ],
   };
+
+  if (mode === "merge") {
+    const id = anfrageId ?? data.anfrage_id;
+    if (!id) throw new Error("Keine verknüpfte Anfrage gefunden");
+    return { phase: "extracted", data: extractedData, merge: { anfrageId: id } };
+  }
 
   if (data.brand_is_new) {
     return {
@@ -104,6 +187,10 @@ async function runAnalyse(threadId: string): Promise<WorkPanelState> {
 type Props = {
   selected: Thread | null;
   open: boolean;
+  /** Width in px when open. Controlled by the drag handle in OrbitInbox. */
+  width?: number;
+  /** Suppresses the width transition while the user drags the handle. */
+  resizing?: boolean;
   integrations: Integration[];
   creators: Creator[];
   workState: WorkPanelState;
@@ -114,11 +201,16 @@ type Props = {
   onPatch: (id: string, patch: Partial<Thread>) => void;
 };
 
+const COLLAPSED_WIDTH = 40;
+const DEFAULT_WIDTH = 320;
+
 // ─── WorkPanel ────────────────────────────────────────────────────────────────
 
 export function WorkPanel({
   selected,
   open,
+  width = DEFAULT_WIDTH,
+  resizing = false,
   creators,
   workState,
   analyseCount,
@@ -132,7 +224,7 @@ export function WorkPanel({
     if (workState.phase !== "scanning" || !selected) return;
     setAnalyseError(null);
     let cancelled = false;
-    runAnalyse(selected.id).then((state) => {
+    runAnalyse(selected.id, workState.mode, workState.anfrageId).then((state) => {
       if (!cancelled) onSetWorkState(state);
     }).catch((err: unknown) => {
       console.error("[WorkPanel] runAnalyse failed:", err);
@@ -156,9 +248,10 @@ export function WorkPanel({
 
   return (
     <div
+      style={{ width: open ? width : COLLAPSED_WIDTH }}
       className={cn(
-        "flex shrink-0 flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300",
-        open ? "w-80" : "w-10",
+        "flex shrink-0 flex-col overflow-hidden rounded-2xl border border-border bg-card",
+        !resizing && "transition-[width] duration-300",
       )}
     >
       <div
@@ -213,25 +306,20 @@ export function WorkPanel({
               labels={selected.system_labels ?? []}
               anfrageId={selected.anfrage_id}
               dealId={selected.deal_id}
-              onAnalyse={() => onSetWorkState({ phase: "scanning" })}
+              onAnalyse={() => onSetWorkState({ phase: "scanning", mode: "create" })}
+              onReanalyse={
+                selected.anfrage_id
+                  ? () =>
+                      onSetWorkState({
+                        phase: "scanning",
+                        mode: "merge",
+                        anfrageId: selected.anfrage_id ?? undefined,
+                      })
+                  : undefined
+              }
               onNotCoop={() => onSetWorkState({ phase: "not-coop" })}
               onManualCreate={() =>
-                onSetWorkState({
-                  phase: "extracted",
-                  data: {
-                    brand: "",
-                    contact: "",
-                    creatorId: null,
-                    creatorConfidence: 0,
-                    product: "",
-                    budget: null,
-                    period: "",
-                    campaign_start: "",
-                    campaign_end: "",
-                    deliverables: [],
-                    uncertainFields: [],
-                  },
-                })
+                onSetWorkState({ phase: "extracted", data: { ...EMPTY_EXTRACTED } })
               }
             />
           )}
@@ -250,6 +338,7 @@ export function WorkPanel({
               data={workState.data}
               creators={creators}
               threadId={selected.id}
+              merge={workState.merge}
               onSetWorkState={onSetWorkState}
             />
           )}

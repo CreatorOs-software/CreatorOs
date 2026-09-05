@@ -41,9 +41,11 @@ import {
   getInitial,
 } from "./utils";
 import { Avatar } from "@/components/ui/avatar-creator";
-import { InsertTemplatePopover } from "./templates/insert-template-popover";
+import { TemplateQuickInsert } from "./templates/template-quick-insert";
+import { AiActionsMenu } from "./ai-actions-menu";
 import { NeueTemplateDialog } from "./templates/neue-template-dialog";
 import { useVariableSlashMenu } from "./templates/variable-slash-menu";
+import { VariablePicker } from "./templates/variable-picker";
 
 // ─── ReplyComposer ────────────────────────────────────────────────────────────
 
@@ -65,6 +67,7 @@ function ReplyComposer({
   const [unresolved, setUnresolved] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const [savingAsTemplate, setSavingAsTemplate] = useState(false);
+  const [correcting, setCorrecting] = useState(false);
   const replyRef = useRef<HTMLTextAreaElement>(null);
   const slashMenu = useVariableSlashMenu({
     mode: "resolve",
@@ -73,6 +76,39 @@ function ReplyComposer({
     onReplace: setReply,
     onUnresolved: (paths) => setUnresolved((prev) => [...new Set([...prev, ...paths])]),
   });
+
+  async function handleCorrectSpelling() {
+    const original = reply;
+    if (!original.trim() || correcting || sending) return;
+    setCorrecting(true);
+    try {
+      const res = await fetch("/api/inbox/ai/proofread", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: original }),
+      });
+      if (!res.ok || !res.body) throw new Error("proofread failed");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        acc += decoder.decode(value, { stream: true });
+        if (acc) setReply(acc);
+      }
+      acc += decoder.decode();
+      if (!acc.trim()) throw new Error("empty");
+      setReply(acc);
+      setInsertedTemplate(false);
+      setUnresolved([]);
+    } catch {
+      setReply(original); // restore the user's draft on any failure
+    } finally {
+      setCorrecting(false);
+    }
+  }
 
   async function handleSend() {
     if (!reply.trim() || sending) return;
@@ -146,11 +182,30 @@ function ReplyComposer({
         </div>
       )}
 
+      {/* Vorlagen als Chips (bzw. Dropdown ab >4) + KI-Aktionen rechts */}
+      <div className="flex items-center gap-2 border-b border-[#E7E7E7] px-4 py-2">
+        <TemplateQuickInsert
+          channel="email"
+          threadId={thread.id}
+          onInsert={(result) => {
+            setReply(result.body);
+            setInsertedTemplate(true);
+            setUnresolved(result.unresolved);
+          }}
+          className="min-w-0 flex-1"
+        />
+        <AiActionsMenu
+          className="ml-auto"
+          busy={correcting}
+          onCorrectSpelling={handleCorrectSpelling}
+        />
+      </div>
+
       {/* Textarea */}
       <textarea
         ref={replyRef}
         autoFocus
-        readOnly={slashMenu.loading}
+        readOnly={slashMenu.loading || correcting}
         value={reply}
         onChange={(e) => {
           setReply(e.target.value);
@@ -164,7 +219,7 @@ function ReplyComposer({
           if (slashMenu.handleKeyDown(e)) return;
           if ((e.metaKey || e.ctrlKey) && e.key === "Enter") handleSend();
         }}
-        placeholder="Antwort schreiben … oder / für Variablen, unten eine Vorlage wählen."
+        placeholder="Antwort schreiben … oder / für Variablen, oben eine Vorlage wählen."
         className="min-h-32 w-full resize-none bg-transparent px-4 py-3 text-sm outline-none"
       />
       {slashMenu.menu}
@@ -176,18 +231,10 @@ function ReplyComposer({
             <Paperclip className="h-3.5 w-3.5" />
             Mediakit anhängen
           </button>
-          <InsertTemplatePopover
-            channel="email"
-            threadId={thread.id}
-            onInsert={(result) => {
-              setReply(result.body);
-              setInsertedTemplate(true);
-              setUnresolved(result.unresolved);
-            }}
-          />
+          <VariablePicker onPick={slashMenu.insertVariable} />
           <button
             type="button"
-            disabled={!reply.trim()}
+            disabled={!reply.trim() || correcting}
             onClick={() => setSavingAsTemplate(true)}
             className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
@@ -196,9 +243,9 @@ function ReplyComposer({
           </button>
         </div>
         <button
-          disabled={!reply.trim() || sending}
+          disabled={!reply.trim() || sending || correcting}
           onClick={handleSend}
-          className="flex items-center gap-1.5 rounded-lg bg-foreground px-4 py-1.5 text-xs font-semibold text-background disabled:opacity-40"
+          className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-40"
         >
           {sending && <Loader2 className="h-3 w-3 animate-spin" />}
           {sending ? "Senden…" : "Senden"}

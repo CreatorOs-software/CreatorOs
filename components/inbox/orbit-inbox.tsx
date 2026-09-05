@@ -1,13 +1,14 @@
 "use client";
 
-import { ChevronLeft, Eye, Inbox, Loader2, MoreVertical, RefreshCcw, Search } from "lucide-react";
+import { ChevronLeft, Eye, Inbox, Loader2, MoreVertical, RefreshCcw, Search, Sparkles } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { WorkPanel } from "./workpanel/work-panel";
 import { InboxSidebar } from "./inbox-sidebar";
@@ -20,6 +21,21 @@ import type { Folder, InboxData, Thread, ThreadPatch } from "./types";
 import type { WorkPanelState } from "./workpanel/types";
 import { QueryKeys } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
+
+// ─── Work panel resize ────────────────────────────────────────────────────────
+
+const WORK_PANEL_MIN = 300;
+const WORK_PANEL_MAX = 720;
+const WORK_PANEL_DEFAULT = 340;
+const INBOX_MIN = 520; // keep the inbox card at least this wide while dragging
+const WORK_PANEL_WIDTH_KEY = "inbox:workPanelWidth";
+
+function readStoredWorkPanelWidth(): number {
+  const raw = localStorage.getItem(WORK_PANEL_WIDTH_KEY);
+  const n = raw ? parseInt(raw, 10) : NaN;
+  if (!Number.isFinite(n)) return WORK_PANEL_DEFAULT;
+  return Math.min(WORK_PANEL_MAX, Math.max(WORK_PANEL_MIN, n));
+}
 
 // ─── Data fetching ────────────────────────────────────────────────────────────
 
@@ -83,8 +99,11 @@ export function OrbitInbox() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [integrations.length]);
 
+  // Deeplink aus der Glocke: /inbox?thread=<id> überschreibt den zuletzt
+  // geöffneten Thread einmalig beim Laden.
+  const searchParams = useSearchParams();
   const [selectedId, setSelectedId] = useState<string | null>(
-    () => localStorage.getItem("inbox:selectedThreadId"),
+    () => searchParams.get("thread") ?? localStorage.getItem("inbox:selectedThreadId"),
   );
   const [selectedIntegrationId, setSelectedIntegrationId] = useState<string | null>(
     () => localStorage.getItem("inbox:selectedIntegrationId"),
@@ -93,6 +112,10 @@ export function OrbitInbox() {
   const [folder, setFolder] = useState<Folder>("inbox");
   const [search, setSearch] = useState("");
   const [workPanelOpen, setWorkPanelOpen] = useState(true);
+  const [workPanelWidth, setWorkPanelWidth] = useState<number>(readStoredWorkPanelWidth);
+  const [isResizing, setIsResizing] = useState(false);
+  const shellRef = useRef<HTMLDivElement | null>(null);
+  const resizeRef = useRef<{ startX: number; startWidth: number; max: number } | null>(null);
   const [mergedMode, setMergedMode] = useState(false);
   const [mergedView, setMergedView] = useState<"sidebar" | "threads">("sidebar");
   const [syncing, setSyncing] = useState(false);
@@ -106,6 +129,40 @@ export function OrbitInbox() {
     if (selectedId) localStorage.setItem("inbox:selectedThreadId", selectedId);
     else localStorage.removeItem("inbox:selectedThreadId");
   }, [selectedId]);
+
+  // Persist the work-panel width across sessions.
+  useEffect(() => {
+    localStorage.setItem(WORK_PANEL_WIDTH_KEY, String(Math.round(workPanelWidth)));
+  }, [workPanelWidth]);
+
+  function handleResizeStart(e: React.PointerEvent<HTMLDivElement>) {
+    e.preventDefault();
+    const shellWidth = shellRef.current?.getBoundingClientRect().width ?? Infinity;
+    resizeRef.current = {
+      startX: e.clientX,
+      startWidth: workPanelWidth,
+      max: Math.max(WORK_PANEL_MIN, Math.min(WORK_PANEL_MAX, shellWidth - INBOX_MIN)),
+    };
+    setIsResizing(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function handleResizeMove(e: React.PointerEvent<HTMLDivElement>) {
+    const r = resizeRef.current;
+    if (!r) return;
+    // Panel sits on the right — dragging left widens it.
+    const next = r.startWidth + (r.startX - e.clientX);
+    setWorkPanelWidth(Math.min(r.max, Math.max(WORK_PANEL_MIN, next)));
+  }
+
+  function handleResizeEnd(e: React.PointerEvent<HTMLDivElement>) {
+    if (!resizeRef.current) return;
+    resizeRef.current = null;
+    setIsResizing(false);
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  }
 
   // Derive effective integration: user pick → first available → null
   const effectiveIntegrationId = (
@@ -365,7 +422,13 @@ export function OrbitInbox() {
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-full min-w-0 overflow-hidden gap-2">
+    <div
+      ref={shellRef}
+      className={cn(
+        "flex h-full min-w-0 overflow-hidden gap-2",
+        isResizing && "cursor-col-resize select-none",
+      )}
+    >
       {/* Main inbox card: sidebar + thread list + email detail */}
       <div className="flex flex-1 min-w-0 overflow-hidden rounded-2xl border border-[#E7E7E7] bg-white shadow-sm">
 
@@ -423,11 +486,11 @@ export function OrbitInbox() {
                 className={cn(
                   "flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-medium uppercase transition-colors",
                   autoLabel
-                    ? "border-transparent bg-muted text-foreground"
+                    ? "border-transparent bg-brand/10 text-brand hover:bg-brand/15"
                     : "border-[#E7E7E7] text-muted-foreground hover:bg-muted/50",
                 )}
               >
-                <span className={cn("h-1.5 w-1.5 rounded-full", autoLabel ? "bg-green-400" : "bg-red-400")} />
+                <Sparkles className={cn("h-3 w-3", autoLabel ? "text-brand" : "text-muted-foreground")} />
                 Auto Label
               </button>
               <button
@@ -532,10 +595,34 @@ export function OrbitInbox() {
 
       <ComposeEmailDialog open={composeOpen} onOpenChange={setComposeOpen} integrationId={effectiveIntegrationId} />
 
+      {/* Drag handle — resize inbox vs. work panel */}
+      {workPanelOpen && (
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Work-Panel-Breite ändern"
+          onPointerDown={handleResizeStart}
+          onPointerMove={handleResizeMove}
+          onPointerUp={handleResizeEnd}
+          onPointerCancel={handleResizeEnd}
+          onDoubleClick={() => setWorkPanelWidth(WORK_PANEL_DEFAULT)}
+          className="group relative flex w-1.5 shrink-0 touch-none cursor-col-resize items-center justify-center"
+        >
+          <span
+            className={cn(
+              "h-12 w-1 rounded-full bg-[#E7E7E7] transition-colors group-hover:bg-muted-foreground/40",
+              isResizing && "bg-muted-foreground/60",
+            )}
+          />
+        </div>
+      )}
+
       {/* Work panel */}
       <WorkPanel
         selected={selected}
         open={workPanelOpen}
+        width={workPanelWidth}
+        resizing={isResizing}
         integrations={integrations}
         creators={creators}
         workState={selected ? (workStates[selected.id] ?? { phase: "idle" }) : { phase: "idle" }}

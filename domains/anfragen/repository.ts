@@ -21,6 +21,21 @@ export const AnfrageRepository = {
     return (data ?? []) as unknown as Anfrage[];
   },
 
+  async findById(
+    supabase: SupabaseClient,
+    id: string,
+    agencyId: string,
+  ): Promise<Anfrage | null> {
+    const { data, error } = await supabase
+      .from("anfragen")
+      .select(ANFRAGE_SELECT)
+      .eq("id", id)
+      .eq("agency_id", agencyId)
+      .maybeSingle();
+    if (error) throw error;
+    return (data ?? null) as unknown as Anfrage | null;
+  },
+
   async create(
     supabase: SupabaseClient,
     agencyId: string,

@@ -24,8 +24,9 @@ import { QueryKeys } from "@/lib/query-keys";
 import { normalizeE164 } from "@/lib/formatters";
 import type { WhatsAppConnectionPublic } from "@/domains/whatsapp/types";
 import type { Thread, Creator } from "../../types";
-import { InsertTemplatePopover } from "../../templates/insert-template-popover";
+import { TemplateQuickInsert } from "../../templates/template-quick-insert";
 import { useVariableSlashMenu } from "../../templates/variable-slash-menu";
+import { VariablePicker } from "../../templates/variable-picker";
 
 export type ForwardContext = {
   brand?: string | null;
@@ -178,17 +179,17 @@ export function WhatsappForwardDialog({
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
+          <TemplateQuickInsert
+            channel="whatsapp"
+            creatorId={creatorId || undefined}
+            onInsert={(result) => {
+              setMessage(result.body);
+              setAiUsed(false);
+              setUnresolved(result.unresolved);
+            }}
+          />
           <div className="flex flex-wrap items-center gap-1.5">
-            <InsertTemplatePopover
-              channel="whatsapp"
-              creatorId={creatorId || undefined}
-              onInsert={(result) => {
-                setMessage(result.body);
-                setAiUsed(false);
-                setUnresolved(result.unresolved);
-              }}
-              trigger={<span>Vorlage einfügen</span>}
-            />
+            <VariablePicker onPick={slashMenu.insertVariable} />
             <button
               type="button"
               onClick={summarize}

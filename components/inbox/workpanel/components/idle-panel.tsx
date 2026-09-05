@@ -15,6 +15,7 @@ type Props = {
   anfrageId?: string | null;
   dealId?: string | null;
   onAnalyse: () => void;
+  onReanalyse?: () => void;
   onNotCoop: () => void;
   onManualCreate: () => void;
   onAssignVorgang?: () => void;
@@ -30,6 +31,7 @@ export function IdlePanel({
   anfrageId,
   dealId,
   onAnalyse,
+  onReanalyse,
   onNotCoop,
   onManualCreate,
   onAssignVorgang,
@@ -60,6 +62,7 @@ export function IdlePanel({
     "deal-open": dealId
       ? () => router.push(`/creators/deals/edit/${dealId}`)
       : undefined,
+    reanalyse: onReanalyse,
   };
 
   return (
@@ -107,10 +110,11 @@ export function IdlePanel({
       {main.map((id) => (
         <Button
           key={id}
-          className="w-full"
+          className="w-full gap-1.5"
           variant={ACTION_META[id].variant}
           onClick={handlers[id]}
         >
+          {ACTION_META[id].ai && <Sparkles className="h-3.5 w-3.5" />}
           {ACTION_META[id].label}
         </Button>
       ))}

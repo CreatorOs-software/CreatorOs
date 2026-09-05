@@ -41,4 +41,8 @@ export const QueryKeys = {
   todos: {
     all: () => ["todos"] as const,
   },
+  notifications: {
+    all: () => ["notifications"] as const,
+    mutes: () => ["notifications", "mutes"] as const,
+  },
 } as const;

@@ -3,11 +3,14 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { PROMPT_REGISTRY, getAdapter } from "./registry.ts";
 import { buildEmailAnalysisContext } from "./tasks/incoming-email-analysis/context.ts";
+import { maybeEmitInboundNotification } from "./notify.ts";
 
 type Payload = {
   email_thread_id: string;
   agency_id: string;
-  mode?: "label" | "analyse";
+  mode?: "label" | "analyse" | "proofread";
+  text?: string;
+  current_anfrage?: Record<string, unknown> | null;
 };
 
 type ThreadRow = {
@@ -19,11 +22,39 @@ type ThreadRow = {
   references_header: string | null;
   system_labels: string[];
   integration_id: string;
+  folder: string | null;
+  sender_email: string | null;
+  sender_name: string | null;
 };
 
 Deno.serve(async (req) => {
   try {
-    const { email_thread_id, agency_id, mode = "label" } = (await req.json()) as Payload;
+    const payload = (await req.json()) as Payload;
+    const { email_thread_id, agency_id, mode = "label" } = payload;
+
+    // ── Proofread mode: correct a draft, stream plain text back, no DB ───────
+    if (mode === "proofread") {
+      const text = typeof payload.text === "string" ? payload.text : "";
+      if (!text.trim()) return json({ error: "text required" }, 400);
+
+      const proofreadDef = PROMPT_REGISTRY.EMAIL_DRAFT_PROOFREAD;
+      const adapter = getAdapter(proofreadDef.provider);
+      const stream = await adapter.executeStream({
+        system: proofreadDef.system,
+        messages: proofreadDef.buildMessages({ text }),
+        model: proofreadDef.model,
+        maxTokens: proofreadDef.maxTokens,
+        reasoning: proofreadDef.reasoning,
+      });
+
+      return new Response(stream.pipeThrough(new TextEncoderStream()), {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-store",
+        },
+      });
+    }
+
     if (!email_thread_id || !agency_id) {
       return json({ error: "email_thread_id and agency_id required" }, 400);
     }
@@ -36,7 +67,11 @@ Deno.serve(async (req) => {
     // ── Analyse mode: extract WorkPanel fields from email, no DB writes ──────
     if (mode === "analyse") {
       const analyseDef = PROMPT_REGISTRY.INCOMING_EMAIL_ANALYSIS;
-      const ctx = await buildEmailAnalysisContext({ email_thread_id }, agency_id, db);
+      const ctx = await buildEmailAnalysisContext(
+        { email_thread_id, current_anfrage: payload.current_anfrage ?? null },
+        agency_id,
+        db,
+      );
       const adapter = getAdapter(analyseDef.provider);
       const response = await adapter.execute({
         system: analyseDef.system,
@@ -50,10 +85,21 @@ Deno.serve(async (req) => {
         creator_id:         parsed.creator_id,
         creator_confidence: parsed.creator_confidence,
         contact:            parsed.contact,
-        deliverables:       parsed.deliverables,
+        title:              parsed.title,
         product:            parsed.product,
         budget:             parsed.budget,
+        budget_offer:       parsed.budget_offer,
+        fee:                parsed.fee,
         period:             parsed.period,
+        campaign_start:     parsed.campaign_start,
+        campaign_end:       parsed.campaign_end,
+        notes:              parsed.notes,
+        deliverables:       parsed.deliverables,
+        payment_items:      parsed.payment_items,
+        guidelines:         parsed.guidelines,
+        tracking_assets:    parsed.tracking_assets,
+        missing_information: parsed.missing_information,
+        suggested_reply:    parsed.suggested_reply,
       });
     }
 
@@ -61,7 +107,7 @@ Deno.serve(async (req) => {
     const { data: thread, error: threadErr } = await db
       .from("email_threads")
       .select(
-        "id, subject, gmail_thread_id, message_id, in_reply_to, references_header, system_labels, integration_id",
+        "id, subject, gmail_thread_id, message_id, in_reply_to, references_header, system_labels, integration_id, folder, sender_email, sender_name",
       )
       .eq("id", email_thread_id)
       .single<ThreadRow>();
@@ -81,6 +127,15 @@ Deno.serve(async (req) => {
 
     // Deterministic LAUFEND when conversation has a linked anfrage
     const deterministicLabels: string[] = conv?.anfrage_id ? ["LAUFEND"] : [];
+
+    // 3b. Movement-Notification — Antwort auf verknüpfte Anfrage, sonst Mail
+    // von bekannter Brand. Läuft unabhängig von AUTO_LABEL, best-effort.
+    await maybeEmitInboundNotification(db, {
+      thread,
+      agencyId: agency_id,
+      conversationId,
+      anfrageId: conv?.anfrage_id ?? null,
+    });
 
     // 4. Check integration's AUTO_LABEL flag
     const { data: integration } = await db

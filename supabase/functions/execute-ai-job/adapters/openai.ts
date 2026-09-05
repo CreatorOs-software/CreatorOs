@@ -1,5 +1,7 @@
 import { AIProviderAdapter, AIRequest, AIResponse } from "./types.ts";
 
+const RESPONSES_URL = "https://api.openai.com/v1/responses";
+
 export class OpenAIAdapter implements AIProviderAdapter {
   private readonly apiKey: string;
 
@@ -7,22 +9,28 @@ export class OpenAIAdapter implements AIProviderAdapter {
     this.apiKey = apiKey;
   }
 
+  private body(req: AIRequest, stream: boolean): string {
+    return JSON.stringify({
+      model:             req.model,
+      max_output_tokens: req.maxTokens,
+      instructions:      req.system,
+      input:             req.messages,
+      store:             false,
+      ...(stream ? { stream: true } : {}),
+      ...(req.reasoning ? { reasoning: { effort: req.reasoning } } : {}),
+    });
+  }
+
   async execute(req: AIRequest): Promise<AIResponse> {
     const start = Date.now();
 
-    const res = await fetch("https://api.openai.com/v1/responses", {
+    const res = await fetch(RESPONSES_URL, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${this.apiKey}`,
         "Content-Type":  "application/json",
       },
-      body: JSON.stringify({
-        model:             req.model,
-        max_output_tokens: req.maxTokens,
-        instructions:      req.system,
-        input:             req.messages,
-        store:             false,
-      }),
+      body: this.body(req, false),
     });
 
     const rawBody = await res.text();
@@ -65,4 +73,60 @@ export class OpenAIAdapter implements AIProviderAdapter {
       latencyMs:    Date.now() - start,
     };
   }
+
+  async executeStream(req: AIRequest): Promise<ReadableStream<string>> {
+    const res = await fetch(RESPONSES_URL, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${this.apiKey}`,
+        "Content-Type":  "application/json",
+      },
+      body: this.body(req, true),
+    });
+
+    if (!res.ok || !res.body) {
+      const errText = await res.text().catch(() => "(no body)");
+      throw new Error(`OpenAI ${res.status}: ${errText}`);
+    }
+
+    return res.body
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(sseToDeltaText());
+  }
+}
+
+// Parses the OpenAI Responses SSE stream and emits only the text deltas.
+function sseToDeltaText(): TransformStream<string, string> {
+  let buffer = "";
+
+  const drain = (enqueue: (chunk: string) => void) => {
+    const events = buffer.split("\n\n");
+    buffer = events.pop() ?? "";
+    for (const evt of events) {
+      for (const line of evt.split("\n")) {
+        if (!line.startsWith("data:")) continue;
+        const data = line.slice(5).trim();
+        if (!data || data === "[DONE]") continue;
+        try {
+          const parsed = JSON.parse(data) as { type?: string; delta?: string };
+          if (parsed.type === "response.output_text.delta" && parsed.delta) {
+            enqueue(parsed.delta);
+          }
+        } catch {
+          // keep-alive comment or a frame split across chunks — ignore
+        }
+      }
+    }
+  };
+
+  return new TransformStream<string, string>({
+    transform(chunk, controller) {
+      buffer += chunk;
+      drain((c) => controller.enqueue(c));
+    },
+    flush(controller) {
+      buffer += "\n\n";
+      drain((c) => controller.enqueue(c));
+    },
+  });
 }

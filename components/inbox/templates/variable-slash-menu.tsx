@@ -4,7 +4,11 @@ import { useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { Loader2 } from "lucide-react";
 import { getCaretCoordinates } from "@/lib/templates/caret-position";
-import { VARIABLE_REGISTRY, type VariableEntry } from "@/lib/templates/variable-registry";
+import {
+  VARIABLE_MAP,
+  VARIABLE_REGISTRY,
+  type VariableEntry,
+} from "@/lib/templates/variable-registry";
 
 // Only opens at a word boundary ("/" preceded by whitespace, newline, or the
 // start of the text) so normal prose ("20/30", "und/oder") never triggers it.
@@ -70,18 +74,23 @@ export function useVariableSlashMenu({ mode, resolveContext, textareaRef, onRepl
     });
   }
 
-  function select(entry: VariableEntry) {
+  // Replaces the textarea range [start, end) with the variable — literally
+  // (`${path}`) or with its resolved value. `onDone` fires once applied.
+  function applyInsertion(
+    entry: VariableEntry,
+    start: number,
+    end: number,
+    onDone?: () => void,
+  ) {
     const el = textareaRef.current;
     if (!el) return;
-    const start = triggerStart.current;
-    const end = start + 1 + query.length; // "/" + query
 
     if (mode === "literal") {
       const insertion = "${" + entry.path + "}";
       const next = el.value.slice(0, start) + insertion + el.value.slice(end);
       onReplace(next);
       placeCaretAfterReplace(el, start + insertion.length);
-      closeMenu();
+      onDone?.();
       return;
     }
 
@@ -115,8 +124,25 @@ export function useVariableSlashMenu({ mode, resolveContext, textareaRef, onRepl
       })
       .finally(() => {
         setLoading(false);
-        closeMenu();
+        onDone?.();
       });
+  }
+
+  function select(entry: VariableEntry) {
+    const start = triggerStart.current;
+    const end = start + 1 + query.length; // "/" + query
+    applyInsertion(entry, start, end, closeMenu);
+  }
+
+  // Insert a variable by path at the current caret — the entry point for an
+  // explicit "add variable" picker button (no `/query` to replace).
+  function insertVariable(path: string) {
+    const el = textareaRef.current;
+    const entry = VARIABLE_MAP.get(path);
+    if (!el || !entry) return;
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? el.value.length;
+    applyInsertion(entry, start, end);
   }
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -213,5 +239,5 @@ export function useVariableSlashMenu({ mode, resolveContext, textareaRef, onRepl
       )
     : null;
 
-  return { menu, handleChange, handleKeyDown, loading };
+  return { menu, handleChange, handleKeyDown, insertVariable, loading };
 }

@@ -1,7 +1,11 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { toErrorResponse } from "@/lib/auth-context";
-import { AnfrageService } from "@/domains/anfragen";
+import { AnfrageService, AnfrageError } from "@/domains/anfragen";
+import {
+  guidelinesSchema,
+  trackingAssetsSchema,
+} from "@/app/(main)/creators/deals/create-deal/[id]/deal-form.schema";
 
 const deliverableSchema = z.object({
   count: z.number().min(1),
@@ -37,13 +41,28 @@ const patchSchema = z.object({
   format: z.string().nullable().optional(),
   budget_requested: z.number().nullable().optional(),
   budget_offer: z.number().nullable().optional(),
-  guidelines: z.record(z.string(), z.unknown()).nullable().optional(),
-  tracking_assets: z.record(z.string(), z.unknown()).nullable().optional(),
+  guidelines: guidelinesSchema.nullable().optional(),
+  tracking_assets: trackingAssetsSchema.nullable().optional(),
   source: z.enum(["email", "ig_dm", "whatsapp", "manual"]).optional(),
   status: z.enum(["neu", "pruefung", "angebot", "verhandlung", "zugesagt", "gewonnen", "abgelehnt"]).optional(),
   rejection_reason: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
 });
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
+    const anfrage = await AnfrageService.getAnfrage(id);
+    return Response.json({ anfrage });
+  } catch (e) {
+    if (e instanceof AnfrageError)
+      return Response.json({ error: e.message }, { status: 404 });
+    return toErrorResponse(e);
+  }
+}
 
 export async function PATCH(
   req: NextRequest,

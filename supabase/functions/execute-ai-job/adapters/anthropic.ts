@@ -7,6 +7,10 @@ export class AnthropicAdapter implements AIProviderAdapter {
     this.apiKey = apiKey;
   }
 
+  executeStream(_req: AIRequest): Promise<ReadableStream<string>> {
+    return Promise.reject(new Error("AnthropicAdapter: streaming not implemented"));
+  }
+
   async execute(req: AIRequest): Promise<AIResponse> {
     const start = Date.now();
 
