@@ -1,5 +1,6 @@
 "use client";
 
+import { SidebarProvider } from "@talentos/ui";
 import { AppSidebar } from "./sidebar";
 import { PageHeaderProvider } from "./page-header-context";
 import { PermissionProvider } from "@/components/context/permission-provider";
@@ -29,7 +30,7 @@ function DockAwareContent({
     <div className="flex-1 overflow-hidden p-2 pl-0">
       <div
         className={cn(
-          "h-full rounded-2xl bg-gray-50 overflow-hidden",
+          "h-full rounded-2xl bg-surface overflow-hidden",
           fullHeight && "flex flex-col",
         )}
       >
@@ -59,12 +60,14 @@ export function AppLayout({
     <PermissionProvider role={role} permissions={defaultPermissions}>
       <PageHeaderProvider>
         <DockProvider>
-          <div className="flex flex-col md:flex-row h-svh w-full overflow-hidden bg-background">
+          <SidebarProvider className="h-svh overflow-hidden bg-background">
             <AppSidebar />
-            <DockAwareContent fullHeight={fullHeight}>
-              {children}
-            </DockAwareContent>
-          </div>
+            <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+              <DockAwareContent fullHeight={fullHeight}>
+                {children}
+              </DockAwareContent>
+            </div>
+          </SidebarProvider>
           <AppDock />
         </DockProvider>
       </PageHeaderProvider>

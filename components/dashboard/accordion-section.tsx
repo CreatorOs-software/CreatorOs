@@ -9,7 +9,7 @@ import {
   AccordionItem,
   AccordionTrigger,
   AccordionContent,
-} from "@/components/ui/accordion";
+} from "@talentos/ui";
 
 interface AccordionSectionProps {
   title: string;
@@ -26,6 +26,7 @@ export function AccordionSection({
 }: AccordionSectionProps) {
   return (
     <Accordion
+      type="multiple"
       defaultValue={defaultOpen ? ["section"] : []}
       className={cn("border-b border-border-light", className)}
     >

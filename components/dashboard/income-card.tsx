@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ArrowUpRight } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardAction,
+  CardContent,
+} from "@talentos/ui";
 import { Button } from "@/components/ui/button";
 
 interface IncomeCardProps {
@@ -45,13 +51,15 @@ export function IncomeCard({
 
   return (
     <Card className={cn("p-5 gap-0 ring-0", className)}>
-      <CardHeader className="flex flex-row items-center justify-between p-0 mb-4 gap-0">
+      <CardHeader className="items-center p-0 mb-4 gap-0">
         <CardTitle className="text-lg font-semibold text-foreground">
           {title}
         </CardTitle>
-        <Button variant="outline" size="icon-sm">
-          <ArrowUpRight />
-        </Button>
+        <CardAction className="self-center">
+          <Button variant="outline" size="icon-sm">
+            <ArrowUpRight />
+          </Button>
+        </CardAction>
       </CardHeader>
 
       <CardContent className="p-0">

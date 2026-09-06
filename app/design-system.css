@@ -1,170 +1,59 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/*
+ * Design tokens: @talentos/ui-tokens (raw --tui-* values) + its Tailwind
+ * bridge — the canonical mapping from --tui-* tokens to --color-*,
+ * --radius-*, --font-* etc. — the exact same file @talentos/ui itself
+ * imports. Imported as-is, never hand-copied/redefined, so bg-primary,
+ * text-foreground, rounded-md, etc. resolve identically in this app and
+ * in every @talentos/ui component.
+ */
+@import "@talentos/ui-tokens";
+@import "@talentos/ui-tokens/tailwind";
+
 @custom-variant dark (&:is(.dark *));
 
-:root {
-  /* Shadcn-Guide · Apple Monochrome */
-
-  /* Base */
-  --background: oklch(100% 0 0); /* white — sidebar + outer */
-  --foreground: oklch(9% 0 0); /* #171717 near-black */
-
-  /* Card — white, border-based (no colored bg) */
-  --card: oklch(100% 0 0);
-  --card-foreground: oklch(9% 0 0);
-  --card-glass: oklch(100% 0 0 / 0.9);
-  --card-dark: oklch(9% 0 0);
-  --card-dark-foreground: oklch(100% 0 0);
-
-  /* Primary — black CTA */
-  --primary: oklch(0.4374 0.0699 201.69);
-  --primary-foreground: oklch(100% 0 0);
-  --primary-muted: oklch(25% 0 0);
-
-  /* Secondary — #F0F0F0 slightly visible gray (chips, esc-button bg) */
-  --secondary: oklch(91.583% 0.0001 271.152);
-  --secondary-foreground: oklch(0% 0 0);
-
-  /* Accent — shadcn convention: hover bg (light gray), not brand color */
-  --accent: oklch(95.5% 0 0);
-  --accent-foreground: oklch(9% 0 0);
-  --accent-yellow: oklch(9% 0 0);
-  --accent-gold: oklch(9% 0 0);
-
-  /* Muted — #FAFAFA content panel bg + #8C8C8C placeholder/secondary text */
-  --muted: oklch(95.815% 0.00011 271.152);
-  --muted-foreground: oklch(60% 0 0); /* #8C8C8C */
-
-  /* UI Elements */
-  --border: oklch(91.5% 0 0); /* #E7E7E7 */
-  --border-light: oklch(94% 0 0);
-
-  /* Brand — amber accent (#F59E0D), used for unread badges + primary links */
-  --brand: oklch(0.4374 0.0699 201.69);
-  --brand-foreground: oklch(9% 0 0);
-  --input: oklch(98.8% 0 0); /* clearly visible gray input background */
-  --ring: oklch(9% 0 0);
-
-  /* Chart — monochrome scale */
-  --chart-yellow: oklch(9% 0 0);
-  --chart-dark: oklch(9% 0 0);
-  --chart-muted: oklch(62% 0 0);
-  --chart-light: oklch(88% 0 0);
-  --chart-green: oklch(55% 0.15 145);
-
-  /* Status Colors — functional, kept */
-  --success: oklch(52% 0.15 145);
-  --success-foreground: oklch(100% 0 0);
-  --warning: oklch(68% 0.14 75);
-  --warning-foreground: oklch(9% 0 0);
-  --destructive: oklch(53% 0.2 25);
-  --destructive-foreground: oklch(100% 0 0);
-
-  /* Shadows — shadcn: very subtle */
-  --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.05), 0 1px 2px oklch(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px oklch(0 0 0 / 0.05), 0 2px 4px oklch(0 0 0 / 0.04);
-  --shadow-lg: 0 10px 15px oklch(0 0 0 / 0.05), 0 4px 6px oklch(0 0 0 / 0.03);
-
-  /* Radius — shadcn default */
-  --radius: 0.5rem;
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.25rem;
-  --radius-full: 9999px;
-
-  /* Spacing Scale */
-  --space-xs: 0.25rem;
-  --space-sm: 0.5rem;
-  --space-md: 1rem;
-  --space-lg: 1.5rem;
-  --space-xl: 2rem;
-  --space-2xl: 3rem;
-
-  /* Typography */
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
-  --font-size-3xl: 1.875rem;
-  --font-size-4xl: 2.25rem;
-  --font-size-5xl: 3rem;
-
-  /* Popover */
-  --popover: var(--card);
-  --popover-foreground: var(--card-foreground);
-
-  /* Sidebar — white, like outer background */
-  --sidebar: oklch(100% 0 0);
-  --sidebar-foreground: var(--foreground);
-  --sidebar-primary: var(--foreground);
-  --sidebar-primary-foreground: oklch(100% 0 0);
-  --sidebar-accent: var(--primary);
-  --sidebar-accent-foreground: var(--foreground);
-  --sidebar-border: var(--border);
-  --sidebar-ring: var(--ring);
-}
-
-/*Dm Sans */
 @theme inline {
-  --font-sans: "Inter", "Geist", "Geist Fallback", system-ui, sans-serif;
+  /* --font-sans inherits the shared bridge's Proxima Nova (var(--tui-font-body),
+     @font-face shipped by @talentos/ui-tokens/fonts.css). Only --font-mono is
+     app-specific (next/font Geist Mono). */
   --font-mono: "Geist Mono", "Geist Mono Fallback", monospace;
 
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-card-glass: var(--card-glass);
-  --color-card-dark: var(--card-dark);
-  --color-card-dark-foreground: var(--card-dark-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary-muted: var(--primary-muted);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent-yellow: var(--accent-yellow);
-  --color-accent-gold: var(--accent-gold);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-border-light: var(--border-light);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-yellow: var(--chart-yellow);
-  --color-chart-dark: var(--chart-dark);
-  --color-chart-muted: var(--chart-muted);
-  --color-chart-light: var(--chart-light);
-  --color-chart-green: var(--chart-green);
-  --color-brand: var(--brand);
-  --color-brand-foreground: var(--brand-foreground);
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
+  /* App-only tokens the shared bridge doesn't define. */
+  --color-card-glass: var(--color-glass);
+  --color-card-dark: var(--color-inverse);
+  --color-card-dark-foreground: var(--color-inverse-foreground);
+  --color-accent-yellow: var(--tui-feedback-info);
+  --color-accent-gold: var(--tui-feedback-info);
+  --color-chart-yellow: var(--tui-feedback-info);
+  --color-chart-dark: var(--tui-neutral-900);
+  --color-chart-muted: var(--tui-neutral-500);
+  --color-chart-light: var(--tui-neutral-200);
+  --color-chart-green: var(--tui-green-600);
 
-  --radius-sm: var(--radius-sm);
-  --radius-md: var(--radius-md);
-  --radius-lg: var(--radius-lg);
-  --radius-xl: var(--radius-xl);
+  --color-sidebar: var(--color-background);
+  --color-sidebar-foreground: var(--color-foreground);
+  --color-sidebar-primary: var(--color-foreground);
+  --color-sidebar-primary-foreground: var(--tui-neutral-0);
+  --color-sidebar-accent: var(--color-primary);
+  --color-sidebar-accent-foreground: var(--color-foreground);
+  --color-sidebar-border: var(--color-border);
+  --color-sidebar-ring: var(--color-ring);
+}
 
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+/*
+ * Legacy aliases — a handful of files still reference these non-prefixed
+ * names directly (var(--foreground), var(--primary), var(--secondary))
+ * instead of the text-foreground/bg-primary utilities. Keep them pointed
+ * at the same canonical --color-* values above rather than redefining
+ * anything separately.
+ */
+:root {
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
+  --primary: var(--color-primary);
+  --secondary: var(--color-secondary);
 }
 
 @layer base {
@@ -189,15 +78,15 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--muted);
+  background: var(--color-muted);
   border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: var(--color-border);
   border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--muted-foreground);
+  background: var(--color-muted-foreground);
 }

@@ -1,3 +1,5 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import {
@@ -6,7 +8,7 @@ import {
   CardTitle,
   CardDescription,
   CardAction,
-} from "@/components/ui/card";
+} from "@talentos/ui";
 import { Badge } from "@/components/ui/badge";
 
 interface CreatorCardProps {

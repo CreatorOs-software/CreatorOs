@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { QueryKeys } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@talentos/ui";
 import { Loader2 } from "lucide-react";
 import { BrandAvatar } from "@/components/creators/dashboard/shared";
 

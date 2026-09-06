@@ -5,7 +5,7 @@ import { QueryKeys } from "@/lib/query-keys";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@talentos/ui";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar-creator";
 
@@ -96,7 +96,7 @@ export function CalendarCard({ className, creatorId }: CalendarCardProps) {
 
   return (
     <Card className={cn("p-5 gap-0 ring-0 h-full flex flex-col bg-card", className)}>
-      <CardHeader className="flex flex-row items-center justify-between p-0 mb-4 gap-0">
+      <div className="flex flex-row items-center justify-between mb-4">
         <Button
           variant="ghost"
           size="icon-sm"
@@ -112,7 +112,7 @@ export function CalendarCard({ className, creatorId }: CalendarCardProps) {
         >
           <ChevronRight className="w-4 h-4" />
         </Button>
-      </CardHeader>
+      </div>
 
       <CardContent className="p-0 flex-1 min-h-0 flex flex-col gap-2 overflow-hidden">
         {/* Day header row */}

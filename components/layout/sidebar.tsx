@@ -1,11 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import { Avatar } from "@base-ui/react";
 import {
   LayoutDashboard,
   Building2,
@@ -21,72 +18,58 @@ import {
 } from "lucide-react";
 import {
   Sidebar,
-  SidebarBody,
-  SidebarLink,
-  useSidebar,
-} from "@/components/ui/sidebar";
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuBadge,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  SidebarTrigger,
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@talentos/ui";
 import { QueryKeys } from "@/lib/query-keys";
 import { usePermissions } from "@/components/context/permission-provider";
 import { useAuth } from "@/components/auth/use-auth";
 import { useDock } from "@/components/layout/dock-context";
-import { cn } from "@/lib/utils";
 
-const Logo = () => (
-  <Link
-    href="/dashboard"
-    className="font-normal flex items-center gap-2 text-sm py-1 relative z-20"
-  >
-    <div className="h-5 w-6 bg-sidebar-accent rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm shrink-0" />
-    <motion.span
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="font-semibold text-foreground whitespace-pre"
-    >
-      Crextio
-    </motion.span>
-  </Link>
-);
+const navItems = [
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Inbox", href: "/inbox", icon: Inbox },
+  { label: "Brands", href: "/brands", icon: Building2 },
+  { label: "Creator", href: "/creators", icon: User },
+  { label: "Events", href: "/events", icon: Calendar },
+  { label: "Files", href: "/files", icon: FolderOpen },
+  { label: "Settings", href: "/settings", icon: Settings2 },
+];
 
-const LogoIcon = () => (
-  <Link href="/dashboard" className="flex justify-center py-1 relative z-20">
-    <div className="h-5 w-6 bg-sidebar-accent rounded-br-lg rounded-tr-sm rounded-tl-lg rounded-bl-sm shrink-0" />
-  </Link>
-);
+const adminItems = [
+  { label: "Members", href: "/admin/members", icon: Users },
+  { label: "Settings", href: "/admin/settings", icon: Settings2 },
+];
 
-function DockToggleButton() {
+function DockToggleMenuItem() {
   const { dockVisible, toggleDock } = useDock();
-  const { open, animate } = useSidebar();
+  const label = dockVisible ? "Dock schließen" : "Dock öffnen";
 
   return (
-    <button
-      onClick={toggleDock}
-      title={dockVisible ? "Dock schließen" : "Dock öffnen"}
-      className={cn(
-        "flex items-center rounded-full py-2 transition-colors text-sidebar-foreground hover:bg-sidebar-accent/50",
-        open ? "gap-3 px-2 w-full" : "justify-center w-full",
-      )}
-    >
-      {dockVisible ? (
-        <PanelBottomClose className="h-5 w-5 shrink-0 text-current" />
-      ) : (
-        <PanelBottom className="h-5 w-5 shrink-0 text-current" />
-      )}
-      <motion.span
-        animate={{
-          display: animate ? (open ? "inline-block" : "none") : "inline-block",
-          opacity: animate ? (open ? 1 : 0) : 1,
-        }}
-        className="text-sm whitespace-pre"
-      >
-        {dockVisible ? "Dock schließen" : "Dock öffnen"}
-      </motion.span>
-    </button>
+    <SidebarMenuItem>
+      <SidebarMenuButton onClick={toggleDock} tooltip={label}>
+        {dockVisible ? <PanelBottomClose /> : <PanelBottom />}
+        <span>{label}</span>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
   );
 }
 
-function ProfileSection() {
+function ProfileMenuItems() {
   const { user, signOut } = useAuth();
-  const { open, animate } = useSidebar();
 
   const name =
     (user?.user_metadata?.full_name as string | undefined) ?? user?.email ?? "";
@@ -98,48 +81,34 @@ function ProfileSection() {
     .join("");
 
   return (
-    <div
-      className={cn(
-        "flex items-center py-2 rounded-md",
-        open ? "gap-2 px-2" : "justify-center",
-      )}
-    >
-      <Avatar.Root className="w-7 h-7 rounded-full overflow-hidden shrink-0">
-        <Avatar.Image
-          src={user?.user_metadata?.avatar_url as string | undefined}
-          alt={name}
-          className="w-full h-full object-cover"
-        />
-        <Avatar.Fallback className="w-full h-full rounded-full bg-brand/10 flex items-center justify-center text-xs font-bold text-brand">
-          {initials}
-        </Avatar.Fallback>
-      </Avatar.Root>
-      <motion.div
-        animate={{
-          display: animate ? (open ? "flex" : "none") : "flex",
-          opacity: animate ? (open ? 1 : 0) : 1,
-        }}
-        className="flex items-center justify-between flex-1 min-w-0"
-      >
-        <p className="text-sm font-medium text-sidebar-foreground truncate min-w-0">
-          {name}
-        </p>
-        <button
-          onClick={signOut}
-          className="ml-2 p-1 rounded-full hover:bg-sidebar-accent transition-colors shrink-0"
-          title="Abmelden"
-        >
-          <LogOut className="w-4 h-4 text-current" />
-        </button>
-      </motion.div>
-    </div>
+    <>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={signOut} tooltip="Abmelden">
+          <LogOut />
+          <span>Abmelden</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton size="lg" asChild tooltip={name}>
+          <div>
+            <Avatar className="size-7">
+              <AvatarImage
+                src={user?.user_metadata?.avatar_url as string | undefined}
+                alt={name}
+              />
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+            <span className="flex-1 truncate">{name}</span>
+          </div>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </>
   );
 }
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { isAdmin } = usePermissions();
-  const [open, setOpen] = useState(false);
 
   const { data } = useQuery<{
     threads: { unread: boolean; folder: string | null }[];
@@ -152,124 +121,94 @@ export function AppSidebar() {
     (t) => t.unread && t.folder !== "sent",
   ).length;
 
-  const navItems = [
-    {
-      label: "Dashboard",
-      href: "/dashboard",
-      icon: <LayoutDashboard className="h-5 w-5 shrink-0 text-current" />,
-    },
-    {
-      label: "Inbox",
-      href: "/inbox",
-      icon: (
-        <div className="relative">
-          <Inbox className="h-5 w-5 shrink-0 text-current" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-brand" />
-          )}
-        </div>
-      ),
-    },
-    {
-      label: "Brands",
-      href: "/brands",
-      icon: <Building2 className="h-5 w-5 shrink-0 text-current" />,
-    },
-    {
-      label: "Creator",
-      href: "/creators",
-      icon: <User className="h-5 w-5 shrink-0 text-current" />,
-    },
-    {
-      label: "Events",
-      href: "/events",
-      icon: <Calendar className="h-5 w-5 shrink-0 text-current" />,
-    },
-    {
-      label: "Files",
-      href: "/files",
-      icon: <FolderOpen className="h-5 w-5 shrink-0 text-current" />,
-    },
-    {
-      label: "Settings",
-      href: "/settings",
-      icon: <Settings2 className="h-5 w-5 shrink-0 text-current" />,
-    },
-  ];
-
-  const adminItems = [
-    {
-      label: "Members",
-      href: "/admin/members",
-      icon: <Users className="h-5 w-5 shrink-0 text-current" />,
-    },
-    {
-      label: "Settings",
-      href: "/admin/settings",
-      icon: <Settings2 className="h-5 w-5 shrink-0 text-current" />,
-    },
-  ];
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(href + "/");
 
   return (
-    <Sidebar open={open} setOpen={setOpen}>
-      <SidebarBody className="justify-between gap-10">
-        <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-          {open ? <Logo /> : <LogoIcon />}
-          <div className="mt-8 flex flex-col gap-1">
-            {navItems.map((item) => {
-              const isActive =
-                pathname === item.href || pathname.startsWith(item.href + "/");
-              return (
-                <SidebarLink
-                  key={item.label}
-                  link={item}
-                  className={cn(
-                    "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-[13px] transition-colors",
-                    isActive
-                      ? "bg-muted font-medium text-foreground"
-                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                  )}
-                />
-              );
-            })}
-          </div>
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <div className="flex items-center justify-between gap-2">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 px-2 py-1 text-sm font-semibold text-foreground group-data-[collapsible=icon]:hidden"
+          >
+            <div className="h-5 w-6 shrink-0 rounded-tl-lg rounded-tr-sm rounded-br-lg rounded-bl-sm bg-sidebar-accent" />
+            <span>Crextio</span>
+          </Link>
+          <SidebarTrigger />
+        </div>
+      </SidebarHeader>
 
-          {isAdmin && (
-            <div className="mt-6 flex flex-col gap-1">
-              <motion.span
-                animate={{
-                  display: open ? "block" : "none",
-                  opacity: open ? 1 : 0,
-                }}
-                className="px-2 text-xs font-medium text-sidebar-foreground/50 uppercase tracking-wider mb-1"
-              >
-                Admin
-              </motion.span>
-              {adminItems.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  pathname.startsWith(item.href + "/");
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navItems.map((item) => {
+                const active = isActive(item.href);
                 return (
-                  <SidebarLink
-                    key={item.label}
-                    link={item}
-                    className={cn(
-                      isActive
-                        ? "bg-muted font-medium text-foreground"
-                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                  <SidebarMenuItem key={item.label}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={active}
+                      tooltip={item.label}
+                    >
+                      <Link href={item.href}>
+                        <item.icon
+                          strokeWidth={active ? 2.5 : 2}
+                          className={active ? "text-primary" : undefined}
+                        />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                    {item.href === "/inbox" && unreadCount > 0 && (
+                      <SidebarMenuBadge>{unreadCount}</SidebarMenuBadge>
                     )}
-                  />
+                  </SidebarMenuItem>
                 );
               })}
-            </div>
-          )}
-        </div>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-        <div className="flex flex-col gap-1">
-          <DockToggleButton />
-          <ProfileSection />
-        </div>
-      </SidebarBody>
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminItems.map((item) => {
+                  const active = isActive(item.href);
+                  return (
+                    <SidebarMenuItem key={item.label}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        tooltip={item.label}
+                      >
+                        <Link href={item.href}>
+                          <item.icon
+                            strokeWidth={active ? 2.5 : 2}
+                            className={active ? "text-primary" : undefined}
+                          />
+                          <span>{item.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+      </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarMenu>
+          <DockToggleMenuItem />
+          <ProfileMenuItems />
+        </SidebarMenu>
+      </SidebarFooter>
+
+      <SidebarRail />
     </Sidebar>
   );
 }

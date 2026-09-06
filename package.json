@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint"
   },
@@ -14,6 +14,8 @@
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.1",
+    "@talentos/ui": "file:../talentos-ui",
+    "@talentos/ui-tokens": "file:../talentos-ui-tokens",
     "@tanstack/react-form-nextjs": "^1.33.0",
     "@tanstack/react-query": "^5.100.14",
     "@tanstack/react-query-devtools": "^5.100.14",
