@@ -11,7 +11,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Button } from "@talentos/ui";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -191,7 +191,7 @@ export function AnfrageDialog({
                   Bearbeiten
                 </Button>
                 <DialogClose
-                  render={<Button variant="ghost" size="icon-sm" className="-mt-0.5 -mr-1" />}
+                  render={<Button variant="ghost" size="icon" className="-mt-0.5 -mr-1" />}
                 >
                   <X className="w-4 h-4" />
                   <span className="sr-only">Schließen</span>

@@ -15,7 +15,7 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import { QueryKeys } from "@/lib/query-keys";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button } from "@talentos/ui";
 import { Badge } from "@/components/ui/badge";
 import { AvatarCreator } from "@/components/ui/avatar-creator";
 import { Auflister } from "@/components/ui/auflister";
@@ -143,7 +143,7 @@ function buildColumns(
         >
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="icon"
             className="text-muted-foreground hover:text-foreground"
             onClick={() => onOpenPlatformSheet(row.original.id)}
           >
@@ -151,7 +151,7 @@ function buildColumns(
           </Button>
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="icon"
             className="text-muted-foreground hover:text-foreground"
             onClick={() => onOpenSheet(row.original.id)}
           >

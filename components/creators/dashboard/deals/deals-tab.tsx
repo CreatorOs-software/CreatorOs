@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowUpRight, Plus } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "@talentos/ui";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Auflister } from "@/components/ui/auflister";
 import {
@@ -58,7 +58,7 @@ function StatCard({
         <CardTitle className="text-sm font-semibold text-foreground">
           {label}
         </CardTitle>
-        <Button variant="outline" size="icon-sm">
+        <Button variant="outline" size="icon">
           <ArrowUpRight />
         </Button>
       </CardHeader>

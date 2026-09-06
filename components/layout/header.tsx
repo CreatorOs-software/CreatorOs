@@ -5,7 +5,7 @@ import { usePageHeader } from "./page-header-context";
 import { Avatar } from "@base-ui/react";
 import { ArrowLeft, Bell, LogOut, PuzzleIcon } from "lucide-react";
 import Link from "next/link";
-import { Button } from "../ui/button";
+import { Button } from "@talentos/ui";
 
 interface User {
   id: string;

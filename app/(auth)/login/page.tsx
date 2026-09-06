@@ -5,7 +5,7 @@ import { Eye, EyeOff, ArrowRight, Info } from "lucide-react";
 import { login } from "@/domains/auth";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button } from "@talentos/ui";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");

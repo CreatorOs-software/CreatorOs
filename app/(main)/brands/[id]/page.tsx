@@ -17,7 +17,7 @@ import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Card } from "@/components/ui/card";
 import { Auflister } from "@/components/ui/auflister";
-import { Button } from "@/components/ui/button";
+import { Button } from "@talentos/ui";
 import {
   Dialog,
   DialogContent,
@@ -265,7 +265,7 @@ function CreatorHistoryDialog({
                       {fmtMoney(Number(d.budget))}
                     </span>
                     <DealStatusBadge status={d.status} />
-                    <Button variant="ghost" size="icon-sm">
+                    <Button variant="ghost" size="icon">
                       <Link
                         href={
                           d.creators?.id
@@ -622,7 +622,7 @@ function ContactsSection({
                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                   <Button
                     variant="ghost"
-                    size="icon-sm"
+                    size="icon"
                     className="text-muted-foreground hover:text-foreground"
                     onClick={() => {
                       setEditing(c);
@@ -633,7 +633,7 @@ function ContactsSection({
                   </Button>
                   <Button
                     variant="ghost"
-                    size="icon-sm"
+                    size="icon"
                     className="text-muted-foreground hover:text-destructive"
                     onClick={() => handleDelete(c.id)}
                   >

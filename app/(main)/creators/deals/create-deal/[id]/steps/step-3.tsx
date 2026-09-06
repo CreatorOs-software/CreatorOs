@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
+import { Button } from "@talentos/ui";
 import { Plus, X } from "lucide-react";
 import { PAYMENT_TERMS } from "../deal-form.constants";
 import type { PaymentItem, PaymentTerm } from "../deal-form.schema";

@@ -2,13 +2,13 @@
 
 import { cn } from "@/lib/utils";
 import { MoreVertical } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import {
   Accordion,
   AccordionItem,
   AccordionTrigger,
   AccordionContent,
+  Button,
 } from "@talentos/ui";
 
 interface AccordionSectionProps {
@@ -59,8 +59,8 @@ export function DeviceItem() {
         <p className="font-medium text-sm">MacBook Air</p>
         <p className="text-xs text-muted-foreground">Version M1</p>
       </div>
-      <Button variant="ghost" size="icon-sm">
-        <MoreVertical className="w-4 h-4 text-muted-foreground" />
+      <Button variant="ghost" size="icon" className="size-7">
+        <MoreVertical className="text-muted-foreground" />
       </Button>
     </div>
   );

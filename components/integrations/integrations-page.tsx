@@ -5,7 +5,7 @@ import { QueryKeys } from "@/lib/query-keys";
 import { useState } from "react";
 import { Inbox, RefreshCw, X, Check, AlertCircle, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button } from "@talentos/ui";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -461,7 +461,7 @@ export function IntegrationsPage() {
                   Nachrichten werden in deinen Inbox gezogen.
                 </div>
               </div>
-              <Button variant="ghost" size="icon-sm" onClick={closeModal}>
+              <Button variant="ghost" size="icon" onClick={closeModal}>
                 <X className="w-4 h-4" />
               </Button>
             </div>

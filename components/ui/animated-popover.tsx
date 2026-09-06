@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button } from "@talentos/ui";
 
 const TRANSITION = { type: "spring", bounce: 0.05, duration: 0.3 } as const;
 
@@ -291,7 +291,7 @@ const PopoverCloseButton = React.forwardRef<HTMLButtonElement, PopoverCloseButto
         ref={ref}
         type="button"
         variant="ghost"
-        size="icon-sm"
+        size="icon"
         className={cn(className)}
         onClick={closePopover}
         aria-label="Schließen"

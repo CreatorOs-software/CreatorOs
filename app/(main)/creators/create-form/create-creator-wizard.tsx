@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { useForm } from "@tanstack/react-form";
-import { Button } from "@/components/ui/button";
+import { Button } from "@talentos/ui";
 import { Stepper } from "@/components/ui/stepper";
 
 import { STEPS, INITIAL_VALUES } from "./creator-form.constants";

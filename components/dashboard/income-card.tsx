@@ -9,8 +9,8 @@ import {
   CardTitle,
   CardAction,
   CardContent,
+  Button,
 } from "@talentos/ui";
-import { Button } from "@/components/ui/button";
 
 interface IncomeCardProps {
   title?: string;
@@ -56,7 +56,7 @@ export function IncomeCard({
           {title}
         </CardTitle>
         <CardAction className="self-center">
-          <Button variant="outline" size="icon-sm">
+          <Button variant="outline" size="icon" className="size-7">
             <ArrowUpRight />
           </Button>
         </CardAction>

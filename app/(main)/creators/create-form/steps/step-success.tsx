@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check, Copy, ExternalLink, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@talentos/ui";
 import { PLATFORM_META, isSupported } from "@/lib/platforms/registry";
 
 // Platforms that support OAuth invite links (derived from PLATFORM_META)

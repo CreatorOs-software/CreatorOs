@@ -24,7 +24,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
+import { Button } from "@talentos/ui";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
@@ -104,7 +104,7 @@ export function Auflister<T>({
               {onEdit && (
                 <Button
                   variant="ghost"
-                  size="icon-sm"
+                  size="icon"
                   className="text-muted-foreground hover:text-foreground"
                   onClick={() => onEdit(row.original)}
                 >
@@ -114,7 +114,7 @@ export function Auflister<T>({
               {onDelete && (
                 <Button
                   variant="ghost"
-                  size="icon-sm"
+                  size="icon"
                   className="text-muted-foreground hover:text-destructive"
                   onClick={() => onDelete(row.original)}
                 >
@@ -326,7 +326,7 @@ export function Auflister<T>({
             {/* Nav buttons */}
             <div className="flex items-center gap-1 shrink-0">
               <Button
-                size="icon-sm"
+                size="icon"
                 variant="outline"
                 onClick={() => table.firstPage()}
                 disabled={!table.getCanPreviousPage()}
@@ -335,7 +335,7 @@ export function Auflister<T>({
                 <ChevronFirst className="w-3.5 h-3.5" />
               </Button>
               <Button
-                size="icon-sm"
+                size="icon"
                 variant="outline"
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
@@ -344,7 +344,7 @@ export function Auflister<T>({
                 <ChevronLeft className="w-3.5 h-3.5" />
               </Button>
               <Button
-                size="icon-sm"
+                size="icon"
                 variant="outline"
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
@@ -353,7 +353,7 @@ export function Auflister<T>({
                 <ChevronRight className="w-3.5 h-3.5" />
               </Button>
               <Button
-                size="icon-sm"
+                size="icon"
                 variant="outline"
                 onClick={() => table.lastPage()}
                 disabled={!table.getCanNextPage()}

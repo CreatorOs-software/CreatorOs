@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { QueryKeys } from "@/lib/query-keys";
 import { useParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@talentos/ui";
 import { EditCreatorWizard } from "../edit-creator-wizard";
 import type { Creator } from "@/domains/creators/types";
 import { useRouter } from "next/navigation";

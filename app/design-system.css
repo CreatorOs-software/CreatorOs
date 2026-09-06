@@ -15,9 +15,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  /* --font-sans inherits the shared bridge's Proxima Nova (var(--tui-font-body),
-     @font-face shipped by @talentos/ui-tokens/fonts.css). Only --font-mono is
-     app-specific (next/font Geist Mono). */
+  /* Proxima Nova is self-hosted via next/font/local (--font-proxima, see
+     app/layout.tsx) because the @talentos/ui-tokens fonts.css @font-face rules
+     don't survive Turbopack's external-dir asset pipeline. The --tui-font-body
+     stack stays as fallback (Adobe kit + system fonts). */
+  --font-sans: var(--font-proxima), var(--tui-font-body);
   --font-mono: "Geist Mono", "Geist Mono Fallback", monospace;
 
   /* App-only tokens the shared bridge doesn't define. */

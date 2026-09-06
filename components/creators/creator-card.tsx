@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Eye, Puzzle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Creator } from "./creator-sheet";
-import { Button } from "../ui/button";
+import { Button } from "@talentos/ui";
 import { AvatarCreator } from "../ui/avatar-creator";
 
 const STATUS_DOT: Record<string, "online" | "away" | "offline"> = {

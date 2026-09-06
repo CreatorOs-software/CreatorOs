@@ -3,7 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button } from "@talentos/ui";
 import { Badge } from "@/components/ui/badge";
 import type { Thread, Integration, Creator } from "../types";
 import type { WorkPanelState, ExtractedEmailData } from "./types";
@@ -260,7 +260,7 @@ export function WorkPanel({
           open ? "gap-2" : "justify-center",
         )}
       >
-        <Button variant="ghost" size="icon-sm" onClick={onToggle}>
+        <Button variant="ghost" size="icon" onClick={onToggle}>
           {open ? (
             <ChevronRight className="h-4 w-4" />
           ) : (

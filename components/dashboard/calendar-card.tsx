@@ -5,8 +5,7 @@ import { QueryKeys } from "@/lib/query-keys";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Card, CardContent } from "@talentos/ui";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, Button } from "@talentos/ui";
 import { Avatar } from "@/components/ui/avatar-creator";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -99,18 +98,20 @@ export function CalendarCard({ className, creatorId }: CalendarCardProps) {
       <div className="flex flex-row items-center justify-between mb-4">
         <Button
           variant="ghost"
-          size="icon-sm"
+          size="icon"
+          className="size-7"
           onClick={() => setWeekOffset((w) => w - 1)}
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft />
         </Button>
         <span className="text-sm font-semibold">{monthLabel}</span>
         <Button
           variant="ghost"
-          size="icon-sm"
+          size="icon"
+          className="size-7"
           onClick={() => setWeekOffset((w) => w + 1)}
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight />
         </Button>
       </div>
 

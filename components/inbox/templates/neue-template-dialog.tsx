@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Button } from "@talentos/ui";
 import { QueryKeys } from "@/lib/query-keys";
 import { TemplateForm, templateToFormValue, type TemplateFormValue } from "./template-form";
 

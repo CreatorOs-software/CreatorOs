@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, Loader2, Pencil, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@talentos/ui";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBar, StatusBarGroup } from "@/components/dashboard/status-bar";
 import { cn } from "@/lib/utils";
@@ -177,7 +177,7 @@ export default function CreatorDashboardPage() {
     <div className="h-full flex flex-col">
       {creator && (
         <div className="flex items-center gap-3 mb-4 shrink-0">
-          <Button variant="ghost" size="icon-sm" onClick={() => router.back()}>
+          <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <AvatarCreator initials={creator.initials} size="md" />

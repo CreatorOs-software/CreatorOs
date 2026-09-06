@@ -11,7 +11,7 @@ import type {
   StepErrors,
 } from "../creator-form.types";
 import { StepNav } from "./step-nav";
-import { Button } from "@/components/ui/button";
+import { Button } from "@talentos/ui";
 
 interface Step1Props {
   form: CreatorForm;

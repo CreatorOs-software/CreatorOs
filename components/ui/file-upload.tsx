@@ -35,7 +35,7 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { Button } from "@talentos/ui";
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -619,7 +619,7 @@ export function DocumentUpload({
             </Select>
             <Button
               variant="outline"
-              size="icon-sm"
+              size="icon"
               onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
               aria-label="Sortierrichtung"
             >
@@ -628,10 +628,10 @@ export function DocumentUpload({
           </div>
 
           <div className="flex items-center gap-1">
-            <Button variant={view === "list" ? "default" : "outline"} size="icon-sm" onClick={() => setView("list")} aria-label="Listenansicht">
+            <Button variant={view === "list" ? "default" : "outline"} size="icon" onClick={() => setView("list")} aria-label="Listenansicht">
               <ListIcon className="size-3.5" />
             </Button>
-            <Button variant={view === "grid" ? "default" : "outline"} size="icon-sm" onClick={() => setView("grid")} aria-label="Rasteransicht">
+            <Button variant={view === "grid" ? "default" : "outline"} size="icon" onClick={() => setView("grid")} aria-label="Rasteransicht">
               <GridIcon className="size-3.5" />
             </Button>
           </div>
@@ -743,20 +743,20 @@ export function DocumentUpload({
                         <TableCell className="text-muted-foreground py-2 text-xs">{niceSubtype(doc.type)}</TableCell>
                         <TableCell className="text-muted-foreground py-2 text-xs">{formatBytes(doc.size)}</TableCell>
                         <TableCell className="py-2 text-right whitespace-nowrap">
-                          <Button size="icon-sm" variant="ghost" aria-label={`${doc.name} öffnen`}
+                          <Button size="icon" variant="ghost" aria-label={`${doc.name} öffnen`}
                             onClick={() => doc.url && window.open(doc.url, "_blank", "noopener,noreferrer")}>
                             <ExternalLinkIcon className="size-3.5" />
                           </Button>
-                          <Button size="icon-sm" variant="ghost" aria-label={`${doc.name} herunterladen`}
+                          <Button size="icon" variant="ghost" aria-label={`${doc.name} herunterladen`}
                             onClick={() => doc.url && window.open(doc.url, "_blank", "noopener,noreferrer")}>
                             <DownloadIcon className="size-3.5" />
                           </Button>
-                          <Button size="icon-sm" variant="ghost" aria-label="Link kopieren" onClick={() => copyLink(doc)}>
+                          <Button size="icon" variant="ghost" aria-label="Link kopieren" onClick={() => copyLink(doc)}>
                             {copied === doc.id
                               ? <CheckIcon className="size-3.5 text-primary" />
                               : <CopyIcon className="size-3.5" />}
                           </Button>
-                          <Button size="icon-sm" variant="ghost"
+                          <Button size="icon" variant="ghost"
                             aria-label={`${doc.name} entfernen`}
                             onClick={() => deleteDocument(doc)}
                             disabled={isDeleting}
@@ -810,20 +810,20 @@ export function DocumentUpload({
                         {niceSubtype(doc.type)} · {formatBytes(doc.size)}
                       </div>
                       <div className="mt-auto flex items-center justify-end gap-0.5">
-                        <Button size="icon-sm" variant="ghost" aria-label={`${doc.name} öffnen`}
+                        <Button size="icon" variant="ghost" aria-label={`${doc.name} öffnen`}
                           onClick={() => doc.url && window.open(doc.url, "_blank", "noopener,noreferrer")}>
                           <ExternalLinkIcon className="size-3.5" />
                         </Button>
-                        <Button size="icon-sm" variant="ghost" aria-label="Herunterladen"
+                        <Button size="icon" variant="ghost" aria-label="Herunterladen"
                           onClick={() => doc.url && window.open(doc.url, "_blank", "noopener,noreferrer")}>
                           <DownloadIcon className="size-3.5" />
                         </Button>
-                        <Button size="icon-sm" variant="ghost" aria-label="Link kopieren" onClick={() => copyLink(doc)}>
+                        <Button size="icon" variant="ghost" aria-label="Link kopieren" onClick={() => copyLink(doc)}>
                           {copied === doc.id
                             ? <CheckIcon className="size-3.5 text-primary" />
                             : <CopyIcon className="size-3.5" />}
                         </Button>
-                        <Button size="icon-sm" variant="ghost" aria-label={`${doc.name} entfernen`}
+                        <Button size="icon" variant="ghost" aria-label={`${doc.name} entfernen`}
                           onClick={() => deleteDocument(doc)}
                           disabled={isDeleting}
                           className="text-destructive hover:text-destructive hover:bg-destructive/10">

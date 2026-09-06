@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronLeft, ChevronRight, Inbox, MessageCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@talentos/ui";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { QueryKeys } from "@/lib/query-keys";

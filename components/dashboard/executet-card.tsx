@@ -2,8 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { ArrowUpRight } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@talentos/ui";
-import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent, Button } from "@talentos/ui";
 
 interface ProgressCardProps {
   className?: string;
@@ -27,7 +26,7 @@ export function ProgressCard({ className }: ProgressCardProps) {
         <CardTitle className="text-lg font-semibold text-foreground">
           Progress
         </CardTitle>
-        <Button variant="outline" size="icon-sm">
+        <Button variant="outline" size="icon" className="size-7">
           <ArrowUpRight />
         </Button>
       </CardHeader>
