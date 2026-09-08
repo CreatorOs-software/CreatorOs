@@ -96,6 +96,16 @@ export type InboxPageData = {
   integrations: InboxIntegration[];
   creators: InboxCreator[];
   labels: EmailLabel[];
+  unreadCount: number;
+};
+
+export type InboxFilters = {
+  search?: string;
+  integrationId?: string;
+  folder?: string;
+  labelId?: string;
+  unread?: boolean;
+  category?: string;
 };
 
 export type SmtpIntegration = {

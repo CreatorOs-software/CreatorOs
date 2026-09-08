@@ -1,19 +1,14 @@
 // sync-imap – Supabase Edge Function
 // Pulls messages from IMAP/Gmail/Outlook integrations into email_threads.
-// Syncs all standard folders: INBOX, SENT, DRAFTS, SPAM, TRASH.
+// Syncs the INBOX incrementally. The first run imports the newest 30 messages;
+// later runs process at most the next 30 unseen UIDs.
 // Triggered by: cron (all connected integrations) or POST { integration_id } (single).
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// Max messages to fetch per folder per sync run
-const MAX_INBOX = 25;
-const MAX_OTHER = 15;
-
-// Lookback window for non-INBOX folders (days)
-const LOOKBACK_DAYS = 90;
-const SPAM_TRASH_DAYS = 30;
+const MAX_MESSAGES_PER_SYNC = 30;
 
 // A single flaky run (connection refused, timeout) shouldn't hide the mailbox
 // from the Inbox. Only escalate status to 'error' after this many consecutive
@@ -45,58 +40,8 @@ const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 
 type FolderInfo = {
   rawName: string;    // actual IMAP name to SELECT
-  folder: string;     // DB value: INBOX | SENT | DRAFTS | SPAM | TRASH
-  lookbackDays: number;
+  folder: "INBOX";
 };
-
-/**
- * Normalize a raw IMAP folder name to our standard folder values.
- * Returns null for folders we don't want to sync (e.g. All Mail which duplicates INBOX).
- */
-function normalizeFolder(raw: string): { folder: string; lookbackDays: number } | null {
-  const r = raw.toLowerCase().trim();
-
-  if (r === "inbox") return { folder: "INBOX", lookbackDays: 0 }; // uses last_uid
-
-  if (
-    r === "sent" ||
-    r === "sent items" ||
-    r === "sent messages" ||
-    r.endsWith("/sent mail") || // [Gmail]/Sent Mail
-    r.endsWith("/sent")
-  ) return { folder: "SENT", lookbackDays: LOOKBACK_DAYS };
-
-  if (
-    r === "drafts" ||
-    r.endsWith("/drafts")
-  ) return { folder: "DRAFTS", lookbackDays: LOOKBACK_DAYS };
-
-  if (
-    r === "spam" ||
-    r === "junk" ||
-    r === "junk email" ||
-    r === "junk e-mail" ||
-    r.endsWith("/spam") ||
-    r.endsWith("/junk")
-  ) return { folder: "SPAM", lookbackDays: SPAM_TRASH_DAYS };
-
-  if (
-    r === "trash" ||
-    r === "deleted" ||
-    r === "deleted items" ||
-    r === "deleted messages" ||
-    r.endsWith("/trash")
-  ) return { folder: "TRASH", lookbackDays: SPAM_TRASH_DAYS };
-
-  // Skip: All Mail, Archive, Flagged, Important, etc. — would create duplicates
-  return null;
-}
-
-function imapDateStr(daysAgo: number): string {
-  const d = new Date(Date.now() - daysAgo * 86_400_000);
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  return `${d.getDate().toString().padStart(2, "0")}-${months[d.getMonth()]}-${d.getFullYear()}`;
-}
 
 // ---- Deno-native IMAP client ----------------------------------------
 
@@ -340,7 +285,7 @@ function decodeMime(s: string): string {
           Uint8Array.from(bin, (c) => c.charCodeAt(0)),
         );
       }
-      let out = data.replace(/_/g, " ").replace(
+      const out = data.replace(/_/g, " ").replace(
         /=([0-9A-Fa-f]{2})/g,
         (_x: string, h: string) => String.fromCharCode(parseInt(h, 16)),
       );
@@ -472,21 +417,13 @@ async function syncFolder(
     return { pulled, skipped, newHighestUid };
   }
 
-  let allUids: number[];
-
-  if (info.folder === "INBOX") {
-    const effectiveLastUid = isFirstRun ? 0 : (row.last_uid ?? 0);
-    allUids = await client.searchAllUids();
-    allUids = allUids.filter((u) => u > effectiveLastUid).slice(-MAX_INBOX);
-  } else {
-    const dateStr = imapDateStr(info.lookbackDays);
-    try {
-      allUids = await client.searchSinceUids(dateStr);
-    } catch {
-      allUids = await client.searchAllUids();
-    }
-    allUids = allUids.slice(-MAX_OTHER);
-  }
+  const effectiveLastUid = isFirstRun ? 0 : (row.last_uid ?? 0);
+  const unseenUids = (await client.searchAllUids()).filter((u) => u > effectiveLastUid);
+  // Bootstrap from the newest messages. Afterwards consume oldest unseen UIDs
+  // first so a backlog larger than 30 is completed across subsequent runs.
+  const allUids = isFirstRun
+    ? unseenUids.slice(-MAX_MESSAGES_PER_SYNC)
+    : unseenUids.slice(0, MAX_MESSAGES_PER_SYNC);
 
   for (const uid of allUids) {
     const msg = await client.fetchMessage(uid).catch((e) => {
@@ -494,8 +431,6 @@ async function syncFolder(
       return null;
     });
     if (!msg) { skipped++; continue; }
-    if (msg.uid > newHighestUid) newHighestUid = msg.uid;
-
     const { name, email } = parseFromAddress(msg.headers["from"] ?? "");
     const { text: body, html: bodyHtml } = extractBodyParts(msg.headers, msg.body);
     const preview = body.slice(0, 240).replace(/\s+/g, " ").trim();
@@ -504,40 +439,11 @@ async function syncFolder(
     const inReplyTo = msg.headers["in-reply-to"]?.trim() || null;
     const referencesHeader = msg.headers["references"]?.trim() || null;
 
-    if (messageId) {
-      const { data: dup } = await db
-        .from("email_threads")
-        .select("id, body, folder")
-        .eq("agency_id", row.agency_id)
-        .eq("gmail_thread_id", messageId)
-        .maybeSingle();
-
-      if (dup) {
-        const patch: Record<string, unknown> = {
-          integration_id: row.id,
-          message_id: messageId ?? null,
-          in_reply_to: inReplyTo,
-          references_header: referencesHeader,
-        };
-        if (!dup.body && body) {
-          patch.body = body || preview;
-          patch.body_html = bodyHtml;
-          patch.preview = preview || (msg.headers["subject"] ?? "");
-        }
-        // Promote folder if INBOX takes priority over others
-        if (info.folder === "INBOX" && dup.folder !== "INBOX") {
-          patch.folder = "INBOX";
-        }
-        await db.from("email_threads").update(patch).eq("id", dup.id);
-        skipped++;
-        continue;
-      }
-    }
-
-    const { data: inserted, error } = await db.from("email_threads").insert({
+    const providerMessageId = messageId ?? `imap-${row.id}-inbox-${msg.uid}`;
+    const { data: inserted, error } = await db.from("email_threads").upsert({
       agency_id: row.agency_id,
       integration_id: row.id,
-      gmail_thread_id: messageId ?? `imap-${row.id}-${info.folder.toLowerCase()}-${msg.uid}`,
+      gmail_thread_id: providerMessageId,
       message_id: messageId ?? null,
       in_reply_to: inReplyTo,
       references_header: referencesHeader,
@@ -552,8 +458,17 @@ async function syncFolder(
       unread: info.folder === "INBOX", // only mark inbox messages as unread
       starred: false,
       priority: "med",
-    }).select("id").single();
+    }, {
+      onConflict: "integration_id,gmail_thread_id",
+      ignoreDuplicates: true,
+    }).select("id").maybeSingle();
     if (error) { console.error("[sync-imap] insert failed", error); continue; }
+    if (!inserted) {
+      if (msg.uid > newHighestUid) newHighestUid = msg.uid;
+      skipped++;
+      continue;
+    }
+    if (msg.uid > newHighestUid) newHighestUid = msg.uid;
     pulled++;
 
     // Trigger AI labeling for new INBOX messages.
@@ -592,36 +507,14 @@ async function pullImap(row: IntegrationRow): Promise<{ pulled: number; skipped:
     await client.connect();
     await client.login();
 
-    // Discover all folders on this account
-    const rawFolders = await client.listMailboxes();
-
-    // Build the list of folders we want to sync, in priority order
-    const foldersToSync: FolderInfo[] = [];
-    const seenTypes = new Set<string>();
-
-    // Always ensure INBOX is first
-    foldersToSync.push({ rawName: "INBOX", folder: "INBOX", lookbackDays: 0 });
-    seenTypes.add("INBOX");
-
-    for (const raw of rawFolders) {
-      const normalized = normalizeFolder(raw);
-      if (!normalized) continue;
-      if (seenTypes.has(normalized.folder)) continue;
-      seenTypes.add(normalized.folder);
-      foldersToSync.push({ rawName: raw, ...normalized });
+    const inbox: FolderInfo = { rawName: "INBOX", folder: "INBOX" };
+    const { pulled, skipped, newHighestUid } = await syncFolder(client, row, inbox, isFirstRun);
+    totalPulled += pulled;
+    totalSkipped += skipped;
+    if (newHighestUid > newInboxHighestUid) {
+      newInboxHighestUid = newHighestUid;
     }
-
-    console.log(`[sync-imap] ${row.email}: syncing folders: ${foldersToSync.map(f => f.rawName).join(", ")}`);
-
-    for (const folderInfo of foldersToSync) {
-      const { pulled, skipped, newHighestUid } = await syncFolder(client, row, folderInfo, isFirstRun);
-      totalPulled += pulled;
-      totalSkipped += skipped;
-      if (folderInfo.folder === "INBOX" && newHighestUid > newInboxHighestUid) {
-        newInboxHighestUid = newHighestUid;
-      }
-      console.log(`[sync-imap] ${row.email} / ${folderInfo.rawName}: +${pulled} pulled, ${skipped} skipped`);
-    }
+    console.log(`[sync-imap] ${row.email} / INBOX: +${pulled} pulled, ${skipped} skipped`);
   } finally {
     try { await client.logout(); } catch { /* ignore */ }
     client.close();

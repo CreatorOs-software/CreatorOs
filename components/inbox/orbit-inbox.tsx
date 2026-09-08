@@ -7,7 +7,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { WorkPanel } from "./workpanel/work-panel";
@@ -40,8 +40,8 @@ function readStoredWorkPanelWidth(): number {
 
 // ─── Data fetching ────────────────────────────────────────────────────────────
 
-async function fetchInboxData(): Promise<InboxData> {
-  const res = await fetch("/api/inbox");
+async function fetchInboxData(params: URLSearchParams): Promise<InboxData> {
+  const res = await fetch(`/api/inbox?${params}`);
   if (!res.ok) throw new Error("Failed to load inbox");
   return res.json() as Promise<InboxData>;
 }
@@ -56,52 +56,10 @@ async function patchThread(id: string, patch: ThreadPatch): Promise<void> {
   if (!res.ok) throw new Error(await res.text());
 }
 
-// ─── Folder filter ────────────────────────────────────────────────────────────
-
-function matchesFolder(thread: Thread, folder: Folder): boolean {
-  const f = (thread.folder ?? "INBOX").toUpperCase();
-  switch (folder) {
-    case "inbox":   return f === "INBOX" || f === "";
-    case "sent":    return f === "SENT";
-    case "drafts":  return f === "DRAFTS" || f === "DRAFT";
-    case "archive": return f === "ARCHIVE";
-    case "spam":    return f === "SPAM";
-    case "bin":     return f === "TRASH";
-    default:        return true;
-  }
-}
-
 // ─── OrbitInbox ───────────────────────────────────────────────────────────────
 
 export function OrbitInbox() {
   const queryClient = useQueryClient();
-
-  const { data, isLoading, isError } = useQuery<InboxData>({
-    queryKey: QueryKeys.inbox.all(),
-    queryFn: fetchInboxData,
-    // Reuse the prefetched list instead of refetching on every mount/focus.
-    staleTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
-    // Poll every 4 seconds while any thread is being labeled
-    refetchInterval: (query) => {
-      const threads = query.state.data?.threads ?? [];
-      return threads.some((t) => t.label_status === "processing") ? 4000 : false;
-    },
-  });
-
-  const threads = data?.threads ?? [];
-  const integrations = data?.integrations ?? [];
-  const labels = data?.labels ?? [];
-  const creators = data?.creators ?? [];
-
-  // Kick off label-batch once on load so any pending threads get labeled
-  useEffect(() => {
-    if (!integrations.length) return;
-    if (integrations.some((i) => i.auto_label)) {
-      void fetch("/api/inbox/label-batch", { method: "POST" }).catch(() => {});
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [integrations.length]);
 
   // Deeplink aus der Glocke: /inbox?thread=<id> überschreibt den zuletzt
   // geöffneten Thread einmalig beim Laden.
@@ -115,6 +73,7 @@ export function OrbitInbox() {
   const [category, setCategory] = useState("all");
   const [folder, setFolder] = useState<Folder>("inbox");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [workPanelOpen, setWorkPanelOpen] = useState(true);
   const [workPanelWidth, setWorkPanelWidth] = useState<number>(readStoredWorkPanelWidth);
   const [isResizing, setIsResizing] = useState(false);
@@ -127,6 +86,55 @@ export function OrbitInbox() {
   const [composeOpen, setComposeOpen] = useState(false);
   const [activeLabelId, setActiveLabelId] = useState<string | null>(null);
   const [workStates, setWorkStates] = useState<Record<string, WorkPanelState>>({});
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 250);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  const params = new URLSearchParams({ folder: folder === "bin" ? "TRASH" : folder.toUpperCase() });
+  if (selectedIntegrationId) params.set("integration_id", selectedIntegrationId);
+  if (activeLabelId) params.set("label_id", activeLabelId);
+  if (filterUnread) params.set("unread", "true");
+  if (category !== "all") params.set("category", category);
+  if (debouncedSearch) params.set("search", debouncedSearch);
+  const queryString = params.toString();
+  const inboxQueryKey = useMemo(
+    () => [...QueryKeys.inbox.list(), queryString] as const,
+    [queryString],
+  );
+
+  const { data, isLoading, isError } = useQuery<InboxData>({
+    queryKey: inboxQueryKey,
+    queryFn: () => fetchInboxData(params),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    refetchInterval: (query) => {
+      const threads = query.state.data?.threads ?? [];
+      return threads.some((t) => t.label_status === "processing") ? 4000 : false;
+    },
+  });
+
+  const threads = data?.threads ?? [];
+  const integrations = useMemo(() => data?.integrations ?? [], [data?.integrations]);
+  const labels = data?.labels ?? [];
+  const creators = data?.creators ?? [];
+
+  useEffect(() => {
+    if (!selectedIntegrationId && integrations[0]?.id) {
+      // The first response supplies mailbox metadata; subsequent list requests
+      // are scoped to the selected mailbox on the server.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedIntegrationId(integrations[0].id);
+    }
+  }, [integrations, selectedIntegrationId]);
+
+  // Kick off label-batch once on load so any pending threads get labeled.
+  useEffect(() => {
+    if (integrations.some((i) => i.auto_label)) {
+      void fetch("/api/inbox/label-batch", { method: "POST" }).catch(() => {});
+    }
+  }, [integrations]);
 
   // Persist the open thread so the inbox reopens where the user left off.
   useEffect(() => {
@@ -179,43 +187,8 @@ export function OrbitInbox() {
 
   // ── Derived ──────────────────────────────────────────────────────────────────
 
-  const SYSTEM_LABEL_MAP: Record<string, import("@/domains/communication").SystemLabel> = {
-    anfrage: "ANFRAGE",
-    laufend: "LAUFEND",
-    promotions: "PROMOTIONS",
-    rechnung: "RECHNUNG",
-    anderes: "ANDERES",
-  };
-
-  const filtered = threads.filter((t) => {
-    if (effectiveIntegrationId && t.integration_id !== effectiveIntegrationId) return false;
-    if (!matchesFolder(t, folder)) return false;
-    if (activeLabelId && !t.labels.some((l) => l.id === activeLabelId)) return false;
-    if (filterUnread && !t.unread) return false;
-
-    if (search) {
-      const q = search.toLowerCase();
-      const matches =
-        (t.sender_name?.toLowerCase().includes(q) ?? false) ||
-        t.sender_email.toLowerCase().includes(q) ||
-        t.subject.toLowerCase().includes(q) ||
-        (t.preview?.toLowerCase().includes(q) ?? false);
-      if (!matches) return false;
-    }
-
-    if (category === "all") return true;
-    if (category === "important") return t.starred;
-    const systemLabel = SYSTEM_LABEL_MAP[category];
-    if (systemLabel) return t.system_labels.includes(systemLabel);
-    return true;
-  });
-
-  const inboxUnread = threads.filter(
-    (t) =>
-      (t.folder ?? "INBOX").toUpperCase() === "INBOX" &&
-      t.unread &&
-      (!effectiveIntegrationId || t.integration_id === effectiveIntegrationId),
-  ).length;
+  const filtered = threads;
+  const inboxUnread = data?.unreadCount ?? 0;
 
   const selectedIndex = filtered.findIndex((t) => t.id === selectedId);
   const selected = filtered.find((t) => t.id === selectedId) ?? null;
@@ -224,8 +197,8 @@ export function OrbitInbox() {
 
   const syncPatch = useCallback(
     async (id: string, patch: ThreadPatch) => {
-      const previous = queryClient.getQueryData<InboxData>(QueryKeys.inbox.all());
-      queryClient.setQueryData<InboxData>(QueryKeys.inbox.all(), (old) => {
+      const previous = queryClient.getQueryData<InboxData>(inboxQueryKey);
+      queryClient.setQueryData<InboxData>(inboxQueryKey, (old) => {
         if (!old) return old;
         return {
           ...old,
@@ -239,10 +212,10 @@ export function OrbitInbox() {
           void queryClient.invalidateQueries({ queryKey: QueryKeys.inbox.unreadCount() });
         }
       } catch {
-        queryClient.setQueryData(QueryKeys.inbox.all(), previous);
+        queryClient.setQueryData(inboxQueryKey, previous);
       }
     },
-    [queryClient],
+    [inboxQueryKey, queryClient],
   );
 
   function handleSelect(t: Thread) {
@@ -278,9 +251,9 @@ export function OrbitInbox() {
   }
 
   async function handleToggleLabel(threadId: string, labelId: string, assign: boolean) {
-    const previous = queryClient.getQueryData<InboxData>(QueryKeys.inbox.all());
+    const previous = queryClient.getQueryData<InboxData>(inboxQueryKey);
 
-    queryClient.setQueryData<InboxData>(QueryKeys.inbox.all(), (old) => {
+    queryClient.setQueryData<InboxData>(inboxQueryKey, (old) => {
       if (!old) return old;
       return {
         ...old,
@@ -307,7 +280,7 @@ export function OrbitInbox() {
     });
 
     if (!res.ok) {
-      queryClient.setQueryData(QueryKeys.inbox.all(), previous);
+      queryClient.setQueryData(inboxQueryKey, previous);
     }
   }
 
@@ -318,21 +291,21 @@ export function OrbitInbox() {
       body: JSON.stringify({ name, color }),
     });
     if (res.ok) {
-      await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() });
+      await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.list() });
     }
   }
 
   async function handleDeleteLabel(id: string) {
     await fetch(`/api/inbox/labels/${id}`, { method: "DELETE" });
     if (activeLabelId === id) setActiveLabelId(null);
-    await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() });
+    await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.list() });
   }
 
   async function handleToggleAutoLabel() {
     if (!effectiveIntegrationId) return;
     const next = !autoLabel;
     // Optimistic update in cache
-    queryClient.setQueryData<InboxData>(QueryKeys.inbox.all(), (old) => {
+    queryClient.setQueryData<InboxData>(inboxQueryKey, (old) => {
       if (!old) return old;
       return {
         ...old,
@@ -348,7 +321,7 @@ export function OrbitInbox() {
     });
     if (!res.ok) {
       // Rollback
-      queryClient.setQueryData<InboxData>(QueryKeys.inbox.all(), (old) => {
+      queryClient.setQueryData<InboxData>(inboxQueryKey, (old) => {
         if (!old) return old;
         return {
           ...old,
@@ -372,13 +345,13 @@ export function OrbitInbox() {
       if (!res.ok) return;
       label = await res.json() as typeof labels[number];
       // Refresh labels list so new label appears in sidebar
-      await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() });
+      await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.list() });
     }
     void handleToggleLabel(threadId, label.id, assign);
   }
 
   async function handleLabelThread(threadId: string) {
-    queryClient.setQueryData<InboxData>(QueryKeys.inbox.all(), (old) => {
+    queryClient.setQueryData<InboxData>(inboxQueryKey, (old) => {
       if (!old) return old;
       return {
         ...old,
@@ -390,14 +363,14 @@ export function OrbitInbox() {
     try {
       await fetch(`/api/inbox/${threadId}/label`, { method: "POST" });
     } finally {
-      await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() });
+      await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.list() });
     }
   }
 
   async function handleSync() {
     setSyncing(true);
     try {
-      await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() });
+      await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.list() });
     } finally {
       setSyncing(false);
     }
@@ -420,7 +393,7 @@ export function OrbitInbox() {
         <Button
           type="button"
           variant="link"
-          onClick={() => void queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() })}
+          onClick={() => void queryClient.refetchQueries({ queryKey: QueryKeys.inbox.list() })}
           className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
         >
           Nochmal versuchen
@@ -600,7 +573,7 @@ export function OrbitInbox() {
               onStar={() => handleStar(selected.id)}
               onArchive={() => handleArchive(selected.id)}
               onDelete={() => handleDelete(selected.id)}
-              onAfterSend={() => void queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() })}
+              onAfterSend={() => void queryClient.refetchQueries({ queryKey: QueryKeys.inbox.list() })}
               onToggleLabel={(threadId, labelId, assign) => void handleToggleLabel(threadId, labelId, assign)}
               onToggleCategoryLabel={(threadId, name, color, assign) => void handleToggleCategoryLabel(threadId, name, color, assign)}
               onLabelThread={handleLabelThread}

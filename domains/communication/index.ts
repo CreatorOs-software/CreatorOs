@@ -8,6 +8,7 @@ export type {
   InboxPageData,
   InboxIntegration,
   InboxCreator,
+  InboxFilters,
   SystemLabel,
   LabelStatus,
 } from "./types";

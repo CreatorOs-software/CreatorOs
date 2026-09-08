@@ -5,6 +5,7 @@ import type {
   EmailThread,
   EmailThreadBody,
   InboxCreator,
+  InboxFilters,
   InboxIntegration,
   InboxPageData,
   SmtpIntegration,
@@ -25,14 +26,53 @@ export const CommunicationRepository = {
   async findInboxPageData(
     supabase: SupabaseClient,
     agencyId: string,
+    filters: InboxFilters = {},
   ): Promise<InboxPageData> {
-    const [threadsRes, integrationsRes, creatorsRes, labelsRes] = await Promise.all([
-      supabase
+    let threadsQuery = supabase
         .from("email_threads")
         .select(THREAD_LIST_COLUMNS)
         .eq("agency_id", agencyId)
         .order("received_at", { ascending: false })
-        .limit(THREAD_LIST_LIMIT),
+        .order("id", { ascending: false })
+        .limit(THREAD_LIST_LIMIT);
+
+    if (filters.integrationId) threadsQuery = threadsQuery.eq("integration_id", filters.integrationId);
+    if (filters.folder) threadsQuery = threadsQuery.eq("folder", filters.folder);
+    if (filters.unread) threadsQuery = threadsQuery.eq("unread", true);
+    if (filters.category === "important") threadsQuery = threadsQuery.eq("starred", true);
+    else if (filters.category && filters.category !== "all") {
+      threadsQuery = threadsQuery.contains("system_labels", [filters.category]);
+    }
+    if (filters.search) {
+      threadsQuery = threadsQuery.textSearch("search_vector", filters.search, {
+        config: "simple",
+        type: "websearch",
+      });
+    }
+    if (filters.labelId) {
+      const { data: matches, error } = await supabase
+        .from("email_thread_labels")
+        .select("thread_id")
+        .eq("label_id", filters.labelId);
+      if (error) throw new Error(error.message);
+      const ids = (matches ?? []).map((row) => row.thread_id);
+      if (ids.length === 0) {
+        threadsQuery = threadsQuery.in("id", ["00000000-0000-0000-0000-000000000000"]);
+      } else {
+        threadsQuery = threadsQuery.in("id", ids);
+      }
+    }
+
+    let unreadQuery = supabase
+      .from("email_threads")
+      .select("id", { count: "exact", head: true })
+      .eq("agency_id", agencyId)
+      .eq("folder", "INBOX")
+      .eq("unread", true);
+    if (filters.integrationId) unreadQuery = unreadQuery.eq("integration_id", filters.integrationId);
+
+    const [threadsRes, integrationsRes, creatorsRes, labelsRes, unreadRes] = await Promise.all([
+      threadsQuery,
       supabase
         .from("email_integrations")
         .select("id, email, display_name, provider, status, creator_id, auto_label")
@@ -49,7 +89,11 @@ export const CommunicationRepository = {
         .select("id, name, color")
         .eq("agency_id", agencyId)
         .order("name"),
+      unreadQuery,
     ]);
+
+    if (threadsRes.error) throw new Error(threadsRes.error.message);
+    if (unreadRes.error) throw new Error(unreadRes.error.message);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const threads = (threadsRes.data ?? []).map((row: any) => ({
@@ -66,6 +110,7 @@ export const CommunicationRepository = {
       integrations: (integrationsRes.data ?? []) as InboxIntegration[],
       creators: (creatorsRes.data ?? []) as InboxCreator[],
       labels: (labelsRes.data ?? []) as EmailLabel[],
+      unreadCount: unreadRes.count ?? 0,
     };
   },
 

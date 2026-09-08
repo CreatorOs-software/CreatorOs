@@ -2,15 +2,15 @@ import { getAuthContext } from "@/domains/auth";
 import { createClient } from "@/lib/supabase/server";
 import { serviceClient } from "@/lib/supabase/service";
 import { CommunicationRepository } from "./repository";
-import type { EmailLabel, EmailThreadBody, InboxPageData, ThreadPatch } from "./types";
+import type { EmailLabel, EmailThreadBody, InboxFilters, InboxPageData, ThreadPatch } from "./types";
 
 export class CommunicationError extends Error {}
 
 export const CommunicationService = {
-  async getInboxPageData(): Promise<InboxPageData> {
+  async getInboxPageData(filters: InboxFilters = {}): Promise<InboxPageData> {
     const supabase = await createClient();
     const { agencyId } = await getAuthContext(supabase);
-    return CommunicationRepository.findInboxPageData(supabase, agencyId);
+    return CommunicationRepository.findInboxPageData(supabase, agencyId, filters);
   },
 
   async getThreadBody(id: string): Promise<EmailThreadBody | null> {
