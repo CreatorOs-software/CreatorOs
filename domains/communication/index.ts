@@ -1,6 +1,8 @@
 export { CommunicationService, CommunicationError } from "./service";
 export type {
   EmailThread,
+  EmailThreadBody,
+  ConversationMessage,
   EmailLabel,
   ThreadPatch,
   InboxPageData,

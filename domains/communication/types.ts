@@ -26,8 +26,10 @@ export type EmailThread = {
   labels: EmailLabel[];
   subject: string;
   preview: string | null;
-  body: string | null;
-  body_html: string | null;
+  // Listenabfragen laden `body`/`body_html` nicht mehr — erst die Detailabfrage
+  // (`getThreadBody`) füllt sie. In Listen-Objekten sind sie daher `undefined`.
+  body?: string | null;
+  body_html?: string | null;
   received_at: string;
   unread: boolean;
   starred: boolean;
@@ -41,6 +43,28 @@ export type EmailThread = {
   references_header: string | null;
   anfrage_id: string | null;
   deal_id: string | null;
+};
+
+/** Vollständiger Nachrichtentext — nur beim Öffnen einer einzelnen E-Mail geladen. */
+export type EmailThreadBody = {
+  id: string;
+  sender_email: string;
+  sender_name: string | null;
+  subject: string;
+  body: string | null;
+  body_html: string | null;
+  received_at: string;
+};
+
+/** Eine Vorgänger-Nachricht im Thread-Verlauf der Detailansicht. */
+export type ConversationMessage = {
+  id: string;
+  sender_email: string;
+  sender_name: string | null;
+  received_at: string;
+  preview: string | null;
+  body: string | null;
+  body_html: string | null;
 };
 
 export type ThreadPatch = {

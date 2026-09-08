@@ -1,7 +1,5 @@
 "use client";
 
-import { Button } from "@talentos/ui";
-
 interface Props {
   platform: string;
   platformLabel: string;

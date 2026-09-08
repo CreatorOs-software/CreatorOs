@@ -322,6 +322,7 @@ const PopoverButton = React.forwardRef<HTMLButtonElement, PopoverButtonProps>(
   ({ children, onClick, className }, ref) => (
     <Button
       ref={ref}
+      type="button"
       variant="ghost"
       className={cn("w-full justify-start gap-2 px-4 py-2 font-normal", className)}
       onClick={onClick}

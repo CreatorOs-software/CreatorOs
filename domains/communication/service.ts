@@ -2,7 +2,7 @@ import { getAuthContext } from "@/domains/auth";
 import { createClient } from "@/lib/supabase/server";
 import { serviceClient } from "@/lib/supabase/service";
 import { CommunicationRepository } from "./repository";
-import type { EmailLabel, InboxPageData, ThreadPatch } from "./types";
+import type { EmailLabel, EmailThreadBody, InboxPageData, ThreadPatch } from "./types";
 
 export class CommunicationError extends Error {}
 
@@ -11,6 +11,12 @@ export const CommunicationService = {
     const supabase = await createClient();
     const { agencyId } = await getAuthContext(supabase);
     return CommunicationRepository.findInboxPageData(supabase, agencyId);
+  },
+
+  async getThreadBody(id: string): Promise<EmailThreadBody | null> {
+    const supabase = await createClient();
+    const { agencyId } = await getAuthContext(supabase);
+    return CommunicationRepository.findThreadBody(supabase, id, agencyId);
   },
 
   async patchThread(id: string, patch: ThreadPatch): Promise<void> {

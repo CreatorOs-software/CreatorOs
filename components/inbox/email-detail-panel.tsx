@@ -32,7 +32,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { Thread } from "./types";
-import type { EmailLabel } from "@/domains/communication";
+import type { ConversationMessage, EmailLabel, EmailThreadBody } from "@/domains/communication";
 import { SYSTEM_LABELS } from "./constants";
 import {
   formatDate,
@@ -307,14 +307,33 @@ export function EmailDetailPanel({
   const [labeling, setLabeling] = useState(false);
   const queryClient = useQueryClient();
 
+  // Body wird erst hier geladen — die Listenabfrage liefert ihn nicht mehr.
+  const {
+    data: body,
+    isLoading: bodyLoading,
+    isError: bodyError,
+    refetch: refetchBody,
+  } = useQuery<EmailThreadBody>({
+    queryKey: QueryKeys.inbox.detail(thread.id),
+    queryFn: async () => {
+      const res = await fetch(`/api/inbox/${thread.id}`);
+      if (!res.ok) throw new Error("Nachricht konnte nicht geladen werden");
+      return res.json() as Promise<EmailThreadBody>;
+    },
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+
   const { data: conversationData } = useQuery({
     queryKey: QueryKeys.inbox.conversation(thread.id),
     queryFn: async () => {
       const res = await fetch(`/api/inbox/${thread.id}/conversation`);
-      if (!res.ok) return { messages: [] as Thread[] };
-      return res.json() as Promise<{ messages: Thread[] }>;
+      if (!res.ok) return { messages: [] as ConversationMessage[] };
+      return res.json() as Promise<{ messages: ConversationMessage[] }>;
     },
     enabled: !!thread.conversation_id,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
   });
   const conversationMessages = conversationData?.messages ?? [];
 
@@ -551,18 +570,33 @@ export function EmailDetailPanel({
             </div>
           </div>
 
-          {/* Email body */}
+          {/* Email body — separat geladen (kein body in der Listenabfrage) */}
           <div className="mt-5">
-            {thread.body_html ? (
+            {bodyLoading ? (
+              <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Nachricht wird geladen…
+              </div>
+            ) : bodyError ? (
+              <div className="flex flex-col items-start gap-2 py-6 text-sm text-muted-foreground">
+                <p>Nachricht konnte nicht geladen werden.</p>
+                <button
+                  onClick={() => void refetchBody()}
+                  className="text-xs underline hover:text-foreground"
+                >
+                  Nochmal versuchen
+                </button>
+              </div>
+            ) : body?.body_html ? (
               <div
                 className="prose prose-sm max-w-none overflow-hidden text-foreground [&_a]:text-[#006FFE] [&_a]:underline [&_img]:max-w-full [&_table]:max-w-full [&_pre]:overflow-x-auto"
                 dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(thread.body_html),
+                  __html: DOMPurify.sanitize(body.body_html),
                 }}
               />
             ) : (
               <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">
-                {thread.body ?? thread.preview ?? ""}
+                {body?.body ?? thread.preview ?? ""}
               </pre>
             )}
           </div>

@@ -78,6 +78,9 @@ export function OrbitInbox() {
   const { data, isLoading, isError } = useQuery<InboxData>({
     queryKey: QueryKeys.inbox.all(),
     queryFn: fetchInboxData,
+    // Reuse the prefetched list instead of refetching on every mount/focus.
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
     // Poll every 4 seconds while any thread is being labeled
     refetchInterval: (query) => {
       const threads = query.state.data?.threads ?? [];

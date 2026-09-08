@@ -1,13 +1,25 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  ConversationMessage,
   EmailLabel,
   EmailThread,
+  EmailThreadBody,
   InboxCreator,
   InboxIntegration,
   InboxPageData,
   SmtpIntegration,
   ThreadPatch,
 } from "./types";
+
+// Nur die Felder, die die Listenansicht wirklich rendert bzw. filtert.
+// Kein `body`/`body_html` — die machen ~40 kB pro Zeile aus und trieben den
+// Supabase-Egress hoch. Eingebettete Relationen (Labels, verknüpfte Anfrage)
+// liefern nur schmale Spalten.
+const THREAD_LIST_COLUMNS =
+  "id, integration_id, folder, sender_email, sender_name, recipient_email, subject, preview, received_at, unread, starred, priority, system_labels, label_status, conversation_id, conversation:conversations(anfrage_id, anfrage:anfragen(linked_deal_id)), thread_labels:email_thread_labels(label:email_labels(id, name, color))";
+
+const THREAD_LIST_LIMIT = 30;
+const CONVERSATION_MESSAGE_LIMIT = 30;
 
 export const CommunicationRepository = {
   async findInboxPageData(
@@ -17,12 +29,10 @@ export const CommunicationRepository = {
     const [threadsRes, integrationsRes, creatorsRes, labelsRes] = await Promise.all([
       supabase
         .from("email_threads")
-        .select(
-          "id, agency_id, sender_email, sender_name, recipient_email, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id, system_labels, label_status, conversation_id, message_id, in_reply_to, references_header, conversation:conversations(anfrage_id, anfrage:anfragen(linked_deal_id)), thread_labels:email_thread_labels(label:email_labels(id, name, color))",
-        )
+        .select(THREAD_LIST_COLUMNS)
         .eq("agency_id", agencyId)
         .order("received_at", { ascending: false })
-        .limit(100),
+        .limit(THREAD_LIST_LIMIT),
       supabase
         .from("email_integrations")
         .select("id, email, display_name, provider, status, creator_id, auto_label")
@@ -138,33 +148,41 @@ export const CommunicationRepository = {
     if (error) throw new Error(error.message);
   },
 
+  /** Full thread body — loaded only when the user opens a single email. Exactly one row. */
+  async findThreadBody(
+    supabase: SupabaseClient,
+    id: string,
+    agencyId: string,
+  ): Promise<EmailThreadBody | null> {
+    const { data, error } = await supabase
+      .from("email_threads")
+      .select("id, sender_email, sender_name, subject, body, body_html, received_at")
+      .eq("id", id)
+      .eq("agency_id", agencyId)
+      .maybeSingle();
+
+    if (error) throw new Error(error.message);
+    return (data as EmailThreadBody | null) ?? null;
+  },
+
   async findConversationMessages(
     supabase: SupabaseClient,
     conversationId: string,
     agencyId: string,
     excludeThreadId: string,
-  ): Promise<EmailThread[]> {
+  ): Promise<ConversationMessage[]> {
     const { data, error } = await supabase
       .from("email_threads")
-      .select(
-        "id, agency_id, sender_email, sender_name, recipient_email, subject, preview, body, body_html, received_at, unread, starred, priority, integration_id, folder, gmail_thread_id, system_labels, label_status, conversation_id, message_id, in_reply_to, references_header, conversation:conversations(anfrage_id, anfrage:anfragen(linked_deal_id)), thread_labels:email_thread_labels(label:email_labels(id, name, color))",
-      )
+      .select("id, sender_email, sender_name, received_at, preview, body, body_html")
       .eq("conversation_id", conversationId)
       .eq("agency_id", agencyId)
       .neq("id", excludeThreadId)
-      .order("received_at", { ascending: true });
+      .order("received_at", { ascending: true })
+      .limit(CONVERSATION_MESSAGE_LIMIT);
 
     if (error) throw new Error(error.message);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (data ?? []).map((row: any) => ({
-      ...row,
-      labels: (row.thread_labels ?? []).map((tl: { label: EmailLabel | null }) => tl.label).filter(Boolean),
-      anfrage_id: row.conversation?.anfrage_id ?? null,
-      deal_id: row.conversation?.anfrage?.linked_deal_id ?? null,
-      thread_labels: undefined,
-      conversation: undefined,
-    })) as EmailThread[];
+    return (data ?? []) as ConversationMessage[];
   },
 
   async findSmtpIntegration(
