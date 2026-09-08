@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
+import { Input } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import {
   Popover,
@@ -75,13 +76,12 @@ function CreateLabelDialog({ onAdd }: { onAdd: (name: string, color: string) => 
             <DialogTitle>Neues Label</DialogTitle>
           </DialogHeader>
           <div className="mt-2 flex flex-col gap-4">
-            <input
+            <Input
               autoFocus
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && void handleSubmit()}
               placeholder="Label-Name"
-              className="h-9 w-full rounded-lg bg-muted px-3 text-sm outline-none focus:ring-1 focus:ring-foreground/20"
             />
             <div>
               <p className="mb-2 text-xs text-muted-foreground">Farbe</p>

@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UserPlus, Trash2, Copy, Check, Crown, User } from "lucide-react";
-import { Button, Input } from "@talentos/ui";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button, Checkbox, Input } from "@talentos/ui";
 import { Label } from "@/components/ui/label";
 import { Avatar } from "@/components/ui/avatar-creator";
 import { cn } from "@/lib/utils";

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Building2, Loader2 } from "lucide-react";
-import { Button, Input } from "@talentos/ui";
+import { Button, Checkbox, Input } from "@talentos/ui";
 import { SectionLabel, FormField } from "./shared";
 import type { WorkPanelState, NewBrandData } from "../types";
 
@@ -127,11 +127,10 @@ export function NewBrandPanel({ newBrand, senderEmail, senderName, onSetWorkStat
       <div className="mb-1 mt-4 flex items-center justify-between">
         <SectionLabel>Ansprechpartner</SectionLabel>
         <label className="flex cursor-pointer items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={addContact}
-            onChange={(e) => setAddContact(e.target.checked)}
-            className="h-3 w-3 cursor-pointer accent-foreground"
+            onCheckedChange={(checked) => setAddContact(checked === true)}
+            className="size-3 cursor-pointer"
           />
           anlegen
         </label>

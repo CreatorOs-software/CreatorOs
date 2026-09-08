@@ -17,7 +17,7 @@ import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Card } from "@/components/ui/card";
 import { Auflister } from "@/components/ui/auflister";
-import { Button, Input } from "@talentos/ui";
+import { Button, Checkbox, Input } from "@talentos/ui";
 import {
   Dialog,
   DialogContent,
@@ -27,7 +27,6 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { Checkbox } from "@/components/ui/checkbox";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { usePageHeader } from "@/components/layout/page-header-context";
 import {

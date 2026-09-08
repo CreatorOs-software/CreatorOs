@@ -657,22 +657,22 @@ function TimeInput({
 
   return (
     <div className="flex h-9 w-full items-center rounded-lg border border-border bg-background px-2 text-sm focus-within:ring-1 focus-within:ring-ring">
-      <input
+      <Input
         type="number"
         min={0}
         max={23}
         value={h}
         onChange={(e) => commit(String(Math.max(0, Math.min(23, parseInt(e.target.value) || 0))).padStart(2, "0"), m)}
-        className="w-8 bg-transparent text-center outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className="h-auto w-8 rounded-none border-0 bg-transparent p-0 text-center [appearance:textfield] focus-visible:ring-0 focus-visible:ring-offset-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
       <span className="text-muted-foreground select-none">:</span>
-      <input
+      <Input
         type="number"
         min={0}
         max={59}
         value={m}
         onChange={(e) => commit(h, String(Math.max(0, Math.min(59, parseInt(e.target.value) || 0))).padStart(2, "0"))}
-        className="w-8 bg-transparent text-center outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className="h-auto w-8 rounded-none border-0 bg-transparent p-0 text-center [appearance:textfield] focus-visible:ring-0 focus-visible:ring-offset-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
     </div>
   )

@@ -4,8 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowUpRight, Plus } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@talentos/ui";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button, Checkbox } from "@talentos/ui";
 import { Auflister } from "@/components/ui/auflister";
 import {
   Dialog,

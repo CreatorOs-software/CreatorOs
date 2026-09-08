@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { QueryKeys } from "@/lib/query-keys";
 import { Calendar, Edit3, Plus, Search, StickyNote, Trash2 } from "lucide-react";
+import { Input } from "@talentos/ui";
 import { FloatingWindow } from "@/components/ui/floating-window";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import {
@@ -157,12 +158,12 @@ export function NotesPanel() {
           <div className="space-y-2 p-3">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-              <input
+              <Input
                 type="text"
                 placeholder="Suchen…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-8 w-full rounded-lg bg-background pl-8 pr-3 text-xs outline-none ring-1 ring-border focus:ring-ring/60 placeholder:text-muted-foreground"
+                className="h-8 pl-8 pr-3 text-xs"
               />
             </div>
             <button
@@ -247,12 +248,12 @@ export function NotesPanel() {
                   <Edit3 className="size-3.5" />
                   {formatTime(activeNote.updated_at)}
                 </div>
-                <input
+                <Input
                   type="text"
                   value={activeNote.title}
                   onChange={(e) => updateNote({ title: e.target.value })}
                   placeholder="Titel…"
-                  className="w-full bg-transparent text-lg font-bold text-foreground outline-none placeholder:text-muted-foreground/50"
+                  className="h-auto rounded-none border-0 bg-transparent p-0 text-lg font-bold text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
 
                 {/* Creator + Brand assignment */}

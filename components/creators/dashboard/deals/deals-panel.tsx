@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { Button } from "@talentos/ui";
+import { Button, Checkbox } from "@talentos/ui";
 import {
   Dialog,
   DialogContent,

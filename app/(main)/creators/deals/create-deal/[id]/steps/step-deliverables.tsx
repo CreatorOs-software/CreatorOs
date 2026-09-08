@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Button, Input } from "@talentos/ui";
+import { Button, Checkbox, Input } from "@talentos/ui";
 import {
   Select,
   SelectContent,
@@ -328,11 +328,9 @@ function RightsSection({
             <Label className="text-xs font-medium">Bearbeitungsrechte</Label>
             {MODIFICATION_OPTIONS.map((m) => (
               <label key={m} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={(rights.modifications ?? []).includes(m)}
-                  onChange={() => toggleMod(m)}
-                  className="rounded border-border"
+                  onCheckedChange={() => toggleMod(m)}
                 />
                 <span className="text-xs">{m}</span>
               </label>
@@ -342,11 +340,9 @@ function RightsSection({
             <Label className="text-xs font-medium">Weitergabe</Label>
             {TRANSFERABILITY_OPTIONS.map((t) => (
               <label key={t} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={(rights.transferability ?? []).includes(t)}
-                  onChange={() => toggleTransfer(t)}
-                  className="rounded border-border"
+                  onCheckedChange={() => toggleTransfer(t)}
                 />
                 <span className="text-xs">{t}</span>
               </label>

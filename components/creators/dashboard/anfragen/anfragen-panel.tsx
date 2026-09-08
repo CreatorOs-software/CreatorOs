@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
-import { Button } from "@talentos/ui";
+import { Button, Checkbox } from "@talentos/ui";
 import {
   Dialog,
   DialogContent,

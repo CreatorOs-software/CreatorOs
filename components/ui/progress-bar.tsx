@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { Slider } from "@talentos/ui"
 import { cn } from "@/lib/utils"
 
 interface SegmentedProgressProps {
@@ -139,32 +140,11 @@ export function SegmentedProgress({
 
       {showDemo && (
         <div className="flex flex-col gap-4">
-          <input
-            type="range"
+          <Slider
             min={0}
             max={100}
-            value={progress}
-            onChange={(e) => setProgress(Number(e.target.value))}
-            className="w-full h-1.5 bg-muted rounded-full appearance-none cursor-pointer
-              transition-all duration-300
-              [&::-webkit-slider-thumb]:appearance-none
-              [&::-webkit-slider-thumb]:w-4
-              [&::-webkit-slider-thumb]:h-4
-              [&::-webkit-slider-thumb]:rounded-full
-              [&::-webkit-slider-thumb]:bg-primary
-              [&::-webkit-slider-thumb]:shadow-[0_0_10px_hsl(var(--primary)/0.4)]
-              [&::-webkit-slider-thumb]:cursor-pointer
-              [&::-webkit-slider-thumb]:transition-all
-              [&::-webkit-slider-thumb]:duration-300
-              [&::-webkit-slider-thumb]:ease-out
-              [&::-webkit-slider-thumb]:hover:scale-125
-              [&::-webkit-slider-thumb]:hover:shadow-[0_0_16px_hsl(var(--primary)/0.6)]
-              [&::-moz-range-thumb]:w-4
-              [&::-moz-range-thumb]:h-4
-              [&::-moz-range-thumb]:rounded-full
-              [&::-moz-range-thumb]:bg-primary
-              [&::-moz-range-thumb]:border-0
-              [&::-moz-range-thumb]:cursor-pointer"
+            value={[progress]}
+            onValueChange={([v]) => setProgress(v)}
           />
           <p className="text-center text-xs text-muted-foreground tracking-wide">Drag to adjust value</p>
         </div>

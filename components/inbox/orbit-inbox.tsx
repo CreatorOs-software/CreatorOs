@@ -20,6 +20,7 @@ import { ComposeEmailDialog } from "./compose-email-dialog";
 import type { Folder, InboxData, Thread, ThreadPatch } from "./types";
 import type { WorkPanelState } from "./workpanel/types";
 import { QueryKeys } from "@/lib/query-keys";
+import { Input } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 
 // ─── Work panel resize ────────────────────────────────────────────────────────
@@ -527,11 +528,11 @@ export function OrbitInbox() {
           <div className="px-4 pb-2 pt-3">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <input
+              <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Suchen..."
-                className="h-8 w-full rounded-lg bg-muted pl-8 pr-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-foreground/20"
+                className="h-8 bg-muted pl-8 pr-3"
               />
             </div>
           </div>

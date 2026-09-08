@@ -3,6 +3,7 @@
 import { AlertTriangle, Command, Plus, Sparkles, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { Input } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { useVariableSlashMenu } from "./templates/variable-slash-menu";
 
@@ -57,12 +58,12 @@ function EmailTagInput({
           </button>
         </span>
       ))}
-      <input
+      <Input
         ref={inputRef}
         value={input}
         onChange={(e) => setInput(e.target.value)}
         placeholder={tags.length === 0 ? "Enter email" : ""}
-        className="min-w-24 flex-1 bg-transparent text-sm outline-none placeholder:text-[#8C8C8C]"
+        className="h-auto min-w-24 flex-1 rounded-none border-0 bg-transparent p-0 text-sm placeholder:text-[#8C8C8C] focus-visible:ring-0 focus-visible:ring-offset-0"
         onKeyDown={(e) => {
           if ((e.key === "Enter" || e.key === " " || e.key === "Tab") && input.trim()) {
             e.preventDefault();
@@ -202,11 +203,11 @@ export function ComposeEmailDialog({ open, onOpenChange, integrationId, initialT
           {/* Subject */}
           <div className="flex items-center gap-2 border-b border-[#E7E7E7] px-3 py-3">
             <span className="shrink-0 text-sm font-medium text-[#8C8C8C]">Subject:</span>
-            <input
+            <Input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Re: Design review feedback"
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-[#8C8C8C]"
+              className="h-auto flex-1 rounded-none border-0 bg-transparent p-0 text-sm placeholder:text-[#8C8C8C] focus-visible:ring-0 focus-visible:ring-offset-0"
             />
             <button title="Betreff generieren" className="shrink-0 text-[#8C8C8C] hover:text-foreground">
               <Sparkles className="h-3.5 w-3.5" />

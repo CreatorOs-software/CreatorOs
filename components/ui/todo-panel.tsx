@@ -4,7 +4,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/lib/query-keys";
 import { ArrowUpDown, Plus } from "lucide-react";
-import { Button, Input } from "@talentos/ui";
+import { Button, Checkbox, Input } from "@talentos/ui";
 import { DatePicker } from "@/components/ui/date-picker";
 import { FloatingWindow } from "@/components/ui/floating-window";
 import { Avatar } from "@/components/ui/avatar-creator";
@@ -496,39 +496,11 @@ export function TodoPanel() {
                     item.done && "bg-black/5",
                   )}
                 >
-                  <label className="relative inline-flex size-6 shrink-0 cursor-pointer items-center justify-center">
-                    <input
-                      type="checkbox"
-                      checked={item.done}
-                      onChange={() => toggleItem(item)}
-                      className="peer absolute inset-0 size-full cursor-pointer appearance-none opacity-0"
-                    />
-                    <span
-                      className={cn(
-                        "flex size-5 items-center justify-center rounded-md border transition-all duration-200",
-                        item.done
-                          ? "scale-95 border-foreground bg-foreground"
-                          : "scale-100 border-border bg-background",
-                      )}
-                    >
-                      <svg
-                        className={cn(
-                          "size-3 text-white transition-opacity duration-200",
-                          item.done ? "opacity-100" : "opacity-0",
-                        )}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        viewBox="0 0 12 9"
-                      >
-                        <path
-                          d="M1 4.2L4 7L11 1"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </span>
-                  </label>
+                  <Checkbox
+                    checked={item.done}
+                    onCheckedChange={() => toggleItem(item)}
+                    className="size-5 shrink-0 rounded-md transition-all duration-200 data-[state=checked]:scale-95 data-[state=checked]:border-foreground data-[state=checked]:bg-foreground data-[state=checked]:text-white"
+                  />
 
                   <div className="flex min-w-0 flex-1 items-center gap-1.5">
                     {item.priority && (

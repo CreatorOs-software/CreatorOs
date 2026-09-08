@@ -6,8 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Loader2, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Button, Input } from "@talentos/ui";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button, Checkbox, Input } from "@talentos/ui";
 import {
   Dialog,
   DialogContent,

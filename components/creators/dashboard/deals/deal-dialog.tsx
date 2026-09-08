@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@talentos/ui";
+import { Button, Checkbox, Input } from "@talentos/ui";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BrandAvatar } from "../shared";
@@ -277,12 +277,14 @@ function InlineInput({
     );
   }
   return (
-    <input
+    <Input
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className={cls}
+      className={cn(
+        "h-auto w-full rounded-md border-0 bg-muted/50 px-2 py-1 text-sm text-foreground transition-colors placeholder:text-muted-foreground/50 focus:bg-muted focus-visible:ring-0 focus-visible:ring-offset-0",
+      )}
     />
   );
 }
@@ -498,12 +500,12 @@ function UeberblickTab({
                 Vertragslink
               </span>
               <div className="flex items-center gap-1">
-                <input
+                <Input
                   type="url"
                   value={local.contract_url}
                   onChange={(e) => patchLocal({ contract_url: e.target.value })}
                   placeholder="https://…"
-                  className="h-8 flex-1 rounded-lg bg-muted px-3 text-xs outline-none focus:ring-1 focus:ring-ring/40"
+                  className="h-8 flex-1 bg-muted px-3 text-xs"
                 />
                 {local.contract_url && (
                   <a
@@ -767,14 +769,14 @@ function DeliverablesTab({
           {/* Approver */}
           <div className="flex flex-col gap-1 flex-1 min-w-32">
             <span className="text-[10px] text-muted-foreground">Freigeber</span>
-            <input
+            <Input
               type="text"
               value={approval_info?.approver_name ?? ""}
               onChange={(e) =>
                 patchApproval({ approver_name: e.target.value || null })
               }
               placeholder="Name…"
-              className="h-8 bg-muted rounded-lg px-3 text-xs outline-none"
+              className="h-8 bg-muted px-3 text-xs"
             />
           </div>
           {/* Response days */}
@@ -782,7 +784,7 @@ function DeliverablesTab({
             <span className="text-[10px] text-muted-foreground">
               Response (Tage)
             </span>
-            <input
+            <Input
               type="number"
               min={0}
               value={approval_info?.approval_days ?? ""}
@@ -791,7 +793,7 @@ function DeliverablesTab({
                   approval_days: Number(e.target.value) || null,
                 })
               }
-              className="h-8 w-20 bg-muted rounded-lg px-3 text-xs outline-none"
+              className="h-8 w-20 bg-muted px-3 text-xs"
             />
           </div>
         </div>
@@ -826,14 +828,14 @@ function DeliverablesTab({
               <span className="text-[10px] text-muted-foreground">
                 Tracking-Nummer
               </span>
-              <input
+              <Input
                 type="text"
                 value={delivery_info?.tracking_number ?? ""}
                 onChange={(e) =>
                   patchDelivery({ tracking_number: e.target.value || null })
                 }
                 placeholder="123ABC…"
-                className="h-8 bg-muted rounded-lg px-3 text-xs outline-none"
+                className="h-8 bg-muted px-3 text-xs"
               />
             </div>
             <div className="flex flex-col gap-1">
@@ -1159,11 +1161,10 @@ function RechteTab({
                 "Formatanpassung",
               ].map((m) => (
                 <div key={m} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    readOnly
+                  <Checkbox
                     checked={(rights.modifications ?? []).includes(m)}
-                    className="rounded border-border pointer-events-none"
+                    tabIndex={-1}
+                    className="pointer-events-none"
                   />
                   <span
                     className={cn(
@@ -1187,11 +1188,10 @@ function RechteTab({
                 "Sublizenz an Händler",
               ].map((t) => (
                 <div key={t} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    readOnly
+                  <Checkbox
                     checked={(rights.transferability ?? []).includes(t)}
-                    className="rounded border-border pointer-events-none"
+                    tabIndex={-1}
+                    className="pointer-events-none"
                   />
                   <span
                     className={cn(

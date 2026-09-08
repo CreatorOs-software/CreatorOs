@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, FileText, X, Plus } from "lucide-react";
 import type {
   CreatorForm,
@@ -10,7 +9,7 @@ import type {
   StepErrors,
 } from "../creator-form.types";
 import { StepNav } from "./step-nav";
-import { Button, Input } from "@talentos/ui";
+import { Button, Checkbox, Input } from "@talentos/ui";
 
 interface Step1Props {
   form: CreatorForm;

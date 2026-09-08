@@ -474,7 +474,7 @@ export function FileManagerClient({ initialFiles }: { initialFiles: FMFile[] }) 
   function RenameInput({ file, className }: { file: FMFile; className?: string }) {
     if (renaming?.file.path !== file.path) return null;
     return (
-      <input
+      <Input
         autoFocus
         value={renaming.name}
         onChange={(e) => setRenaming({ ...renaming, name: e.target.value })}
@@ -485,7 +485,7 @@ export function FileManagerClient({ initialFiles }: { initialFiles: FMFile[] }) 
         }}
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          "bg-transparent text-sm font-medium outline-none border-b border-primary w-full",
+          "h-auto w-full rounded-none border-0 border-b border-primary bg-transparent p-0 text-sm font-medium focus-visible:ring-0 focus-visible:ring-offset-0",
           className,
         )}
       />

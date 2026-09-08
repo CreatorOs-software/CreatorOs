@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Input } from "@talentos/ui";
+import { Checkbox, Input } from "@talentos/ui";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -244,11 +244,9 @@ export function Step3Rechte({ form, errors: _errors, onNext, onPrev }: Step3Rech
                       <Label className="text-sm font-medium">Bearbeitungsrechte</Label>
                       {MODIFICATION_OPTIONS.map((m) => (
                         <label key={m} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={(r.modifications ?? []).includes(m)}
-                            onChange={() => toggleMod(m)}
-                            className="rounded border-border"
+                            onCheckedChange={() => toggleMod(m)}
                           />
                           <span className="text-xs">{m}</span>
                         </label>
@@ -258,11 +256,9 @@ export function Step3Rechte({ form, errors: _errors, onNext, onPrev }: Step3Rech
                       <Label className="text-sm font-medium">Weitergabe</Label>
                       {TRANSFERABILITY_OPTIONS.map((t) => (
                         <label key={t} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={(r.transferability ?? []).includes(t)}
-                            onChange={() => toggleTransfer(t)}
-                            className="rounded border-border"
+                            onCheckedChange={() => toggleTransfer(t)}
                           />
                           <span className="text-xs">{t}</span>
                         </label>
