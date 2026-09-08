@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button, Checkbox } from "@talentos/ui";
+import { Button, Card, Checkbox, SegmentedControl } from "@talentos/ui";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +12,6 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Auflister } from "@/components/ui/auflister";
 import type { Anfrage } from "../types";
 import { anfrageColumns, daysSince, isEndState } from "./anfragen-columns";
@@ -144,8 +142,9 @@ export function AnfragenPanel({
           activeFilterCount={formatFilter.size}
           filterLeft={
             <SegmentedControl
+              size="sm"
               value={showClosed ? "closed" : "open"}
-              onChange={(v) => setShowClosed(v === "closed")}
+              onValueChange={(v) => setShowClosed(v === "closed")}
               options={[
                 { value: "open", label: "Offen" },
                 {

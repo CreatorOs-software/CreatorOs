@@ -4,8 +4,7 @@ import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, Loader2, Pencil, Plus } from "lucide-react";
-import { Button } from "@talentos/ui";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@talentos/ui";
 import { StatusBar, StatusBarGroup } from "@/components/dashboard/status-bar";
 import { cn } from "@/lib/utils";
 import { usePageHeader } from "@/components/layout/page-header-context";
@@ -196,7 +195,7 @@ export default function CreatorDashboardPage() {
       >
         {/* Tab bar */}
         <div className="shrink-0 -mx-6 px-6 mb-4 flex items-end justify-between ">
-          <TabsList variant="underline">
+          <TabsList>
             <TabsTrigger value="uebersicht">Übersicht</TabsTrigger>
             <TabsTrigger value="deals">Deals</TabsTrigger>
             <TabsTrigger value="insights">Insights</TabsTrigger>
@@ -287,7 +286,7 @@ export default function CreatorDashboardPage() {
                     )}
                   </div>
 
-                  <TabsList variant="underline">
+                  <TabsList>
                     {activeAccounts.map((a) => (
                       <TabsTrigger key={a.id} value={a.id}>
                         <span className="text-lg leading-none opacity-60">

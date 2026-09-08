@@ -8,7 +8,7 @@ import { QueryKeys } from "@/lib/query-keys";
 import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion";
 import { AccordionContent } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
-import { Button, Input } from "@talentos/ui";
+import { Button, Input, Tabs, TabsContent, TabsList, TabsTrigger } from "@talentos/ui";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -17,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { Creator } from "../../types";
 import type { WorkPanelState, ExtractedEmailData, LocalVorgang } from "../types";
 import { SectionLabel, FormField } from "./shared";
@@ -402,7 +401,7 @@ export function ExtractedPanel({
       )}
 
       <Tabs defaultValue="uebersicht" className="mb-4 flex flex-col">
-        <TabsList variant="underline" className="w-full">
+        <TabsList className="w-full">
           <TabsTrigger value="uebersicht" className="flex-1">
             Übersicht
           </TabsTrigger>

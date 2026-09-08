@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Card } from "@/components/ui/card";
-import { Button, Checkbox } from "@talentos/ui";
+import { Button, Card, Checkbox, SegmentedControl } from "@talentos/ui";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +12,6 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Auflister } from "@/components/ui/auflister";
 import type { Creator } from "@/domains/creators/types";
 import type { DealFull } from "../types";
@@ -123,8 +121,9 @@ export function DealsPanel({ deals, creator }: DealsPanelProps) {
           activeFilterCount={campaignTypeFilter.size}
           filterLeft={
             <SegmentedControl
+              size="sm"
               value={showAlt ? "abgeschlossen" : "laufend"}
-              onChange={(v) => setShowAlt(v === "abgeschlossen")}
+              onValueChange={(v) => setShowAlt(v === "abgeschlossen")}
               options={[
                 { value: "laufend", label: "Laufend" },
                 {

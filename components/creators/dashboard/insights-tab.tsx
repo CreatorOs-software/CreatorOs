@@ -9,8 +9,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@talentos/ui";
+import { Button, Card, CardHeader, CardTitle, CardContent } from "@talentos/ui";
 import {
   Dialog,
   DialogContent,

@@ -2,9 +2,8 @@
 
 import { CheckCircle2, Info, TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@talentos/ui";
+import { Button, SegmentedControl } from "@talentos/ui";
 import { Badge } from "@/components/ui/badge";
-import { SegmentedControl } from "@/components/ui/segmented-control";
 import type { Creator, Thread } from "../../types";
 import type { WorkPanelState, LocalVorgang } from "../types";
 import { SectionLabel } from "./shared";
@@ -101,9 +100,10 @@ export function VorgangPanel({ vorgang, creators, thread, onSetWorkState }: Prop
       <section>
         <SectionLabel>Am Zug</SectionLabel>
         <SegmentedControl
+          size="sm"
           options={ZUG_OPTIONS}
           value={vorgang.amZug}
-          onChange={(v) => update({ amZug: v })}
+          onValueChange={(v) => update({ amZug: v as LocalVorgang["amZug"] })}
           className="w-full"
         />
       </section>

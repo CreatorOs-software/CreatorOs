@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Loader2, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Button, Checkbox, Input } from "@talentos/ui";
+import { Button, Checkbox, Input, SegmentedControl } from "@talentos/ui";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,6 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Auflister } from "@/components/ui/auflister";
 import { cn } from "@/lib/utils";
 import { fmtMoney, fmtDate } from "@/components/creators/dashboard/constants";
@@ -410,8 +409,9 @@ export default function BrandsPage() {
             activeFilterCount={industryFilter.size}
             filterLeft={
               <SegmentedControl
+                size="sm"
                 value={filter}
-                onChange={(v) => setFilter(v as "active" | "all")}
+                onValueChange={(v) => setFilter(v as "active" | "all")}
                 options={[
                   { value: "active", label: "Aktive Partner" },
                   { value: "all", label: "Alle" },

@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowUpRight, Plus } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button, Checkbox } from "@talentos/ui";
+import { Button, Card, CardHeader, CardTitle, CardContent, Checkbox, SegmentedControl } from "@talentos/ui";
 import { Auflister } from "@/components/ui/auflister";
 import {
   Dialog,
@@ -14,7 +13,6 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { SegmentedControl } from "@/components/ui/segmented-control";
 import type { Creator } from "@/domains/creators/types";
 import type { DealFull, Anfrage } from "../types";
 import { ALT, daysUntil, fmtMoney } from "../constants";
@@ -251,8 +249,9 @@ export function DealsTab({
           activeFilterCount={campaignTypeFilter.size}
           filterLeft={
             <SegmentedControl
+              size="sm"
               value={showAlt ? "abgeschlossen" : "laufend"}
-              onChange={(v) => setShowAlt(v === "abgeschlossen")}
+              onValueChange={(v) => setShowAlt(v === "abgeschlossen")}
               options={[
                 { value: "laufend", label: "Laufend" },
                 { value: "abgeschlossen", label: alt.length > 0 ? `Abgeschlossen (${alt.length})` : "Abgeschlossen" },

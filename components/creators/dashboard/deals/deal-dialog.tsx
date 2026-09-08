@@ -18,9 +18,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Button, Checkbox, Input } from "@talentos/ui";
+import { Button, Checkbox, Input, Stepper, type Step as StepperStep, Tabs, TabsContent, TabsList, TabsTrigger } from "@talentos/ui";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BrandAvatar } from "../shared";
 import type {
   ApprovalInfo,
@@ -36,8 +35,6 @@ import type {
   WhitelistingInfo,
 } from "../types";
 import { ALT, LAUFEND, PIPELINE, fmtMoney } from "../constants";
-import { Stepper } from "@/components/ui/stepper";
-import type { Step as StepperStep } from "@/components/ui/stepper";
 import { DatePicker } from "@/components/ui/date-picker";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -1679,7 +1676,7 @@ function DealDialogContent({
       {/* Tabs */}
       <Tabs defaultValue="uebersicht" className="flex-1 min-h-0 flex flex-col">
         <div className="px-6  shrink-0">
-          <TabsList variant="underline">
+          <TabsList>
             <TabsTrigger value="uebersicht">Überblick</TabsTrigger>
             <TabsTrigger value="deliverables">Deliverables</TabsTrigger>
             <TabsTrigger value="rechte">Rechte & Konditionen</TabsTrigger>
