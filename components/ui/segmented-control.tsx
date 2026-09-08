@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 
 export interface SegmentedControlOption<T extends string = string> {
@@ -28,19 +29,20 @@ export function SegmentedControl<T extends string = string>({
       )}
     >
       {options.map((option) => (
-        <button
+        <Button
           key={option.value}
           type="button"
+          variant="ghost"
           onClick={() => onChange(option.value)}
           className={cn(
-            "px-2.5 py-1 rounded-md transition-colors cursor-pointer",
+            "h-auto px-2.5 py-1 rounded-md cursor-pointer text-xs font-normal hover:bg-transparent",
             value === option.value
               ? "bg-card text-foreground font-medium shadow-md"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
           {option.label}
-        </button>
+        </Button>
       ))}
     </div>
   );

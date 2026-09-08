@@ -292,14 +292,16 @@ function InlineInput({
 function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="icon"
       onClick={() => {
         navigator.clipboard.writeText(value);
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
       }}
-      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+      className="size-auto p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted shrink-0"
       title="Kopieren"
     >
       {copied ? (
@@ -307,7 +309,7 @@ function CopyButton({ value }: { value: string }) {
       ) : (
         <Copy className="size-3.5" />
       )}
-    </button>
+    </Button>
   );
 }
 
@@ -323,10 +325,11 @@ function Collapsible({
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="rounded-xl border border-border-light overflow-hidden">
-      <button
+      <Button
         type="button"
+        variant="ghost"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/40 transition-colors"
+        className="h-auto rounded-none w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/40"
       >
         {title}
         {open ? (
@@ -334,7 +337,7 @@ function Collapsible({
         ) : (
           <ChevronDown className="size-4 text-muted-foreground" />
         )}
-      </button>
+      </Button>
       {open && (
         <div className="px-4 pb-4 pt-1 border-t border-border-light">
           {children}
@@ -465,12 +468,13 @@ function UeberblickTab({
           <div className="flex gap-1">
             {(["offen", "versendet", "unterschrieben"] as ContractStatus[]).map(
               (s) => (
-                <button
+                <Button
                   key={s}
                   type="button"
+                  variant="ghost"
                   onClick={() => patchLocal({ contract_status: s })}
                   className={cn(
-                    "rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
+                    "h-auto rounded-md px-2.5 py-1 text-[11px] font-medium",
                     local.contract_status === s
                       ? s === "unterschrieben"
                         ? "bg-green-500/15 text-green-700"
@@ -481,7 +485,7 @@ function UeberblickTab({
                   )}
                 >
                   {s.charAt(0).toUpperCase() + s.slice(1)}
-                </button>
+                </Button>
               ),
             )}
           </div>
@@ -700,8 +704,10 @@ function DeliverablesTab({
               Korrekturschleifen
             </span>
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() =>
                   patchApproval({
                     correction_rounds: Math.max(
@@ -710,33 +716,37 @@ function DeliverablesTab({
                     ),
                   })
                 }
-                className="size-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+                className="size-7 rounded-full bg-muted hover:bg-muted/80"
               >
                 <Minus className="size-3" />
-              </button>
+              </Button>
               <span className="w-8 text-center text-sm font-semibold tabular-nums">
                 {approval_info?.correction_rounds ?? 0}
               </span>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() =>
                   patchApproval({
                     correction_rounds:
                       (approval_info?.correction_rounds ?? 0) + 1,
                   })
                 }
-                className="size-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+                className="size-7 rounded-full bg-muted hover:bg-muted/80"
               >
                 <Plus className="size-3" />
-              </button>
+              </Button>
             </div>
           </div>
           {/* Used */}
           <div className="flex flex-col gap-1">
             <span className="text-[10px] text-muted-foreground">Verwendet</span>
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() =>
                   patchApproval({
                     corrections_used: Math.max(
@@ -745,25 +755,27 @@ function DeliverablesTab({
                     ),
                   })
                 }
-                className="size-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+                className="size-7 rounded-full bg-muted hover:bg-muted/80"
               >
                 <Minus className="size-3" />
-              </button>
+              </Button>
               <span className="w-8 text-center text-sm font-semibold tabular-nums">
                 {approval_info?.corrections_used ?? 0}
               </span>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() =>
                   patchApproval({
                     corrections_used:
                       (approval_info?.corrections_used ?? 0) + 1,
                   })
                 }
-                className="size-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+                className="size-7 rounded-full bg-muted hover:bg-muted/80"
               >
                 <Plus className="size-3" />
-              </button>
+              </Button>
             </div>
           </div>
           {/* Approver */}
@@ -1647,13 +1659,15 @@ function DealDialogContent({
               )}
             </div>
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+            className="size-auto p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted shrink-0"
           >
             <X className="size-4" />
-          </button>
+          </Button>
         </div>
         <DealStepper
           status={local.status}

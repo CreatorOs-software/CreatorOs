@@ -219,8 +219,9 @@ export function Step1({ form, errors, brands, users, documents, onDocumentsChang
             className="hidden"
             onChange={(e) => handleFiles(e.target.files)}
           />
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => fileInputRef.current?.click()}
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
             onDragLeave={() => setDragging(false)}
@@ -230,10 +231,10 @@ export function Step1({ form, errors, brands, users, documents, onDocumentsChang
               handleFiles(e.dataTransfer.files);
             }}
             className={`
-              w-full flex flex-col items-center justify-center gap-2
+              h-auto w-full flex flex-col items-center justify-center gap-2
               rounded-xl border-2 border-dashed px-4 py-8
               text-sm text-muted-foreground
-              transition-colors cursor-pointer
+              cursor-pointer
               ${dragging
                 ? "border-primary bg-primary/5 text-primary"
                 : "border-border hover:border-muted-foreground/40 hover:bg-muted/30"
@@ -243,7 +244,7 @@ export function Step1({ form, errors, brands, users, documents, onDocumentsChang
             <Upload className="w-5 h-5" />
             <span>Dateien hierher ziehen oder <span className="text-primary underline underline-offset-2">auswählen</span></span>
             <span className="text-xs text-muted-foreground/60">PDF, Word, Excel, PNG, JPG</span>
-          </button>
+          </Button>
 
           {/* File list */}
           {documents.length > 0 && (

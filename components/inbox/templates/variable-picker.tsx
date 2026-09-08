@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Braces } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Input } from "@talentos/ui";
+import { Button, Input } from "@talentos/ui";
 import {
   Popover,
   PopoverContent,
@@ -99,17 +99,18 @@ export function VariablePicker({ onPick, align = "start", className }: Props) {
                   {GROUP_LABELS[group]}
                 </p>
                 {entries.map((v) => (
-                  <button
+                  <Button
                     key={v.path}
                     type="button"
+                    variant="ghost"
                     onClick={() => pick(v.path)}
-                    className="flex w-full flex-col items-start px-3 py-1.5 text-left hover:bg-muted"
+                    className="h-auto rounded-none flex w-full flex-col items-start px-3 py-1.5 text-left hover:bg-muted"
                   >
                     <span className="text-xs font-medium">{v.label}</span>
                     <span className="font-mono text-[10px] text-muted-foreground">
                       {"${" + v.path + "}"}
                     </span>
-                  </button>
+                  </Button>
                 ))}
               </div>
             ))

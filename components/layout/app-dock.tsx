@@ -12,6 +12,7 @@ import {
   NotebookPen,
   Settings2,
 } from "lucide-react";
+import { Button } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { QueryKeys } from "@/lib/query-keys";
 import { GlassEffect, GlassFilter } from "@/components/ui/liquid-glass";
@@ -187,13 +188,17 @@ export function AppDock() {
                       {iconNode}
                     </Link>
                   ) : (
-                    <button
+                    <Button
                       key={label}
+                      type="button"
+                      variant="ghost"
+                      size="icon"
                       title={label}
                       onClick={() => handlePanelToggle(item.panel)}
+                      className="size-auto rounded-none p-0 hover:bg-transparent"
                     >
                       {iconNode}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Archive, Briefcase, Loader2, Star, Trash2 } from "lucide-react";
+import { Button } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import type { Thread } from "./types";
 import { formatDate, getDisplayName, getInitial } from "./utils";
@@ -108,24 +109,33 @@ export function ThreadItem({ thread, isSelected, onClick, onStar, onArchive, onD
 
       {/* Hover actions */}
       <div className="absolute right-3 top-3 hidden flex-row gap-1 group-hover:flex">
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
           onClick={(e) => { e.stopPropagation(); onStar(); }}
-          className="flex h-6 w-6 items-center justify-center rounded border border-[#E7E7E7] bg-white hover:bg-gray-100"
+          className="h-6 w-6 rounded border border-[#E7E7E7] bg-white hover:bg-gray-100"
         >
           <Star className={cn("h-3 w-3", thread.starred ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground")} />
-        </button>
-        <button
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
           onClick={(e) => { e.stopPropagation(); onArchive(); }}
-          className="flex h-6 w-6 items-center justify-center rounded border border-[#E7E7E7] bg-white hover:bg-gray-100"
+          className="h-6 w-6 rounded border border-[#E7E7E7] bg-white hover:bg-gray-100"
         >
           <Archive className="text-muted-foreground h-3 w-3" />
-        </button>
-        <button
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          className="flex h-6 w-6 items-center justify-center rounded border border-[#FCCDD5] bg-[#FDE4E9] hover:bg-[#FDE4E9]/80"
+          className="h-6 w-6 rounded border border-[#FCCDD5] bg-[#FDE4E9] hover:bg-[#FDE4E9]/80"
         >
           <Trash2 className="h-3 w-3 text-[#F43F5E]" />
-        </button>
+        </Button>
       </div>
     </div>
   );

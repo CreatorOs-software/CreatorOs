@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { Button } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { CATEGORIES } from "./constants";
 
@@ -29,13 +30,15 @@ export function CategorySelect({ category, onCategory }: Props) {
     CATEGORIES.map((cat) => {
       const isActive = cat.id === category;
       return (
-        <button
+        <Button
           key={cat.id}
+          type="button"
+          variant="ghost"
           ref={!isOverlay && isActive ? activeRef : undefined}
           onClick={() => onCategory(cat.id)}
           tabIndex={isOverlay ? -1 : undefined}
           className={cn(
-            "flex h-8 items-center justify-center gap-1 overflow-hidden rounded-md border transition-all duration-300 ease-out",
+            "h-8 flex items-center justify-center gap-1 overflow-hidden rounded-md border transition-all duration-300 ease-out",
             isActive
               ? cn("flex-1 border-none px-3 text-white", cat.color)
               : "w-8 border-[#E7E7E7] bg-white hover:bg-gray-100",
@@ -47,7 +50,7 @@ export function CategorySelect({ category, onCategory }: Props) {
               {cat.label}
             </span>
           )}
-        </button>
+        </Button>
       );
     });
 

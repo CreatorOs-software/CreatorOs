@@ -190,14 +190,15 @@ export function WhatsappForwardDialog({
           />
           <div className="flex flex-wrap items-center gap-1.5">
             <VariablePicker onPick={slashMenu.insertVariable} />
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={summarize}
-              className="inline-flex items-center gap-1 rounded-full bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand transition-colors hover:bg-brand/15"
+              className="h-auto gap-1 rounded-full bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand hover:bg-brand/15"
             >
               <Sparkles className="h-3 w-3" />
               Eckdaten zusammenfassen
-            </button>
+            </Button>
           </div>
 
           {aiUsed && (

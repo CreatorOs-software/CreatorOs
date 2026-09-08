@@ -854,12 +854,13 @@ function EventDialog({
                       const active = activeAttendees.includes(member.id)
                       const initials = member.initials ?? getInitials(member.display_name ?? "")
                       return (
-                        <button
+                        <Button
                           key={member.id}
                           type="button"
+                          variant="ghost"
                           onClick={() => toggleAttendee(member.id)}
                           className={cn(
-                            "flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm transition-colors",
+                            "h-auto justify-start flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm font-normal",
                             active ? "bg-muted" : "hover:bg-muted/60",
                           )}
                         >
@@ -871,7 +872,7 @@ function EventDialog({
                           {active && (
                             <span className="ml-1 text-xs font-medium text-primary">✓</span>
                           )}
-                        </button>
+                        </Button>
                       )
                     })}
                   </div>

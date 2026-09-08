@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { Input } from "@talentos/ui";
+import { Button, Input } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import {
   Popover,
@@ -64,12 +64,15 @@ function CreateLabelDialog({ onAdd }: { onAdd: (name: string, color: string) => 
 
   return (
     <>
-      <button
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
         onClick={() => setOpen(true)}
-        className="flex h-4 w-4 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+        className="h-4 w-4 rounded text-muted-foreground hover:text-foreground hover:bg-transparent"
       >
         <Plus className="h-3 w-3" />
-      </button>
+      </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-xs">
           <DialogHeader>
@@ -87,11 +90,14 @@ function CreateLabelDialog({ onAdd }: { onAdd: (name: string, color: string) => 
               <p className="mb-2 text-xs text-muted-foreground">Farbe</p>
               <div className="flex flex-wrap gap-2">
                 {LABEL_COLORS.map((c) => (
-                  <button
+                  <Button
                     key={c}
+                    type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setColor(c)}
                     className={cn(
-                      "h-6 w-6 rounded-full border-2 transition-transform",
+                      "h-6 w-6 rounded-full border-2 transition-transform hover:bg-transparent",
                       color === c ? "scale-110 border-foreground" : "border-transparent",
                     )}
                     style={{ backgroundColor: c }}
@@ -100,19 +106,22 @@ function CreateLabelDialog({ onAdd }: { onAdd: (name: string, color: string) => 
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <button
+              <Button
+                type="button"
+                variant="ghost"
                 onClick={() => setOpen(false)}
-                className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+                className="h-auto rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-transparent"
               >
                 Abbrechen
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
                 onClick={() => void handleSubmit()}
                 disabled={!name.trim() || saving}
-                className="rounded-lg bg-foreground px-3 py-1.5 text-xs font-medium text-background disabled:opacity-40"
+                className="h-auto rounded-lg bg-foreground px-3 py-1.5 text-xs font-medium text-background hover:bg-foreground/90"
               >
                 Erstellen
-              </button>
+              </Button>
             </div>
           </div>
         </DialogContent>
@@ -151,11 +160,13 @@ function LabelsSection({
           {labels.map((label) => {
             const isActive = activeLabelId === label.id;
             return (
-              <button
+              <Button
                 key={label.id}
+                type="button"
+                variant="ghost"
                 onClick={() => onLabelClick(label.id)}
                 className={cn(
-                  "group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors",
+                  "h-auto group flex w-full items-center justify-start gap-2 rounded-lg px-2 py-1.5 text-left",
                   isActive ? "bg-muted" : "hover:bg-muted/60",
                 )}
               >
@@ -166,13 +177,16 @@ function LabelsSection({
                 <span className={cn("flex-1 truncate text-[13px]", isActive ? "font-medium text-foreground" : "text-muted-foreground")}>
                   {label.name}
                 </span>
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={(e) => { e.stopPropagation(); void onDeleteLabel(label.id); }}
-                  className="hidden rounded text-muted-foreground hover:text-foreground group-hover:block"
+                  className="size-auto hidden rounded text-muted-foreground hover:text-foreground hover:bg-transparent group-hover:block"
                 >
                   <X className="h-3 w-3" />
-                </button>
-              </button>
+                </Button>
+              </Button>
             );
           })}
         </div>
@@ -208,10 +222,12 @@ type NavItemProps = NavEntry & {
 function NavItem({ id, label, icon, badge, activeFolder, onFolderChange }: NavItemProps) {
   const isActive = activeFolder === id;
   return (
-    <button
+    <Button
+      type="button"
+      variant="ghost"
       onClick={() => onFolderChange(id)}
       className={cn(
-        "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-[13px] transition-colors",
+        "h-auto justify-start flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-[13px] font-normal",
         isActive
           ? "bg-muted font-medium text-foreground"
           : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
@@ -222,7 +238,7 @@ function NavItem({ id, label, icon, badge, activeFolder, onFolderChange }: NavIt
       {badge != null && badge > 0 && (
         <span className="px-1 text-xs font-medium text-brand">{badge}</span>
       )}
-    </button>
+    </Button>
   );
 }
 
@@ -303,10 +319,12 @@ function AccountSwitcher({ integrations, selectedId, creators, onSelect }: Accou
           sideOffset={6}
         >
           {integrations.map((integ) => (
-            <button
+            <Button
               key={integ.id}
+              type="button"
+              variant="ghost"
               onClick={() => onSelect(integ.id)}
-              className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted"
+              className="h-auto justify-start flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left hover:bg-muted"
             >
               <IntegrationAvatar integration={integ} size="sm" />
               <div className="min-w-0 flex-1">
@@ -320,7 +338,7 @@ function AccountSwitcher({ integrations, selectedId, creators, onSelect }: Accou
               {integ.id === selectedId && (
                 <Check className="h-3.5 w-3.5 shrink-0 text-foreground" />
               )}
-            </button>
+            </Button>
           ))}
         </PopoverContent>
       )}
@@ -380,13 +398,15 @@ export function InboxSidebar({
 
       {/* Compose */}
       <div className="px-3 pb-3">
-        <button
+        <Button
+          type="button"
+          variant="outline"
           onClick={onCompose}
-          className="inline-flex h-8 w-full items-center justify-center gap-2 rounded-lg border border-[#E7E7E7] bg-transparent text-sm text-foreground transition-colors hover:bg-muted/50"
+          className="h-8 w-full gap-2 rounded-lg border-[#E7E7E7] bg-transparent text-sm font-normal text-foreground hover:bg-muted/50"
         >
           <Pencil className="h-3.5 w-3.5" />
           New Email
-        </button>
+        </Button>
       </div>
 
       {/* Scrollable nav */}
@@ -435,19 +455,21 @@ export function InboxSidebar({
 
       {/* Footer */}
       <div className="space-y-0.5 border-t border-[#E7E7E7] px-3 pt-3">
-        <button className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground">
+        <Button type="button" variant="ghost" className="h-auto justify-start flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] font-normal text-muted-foreground hover:bg-muted/50 hover:text-foreground">
           <MessageSquare className="h-4 w-4 shrink-0" />
           Feedback
-        </button>
-        <button className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground">
+        </Button>
+        <Button type="button" variant="ghost" className="h-auto justify-start flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] font-normal text-muted-foreground hover:bg-muted/50 hover:text-foreground">
           <Settings2 className="h-4 w-4 shrink-0" />
           Settings
-        </button>
+        </Button>
         {onMergedChange && (
-          <button
+          <Button
+            type="button"
+            variant="ghost"
             onClick={() => onMergedChange(!merged)}
             className={cn(
-              "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] transition-colors",
+              "h-auto justify-start flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] font-normal",
               merged
                 ? "bg-muted font-medium text-foreground"
                 : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
@@ -459,7 +481,7 @@ export function InboxSidebar({
               <PanelLeft className="h-4 w-4 shrink-0" />
             )}
             {merged ? "Panels trennen" : "Panels zusammenführen"}
-          </button>
+          </Button>
         )}
       </div>
     </div>

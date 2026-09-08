@@ -3,6 +3,7 @@
 import { useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { Loader2 } from "lucide-react";
+import { Button } from "@talentos/ui";
 import { getCaretCoordinates } from "@/lib/templates/caret-position";
 import {
   VARIABLE_MAP,
@@ -212,9 +213,10 @@ export function useVariableSlashMenu({ mode, resolveContext, textareaRef, onRepl
               <p className="px-3 py-2 text-xs text-muted-foreground">Keine Treffer.</p>
             ) : (
               items.map((entry, i) => (
-                <button
+                <Button
                   key={entry.path}
                   type="button"
+                  variant="ghost"
                   onMouseDown={(e) => {
                     // preventDefault so the textarea never loses focus/selection
                     e.preventDefault();
@@ -222,7 +224,7 @@ export function useVariableSlashMenu({ mode, resolveContext, textareaRef, onRepl
                   }}
                   onMouseEnter={() => setActiveIndex(i)}
                   className={
-                    "flex w-full flex-col items-start px-3 py-1.5 text-left " +
+                    "h-auto rounded-none flex w-full flex-col items-start px-3 py-1.5 text-left hover:bg-muted " +
                     (i === activeIndex ? "bg-muted" : "")
                   }
                 >
@@ -230,7 +232,7 @@ export function useVariableSlashMenu({ mode, resolveContext, textareaRef, onRepl
                   <span className="font-mono text-[10px] text-muted-foreground">
                     {"${" + entry.path + "}"}
                   </span>
-                </button>
+                </Button>
               ))
             )}
           </div>

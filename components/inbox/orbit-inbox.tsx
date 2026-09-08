@@ -20,7 +20,7 @@ import { ComposeEmailDialog } from "./compose-email-dialog";
 import type { Folder, InboxData, Thread, ThreadPatch } from "./types";
 import type { WorkPanelState } from "./workpanel/types";
 import { QueryKeys } from "@/lib/query-keys";
-import { Input } from "@talentos/ui";
+import { Button, Input } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 
 // ─── Work panel resize ────────────────────────────────────────────────────────
@@ -417,12 +417,14 @@ export function OrbitInbox() {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
         <p className="text-sm">Inbox konnte nicht geladen werden.</p>
-        <button
+        <Button
+          type="button"
+          variant="link"
           onClick={() => void queryClient.refetchQueries({ queryKey: QueryKeys.inbox.all() })}
-          className="text-xs underline hover:text-foreground"
+          className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
         >
           Nochmal versuchen
-        </button>
+        </Button>
       </div>
     );
   }
@@ -479,20 +481,25 @@ export function OrbitInbox() {
           <div className="flex items-center justify-between border-b border-[#E7E7E7] px-4 py-3">
             <div className="flex items-center gap-1.5">
               {mergedMode && (
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setMergedView("sidebar")}
-                  className="flex h-6 w-6 items-center justify-center rounded hover:bg-muted"
+                  className="h-6 w-6 rounded hover:bg-muted"
                 >
                   <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-                </button>
+                </Button>
               )}
               <span className="text-sm font-semibold capitalize">{folder}</span>
             </div>
             <div className="flex items-center gap-1">
-              <button
+              <Button
+                type="button"
+                variant="ghost"
                 onClick={() => void handleToggleAutoLabel()}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-medium uppercase transition-colors",
+                  "h-auto gap-1.5 rounded-md border px-2 py-1 text-[11px] font-medium uppercase",
                   autoLabel
                     ? "border-transparent bg-brand/10 text-brand hover:bg-brand/15"
                     : "border-[#E7E7E7] text-muted-foreground hover:bg-muted/50",
@@ -500,14 +507,17 @@ export function OrbitInbox() {
               >
                 <Sparkles className={cn("h-3 w-3", autoLabel ? "text-brand" : "text-muted-foreground")} />
                 Auto Label
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => void handleSync()}
                 disabled={syncing}
-                className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted disabled:opacity-50"
+                className="h-7 w-7 rounded hover:bg-muted"
               >
                 <RefreshCcw className={`h-4 w-4 text-muted-foreground ${syncing ? "animate-spin" : ""}`} />
-              </button>
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted outline-none">
                   <MoreVertical className="h-4 w-4 text-muted-foreground" />

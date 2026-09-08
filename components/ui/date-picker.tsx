@@ -20,6 +20,7 @@ import {
 import { de } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, CalendarIcon, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Button } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 
@@ -105,13 +106,15 @@ function Calendar({
     <div className="w-56 shrink-0 select-none">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={onPrevMonth}
-          className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+          className="size-auto p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft className="size-4" />
-        </button>
+        </Button>
         <AnimatePresence mode="wait">
           <motion.span
             key={format(month, "MM-yyyy")}
@@ -124,13 +127,15 @@ function Calendar({
             {format(month, "MMMM yyyy", { locale: de })}
           </motion.span>
         </AnimatePresence>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={onNextMonth}
-          className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+          className="size-auto p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
         >
           <ChevronRight className="size-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Weekday labels */}
@@ -354,16 +359,16 @@ export function DatePicker(props: DatePickerProps) {
   return (
     <div className={cn("relative", props.className)}>
       {/* Trigger */}
-      <button
+      <Button
         ref={triggerRef}
         type="button"
+        variant="outline"
         disabled={props.disabled}
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "flex items-center gap-2 w-full h-9 px-3 rounded-lg border border-border bg-background text-sm transition-colors",
-          "hover:border-border/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+          "h-9 justify-start flex items-center gap-2 w-full px-3 rounded-lg border-border bg-background text-sm font-normal",
+          "hover:border-border/80 hover:bg-background",
           hasValue ? "text-foreground" : "text-muted-foreground",
-          props.disabled && "opacity-50 cursor-not-allowed",
           open && "border-ring ring-1 ring-ring",
         )}
       >
@@ -378,7 +383,7 @@ export function DatePicker(props: DatePickerProps) {
             <X className="size-3" />
           </span>
         )}
-      </button>
+      </Button>
 
       {/* Two-panel picker – rendered via portal to escape overflow containers */}
       {createPortal(
@@ -436,21 +441,22 @@ export function DatePicker(props: DatePickerProps) {
                   </div>
                 )}
                 <div className="flex justify-end gap-2">
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={() => setOpen(false)}
-                    className="px-3 py-1.5 text-xs font-medium rounded-lg border border-border hover:bg-muted transition-colors"
+                    className="h-auto px-3 py-1.5 text-xs font-medium rounded-lg border-border hover:bg-muted"
                   >
                     Abbrechen
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={handleConfirm}
                     disabled={confirmDisabled}
-                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="h-auto px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     Bestätigen
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

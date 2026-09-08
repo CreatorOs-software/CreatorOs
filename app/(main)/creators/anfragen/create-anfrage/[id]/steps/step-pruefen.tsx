@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@talentos/ui";
 import { StepNav } from "@/app/(main)/creators/create-form/steps/step-nav";
 import { SOURCE_LABEL, parseMoney } from "../anfrage-form.constants";
 import type { AnfrageFormValues, AnfrageExtras } from "../anfrage-form.schema";
@@ -36,13 +37,14 @@ function SectionCard({
     <div className="rounded-xl border border-border-light overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3 border-b border-border-light bg-muted/30">
         <h3 className="text-sm font-semibold">{title}</h3>
-        <button
+        <Button
           type="button"
+          variant="link"
           onClick={onEdit}
-          className="text-xs text-primary hover:underline underline-offset-4"
+          className="h-auto p-0 text-xs"
         >
           Bearbeiten
-        </button>
+        </Button>
       </div>
       <dl className="px-5 divide-y divide-border-light">{children}</dl>
     </div>

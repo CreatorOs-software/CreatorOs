@@ -189,8 +189,10 @@ export function FullScreenCalendar({ data, onNewEvent }: FullScreenCalendarProps
                 )}
               >
                 <header className="flex items-center justify-between p-2.5">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     className={cn(
                       isEqual(day, selectedDay) && "text-primary-foreground",
                       !isEqual(day, selectedDay) &&
@@ -209,13 +211,13 @@ export function FullScreenCalendar({ data, onNewEvent }: FullScreenCalendarProps
                         "bg-foreground",
                       (isEqual(day, selectedDay) || isToday(day)) &&
                         "font-semibold",
-                      "flex h-7 w-7 items-center justify-center rounded-full text-xs hover:border",
+                      "size-auto flex h-7 w-7 items-center justify-center rounded-full text-xs hover:border hover:bg-transparent",
                     )}
                   >
                     <time dateTime={format(day, "yyyy-MM-dd")}>
                       {format(day, "d")}
                     </time>
-                  </button>
+                  </Button>
                 </header>
                 <div className="flex-1 p-2.5">
                   {data
@@ -250,7 +252,8 @@ export function FullScreenCalendar({ data, onNewEvent }: FullScreenCalendarProps
           {/* Mobile grid */}
           <div className="isolate grid w-full grid-cols-7 grid-rows-5 border-x lg:hidden">
             {days.map((day, dayIdx) => (
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setSelectedDay(day)}
                 key={dayIdx}
                 type="button"
@@ -266,7 +269,7 @@ export function FullScreenCalendar({ data, onNewEvent }: FullScreenCalendarProps
                     "text-muted-foreground",
                   (isEqual(day, selectedDay) || isToday(day)) &&
                     "font-semibold",
-                  "flex h-14 flex-col border-b border-r px-3 py-2 hover:bg-muted focus:z-10",
+                  "h-14 rounded-none flex flex-col items-stretch border-b border-r px-3 py-2 hover:bg-muted focus:z-10",
                 )}
               >
                 <time
@@ -302,7 +305,7 @@ export function FullScreenCalendar({ data, onNewEvent }: FullScreenCalendarProps
                       ))}
                   </div>
                 )}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

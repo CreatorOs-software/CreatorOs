@@ -369,10 +369,12 @@ function CreatorSection({
 
             <div className="flex flex-col divide-y divide-border -mx-5">
               {summaries.map((s) => (
-                <button
+                <Button
                   key={s.creator.id}
+                  type="button"
+                  variant="ghost"
                   onClick={() => setSelected(s)}
-                  className="flex items-center gap-3 px-5 py-3 hover:bg-muted/40 transition-colors text-left"
+                  className="h-auto justify-start rounded-none flex items-center gap-3 px-5 py-3 hover:bg-muted/40 text-left"
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <CreatorAvatar creator={s.creator} />
@@ -412,7 +414,7 @@ function CreatorSection({
                   </div>
 
                   <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                </button>
+                </Button>
               ))}
             </div>
           </>
@@ -804,12 +806,14 @@ function DealHistorySection({ deals }: { deals: DealRow[] }) {
                 </label>
               ))}
               {creatorFilter.size > 0 && (
-                <button
-                  className="text-[10px] text-muted-foreground hover:text-foreground mt-2 px-1 text-left"
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-auto justify-start text-[10px] text-muted-foreground hover:text-foreground hover:bg-transparent mt-2 px-1 text-left"
                   onClick={() => setCreatorFilter(new Set())}
                 >
                   Zurücksetzen
-                </button>
+                </Button>
               )}
             </div>
           ) : undefined

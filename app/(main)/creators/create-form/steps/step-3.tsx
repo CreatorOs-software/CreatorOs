@@ -1,7 +1,7 @@
 "use client";
 
 import { Label } from "@/components/ui/label";
-import { Input } from "@talentos/ui";
+import { Button, Input } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { PLATFORM_OPTIONS } from "../creator-form.constants";
 import type {
@@ -46,9 +46,10 @@ export function Step3({ form, errors, onNext, onPrev }: Step3Props) {
 
                     <div className="mt-2 flex flex-wrap gap-2">
                       {PLATFORM_OPTIONS.map((p) => (
-                        <button
+                        <Button
                           key={p}
                           type="button"
+                          variant="ghost"
                           onClick={() => {
                             const current = field.state.value;
                             field.handleChange(
@@ -58,14 +59,14 @@ export function Step3({ form, errors, onNext, onPrev }: Step3Props) {
                             );
                           }}
                           className={cn(
-                            "text-xs px-3 py-1.5 rounded-xl border transition-colors",
+                            "h-auto text-xs px-3 py-1.5 rounded-xl border",
                             field.state.value.includes(p)
                               ? "bg-primary text-primary-foreground border-primary"
                               : "border-border-light bg-input text-muted-foreground hover:text-foreground hover:border-foreground/30",
                           )}
                         >
                           {p}
-                        </button>
+                        </Button>
                       ))}
                     </div>
 

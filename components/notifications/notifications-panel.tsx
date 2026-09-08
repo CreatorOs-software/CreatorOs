@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BellOff, ListTodo, MoreHorizontal, X } from "lucide-react";
+import { Button } from "@talentos/ui";
 import { QueryKeys } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { FloatingWindow } from "@/components/ui/floating-window";
@@ -129,19 +130,20 @@ export function NotificationsPanel() {
 
       <div className="flex shrink-0 items-center gap-1 border-b border-border bg-muted/60 px-3 py-1.5">
         {(["all", "LAUT", "NORMAL", "LEISE"] as VolumeFilter[]).map((v) => (
-          <button
+          <Button
             key={v}
             type="button"
+            variant="ghost"
             onClick={() => setVolume(v)}
             className={cn(
-              "rounded-md px-2 py-0.5 text-xs font-medium transition-colors",
+              "h-auto rounded-md px-2 py-0.5 text-xs font-medium",
               volume === v
-                ? "bg-foreground text-background"
+                ? "bg-foreground text-background hover:bg-foreground"
                 : "text-muted-foreground hover:bg-muted",
             )}
           >
             {v === "all" ? "Alle" : SEVERITY_LABEL[v]}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -168,10 +170,11 @@ export function NotificationsPanel() {
                     aria-hidden
                   />
 
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => openTarget(n)}
-                    className="flex min-w-0 flex-1 flex-col items-start gap-0.5 text-left"
+                    className="h-auto rounded-none hover:bg-transparent flex min-w-0 flex-1 flex-col items-start gap-0.5 text-left"
                   >
                     <span className="flex items-center gap-1.5">
                       {n.creator && (
@@ -196,25 +199,29 @@ export function NotificationsPanel() {
                         {n.reason}
                       </span>
                     )}
-                  </button>
+                  </Button>
 
                   <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       title="In To-do verwandeln"
                       onClick={() => convertToTodo(n.id)}
-                      className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      className="size-auto rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
                     >
                       <ListTodo className="size-3.5" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       title="Wegwischen"
                       onClick={() => dismiss(n.id)}
-                      className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      className="size-auto rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
                     >
                       <X className="size-3.5" />
-                    </button>
+                    </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"

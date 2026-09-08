@@ -2,10 +2,9 @@
 
 import { useAuth } from "@/components/auth/use-auth";
 import { usePageHeader } from "./page-header-context";
-import { Avatar } from "@base-ui/react";
 import { ArrowLeft, Bell, LogOut, PuzzleIcon } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@talentos/ui";
+import { Avatar, AvatarFallback, AvatarImage, Button } from "@talentos/ui";
 
 interface User {
   id: string;
@@ -36,12 +35,15 @@ export function Header({ user }: HeaderProps) {
       {config ? (
         <div className="flex items-center gap-2 min-w-0">
           {config.onBack && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
               onClick={config.onBack}
-              className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              className="size-auto shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
             >
               <ArrowLeft className="w-4 h-4" />
-            </button>
+            </Button>
           )}
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap leading-tight">
@@ -75,16 +77,12 @@ export function Header({ user }: HeaderProps) {
         {/* User Menu */}
         {user && (
           <div className="hidden sm:flex items-center gap-2 bg-card rounded-full pl-1 pr-3 py-1">
-            <Avatar.Root className="w-8 h-8 rounded-full overflow-hidden">
-              <Avatar.Image
-                src={user.avatar}
-                alt={user.name}
-                className="w-full h-full object-cover"
-              />
-              <Avatar.Fallback className="w-full h-full rounded-full bg-brand/10 flex items-center justify-center text-xs font-bold text-brand">
+            <Avatar className="size-8">
+              <AvatarImage src={user.avatar} alt={user.name} />
+              <AvatarFallback className="bg-brand/10 text-xs font-bold text-brand">
                 {initials}
-              </Avatar.Fallback>
-            </Avatar.Root>
+              </AvatarFallback>
+            </Avatar>
           </div>
         )}
 

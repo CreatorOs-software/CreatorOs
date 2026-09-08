@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { Button } from "@talentos/ui";
+import { cn } from "@/lib/utils";
 
 interface CopyButtonProps {
   value: string;
@@ -19,12 +21,15 @@ export function CopyButton({ value, className }: CopyButtonProps) {
   }
 
   return (
-    <button
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
       onClick={handleCopy}
-      className={
-        className ??
-        "p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-      }
+      className={cn(
+        "size-auto p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted",
+        className,
+      )}
       title="Kopieren"
     >
       {copied ? (
@@ -32,6 +37,6 @@ export function CopyButton({ value, className }: CopyButtonProps) {
       ) : (
         <Copy className="w-3.5 h-3.5" />
       )}
-    </button>
+    </Button>
   );
 }

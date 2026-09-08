@@ -11,6 +11,7 @@ import {
   X,
   Inbox,
 } from "lucide-react";
+import { Button } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -54,12 +55,15 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
               Crextio
             </span>
           </div>
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-muted transition-colors"
+            className="size-auto p-2 rounded-lg hover:bg-muted"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Navigation */}

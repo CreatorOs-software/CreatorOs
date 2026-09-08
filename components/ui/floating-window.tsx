@@ -4,6 +4,7 @@ import React from "react";
 import { FloatingPanel } from "@ark-ui/react/floating-panel";
 import { Portal } from "@ark-ui/react/portal";
 import { ArrowDownLeft, ArrowLeft, GripHorizontal, Maximize2, Minus, X } from "lucide-react";
+import { Button } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 
 // ─── Shared button style for header controls ───────────────────────────────────
@@ -86,9 +87,9 @@ function Header({ title, className, children, onBack }: HeaderProps) {
       )}
     >
       {onBack ? (
-        <button type="button" onClick={onBack} className={ctrlCls} aria-label="Zurück">
+        <Button type="button" variant="ghost" size="icon" onClick={onBack} className={cn(ctrlCls, "size-7")} aria-label="Zurück">
           <ArrowLeft className="size-3.5" />
-        </button>
+        </Button>
       ) : (
         <GripHorizontal className="size-3.5 shrink-0 text-muted-foreground/60" />
       )}

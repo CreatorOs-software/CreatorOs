@@ -310,14 +310,15 @@ export function TodoPanel() {
                 const cfg = PRIORITY_CONFIG[p];
                 const active = form.priority === p;
                 return (
-                  <button
+                  <Button
                     key={p}
                     type="button"
+                    variant="ghost"
                     onClick={() =>
                       setForm((f) => ({ ...f, priority: active ? "" : p }))
                     }
                     className={cn(
-                      "flex flex-1 items-center justify-center gap-1.5 rounded-full border py-1.5 text-xs font-medium transition-colors",
+                      "h-auto flex flex-1 items-center justify-center gap-1.5 rounded-full border py-1.5 text-xs font-medium",
                       active
                         ? cfg.activeClass
                         : "border-border text-muted-foreground hover:bg-muted",
@@ -325,7 +326,7 @@ export function TodoPanel() {
                   >
                     <span className={cn("size-2 rounded-full", cfg.dotClass)} />
                     {cfg.label}
-                  </button>
+                  </Button>
                 );
               })}
             </div>

@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Loader2 } from "lucide-react";
+import { Button } from "@talentos/ui";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QueryKeys } from "@/lib/query-keys";
 import type { RenderResult, Template, TemplateChannel } from "@/domains/templates";
@@ -76,16 +77,17 @@ export function InsertTemplatePopover({
             </p>
           ) : (
             templates.map((t) => (
-              <button
+              <Button
                 key={t.id}
                 type="button"
+                variant="ghost"
                 onClick={() => pick(t)}
                 disabled={renderingId !== null}
-                className="flex w-full items-center justify-between px-3 py-1.5 text-left text-xs font-medium hover:bg-muted disabled:opacity-50"
+                className="h-auto rounded-none flex w-full items-center justify-between px-3 py-1.5 text-left text-xs font-medium hover:bg-muted"
               >
                 {t.name}
                 {renderingId === t.id && <Loader2 className="h-3 w-3 animate-spin" />}
-              </button>
+              </Button>
             ))
           )}
         </div>

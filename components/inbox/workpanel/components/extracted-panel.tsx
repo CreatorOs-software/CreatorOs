@@ -825,15 +825,17 @@ export function ExtractedPanel({
                               </SelectContent>
                             </Select>
                           </div>
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="icon"
                             onClick={() =>
                               field.handleChange(items.filter((_, idx) => idx !== i))
                             }
-                            className="pb-1.5 text-muted-foreground hover:text-destructive"
+                            className="size-auto pb-1.5 text-muted-foreground hover:text-destructive hover:bg-transparent"
                           >
                             <Trash2 className="h-3 w-3" />
-                          </button>
+                          </Button>
                         </div>
                       ))}
                       <Button
@@ -940,13 +942,15 @@ export function ExtractedPanel({
                                 <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground transition-transform group-aria-expanded:rotate-180" />
                                 <span className="flex-1 truncate">{summary}</span>
                               </AccordionPrimitive.Trigger>
-                              <button
+                              <Button
                                 type="button"
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => removeDeliverable(i)}
-                                className="px-3 py-2.5 text-muted-foreground hover:text-destructive"
+                                className="size-auto px-3 py-2.5 text-muted-foreground hover:text-destructive hover:bg-transparent"
                               >
                                 <Trash2 className="h-3 w-3" />
-                              </button>
+                              </Button>
                             </AccordionPrimitive.Header>
 
                             <AccordionContent className="px-3">

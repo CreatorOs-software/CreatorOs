@@ -270,9 +270,12 @@ export default function CreatorsPage() {
         <div className="ml-auto flex items-center gap-2">
           {/* View toggle */}
           <div className="flex items-center rounded-lg border border-border overflow-hidden">
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setView("grid")}
-              className={`flex h-8 w-8 items-center justify-center transition-colors ${
+              className={`h-8 w-8 rounded-none ${
                 view === "grid"
                   ? "bg-secondary text-secondary-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -280,10 +283,13 @@ export default function CreatorsPage() {
               aria-label="Kartenansicht"
             >
               <LayoutGrid className="h-3.5 w-3.5" />
-            </button>
-            <button
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setView("table")}
-              className={`flex h-8 w-8 items-center justify-center transition-colors ${
+              className={`h-8 w-8 rounded-none ${
                 view === "table"
                   ? "bg-secondary text-secondary-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -291,7 +297,7 @@ export default function CreatorsPage() {
               aria-label="Tabellenansicht"
             >
               <List className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           </div>
 
           {view === "grid" && (

@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Checkbox, Input } from "@talentos/ui";
+import { Button, Checkbox, Input } from "@talentos/ui";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,19 +25,20 @@ function ToggleChip<T extends string>({
   return (
     <div className="flex flex-wrap gap-1.5">
       {options.map((opt) => (
-        <button
+        <Button
           key={opt}
           type="button"
+          variant="ghost"
           onClick={() => onChange(opt)}
           className={cn(
-            "rounded-lg px-3 py-1.5 text-xs font-medium border transition-colors",
+            "h-auto rounded-lg px-3 py-1.5 text-xs font-medium border",
             value === opt
               ? "bg-foreground text-background border-foreground"
               : "border-border bg-background text-foreground hover:bg-muted",
           )}
         >
           {labels?.[opt] ?? opt}
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -214,12 +215,13 @@ export function Step3Rechte({ form, errors: _errors, onNext, onPrev }: Step3Rech
                       {CHANNELS_LIST.map((ch) => {
                         const active = (r.channels ?? []).includes(ch);
                         return (
-                          <button
+                          <Button
                             key={ch}
                             type="button"
+                            variant="ghost"
                             onClick={() => toggleChannel(ch)}
                             className={cn(
-                              "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                              "h-auto gap-2 rounded-full border px-3 py-1.5 text-xs font-medium",
                               active
                                 ? "bg-foreground text-background border-foreground"
                                 : "border-border bg-background text-foreground hover:bg-muted",
@@ -232,7 +234,7 @@ export function Step3Rechte({ form, errors: _errors, onNext, onPrev }: Step3Rech
                               {active && <Check className="size-2.5" strokeWidth={3} style={{ color: "hsl(var(--foreground))" }} />}
                             </span>
                             {ch}
-                          </button>
+                          </Button>
                         );
                       })}
                     </div>

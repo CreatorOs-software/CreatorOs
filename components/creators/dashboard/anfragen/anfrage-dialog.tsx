@@ -210,11 +210,13 @@ export function AnfrageDialog({
                   const isClickable = i === currentIdx + 1;
                   return (
                     <div key={s} className="flex items-center gap-1 flex-1 min-w-0">
-                      <button
+                      <Button
+                        type="button"
+                        variant="ghost"
                         disabled={!isClickable || statusLoading}
                         onClick={() => isClickable && handleStatusChange(s)}
                         className={cn(
-                          "flex-1 h-1.5 rounded-full transition-colors",
+                          "flex-1 h-1.5 p-0 rounded-full transition-colors",
                           isDone && "bg-emerald-500",
                           isCurrent && "bg-accent",
                           isClickable && "bg-muted hover:bg-accent/60 cursor-pointer",

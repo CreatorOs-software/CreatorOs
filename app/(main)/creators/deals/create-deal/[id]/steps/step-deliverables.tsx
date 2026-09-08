@@ -96,19 +96,20 @@ function ToggleChip<T extends string>({
   return (
     <div className="flex flex-wrap gap-1.5">
       {options.map((opt) => (
-        <button
+        <Button
           key={opt}
           type="button"
+          variant="ghost"
           onClick={() => onChange(opt)}
           className={cn(
-            "rounded-lg px-3 py-1.5 text-xs font-medium border transition-colors",
+            "h-auto rounded-lg px-3 py-1.5 text-xs font-medium border",
             value === opt
               ? "bg-foreground text-background border-foreground"
               : "border-border bg-background text-foreground hover:bg-muted",
           )}
         >
           {labels?.[opt] ?? opt}
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -131,10 +132,11 @@ function SubSection({
   return (
     <div className="border-t border-border-light pt-3 mt-3">
       <div className="flex items-center justify-between mb-2">
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-1.5 group"
+          className="h-auto p-0 flex items-center gap-1.5 group hover:bg-transparent"
         >
           <ChevronDown
             className={cn(
@@ -145,15 +147,16 @@ function SubSection({
           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">
             {title}
           </span>
-        </button>
+        </Button>
         {onSelectAll && (
-          <button
+          <Button
             type="button"
+            variant="link"
             onClick={onSelectAll}
-            className="text-[10px] text-primary hover:underline underline-offset-2"
+            className="h-auto p-0 text-[10px] underline-offset-2"
           >
             Alles auswählen
-          </button>
+          </Button>
         )}
       </div>
       {open && (
@@ -293,12 +296,13 @@ function RightsSection({
           {CHANNELS_LIST.map((ch) => {
             const active = (rights.channels ?? []).includes(ch);
             return (
-              <button
+              <Button
                 key={ch}
                 type="button"
+                variant="ghost"
                 onClick={() => toggleChannel(ch)}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                  "h-auto gap-2 rounded-full border px-3 py-1.5 text-xs font-medium",
                   active
                     ? "bg-foreground text-background border-foreground"
                     : "border-border bg-background text-foreground hover:bg-muted",
@@ -311,7 +315,7 @@ function RightsSection({
                   {active && <Check className="size-2.5" strokeWidth={3} style={{ color: "hsl(var(--foreground))" }} />}
                 </span>
                 {ch}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -522,10 +526,11 @@ function DeliverableCard({
     <div className="rounded-xl border border-border-light bg-card overflow-hidden">
       {/* Card header */}
       <div className="flex items-center gap-2 px-4 py-3 bg-muted/20">
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={() => setExpanded((v) => !v)}
-          className="flex-1 flex items-center gap-2 text-left"
+          className="h-auto p-0 flex-1 flex items-center justify-start gap-2 text-left hover:bg-transparent"
         >
           <ChevronDown
             className={cn(
@@ -534,15 +539,17 @@ function DeliverableCard({
             )}
           />
           <span className="text-sm font-medium">{headerLabel}</span>
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={onRemove}
-          className="flex items-center justify-center w-7 h-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+          className="w-7 h-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
           title={`Deliverable ${index + 1} löschen`}
         >
           <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
 
       {/* Expanded content */}

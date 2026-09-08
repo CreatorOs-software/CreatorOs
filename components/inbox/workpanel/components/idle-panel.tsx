@@ -140,14 +140,16 @@ export function IdlePanel({
               {more.map((id) => {
                 const Icon = ACTION_META[id].icon;
                 return (
-                  <button
+                  <Button
                     key={id}
+                    type="button"
+                    variant="ghost"
                     onClick={handlers[id]}
-                    className="flex flex-col items-center gap-2 rounded-xl border border-border bg-muted/30 px-2 py-4 text-center text-xs font-medium leading-tight text-foreground transition-colors hover:bg-muted"
+                    className="h-auto flex flex-col items-center gap-2 rounded-xl border border-border bg-muted/30 px-2 py-4 text-center text-xs font-medium leading-tight text-foreground hover:bg-muted"
                   >
                     <Icon className="h-5 w-5 text-muted-foreground" />
                     {ACTION_META[id].label}
-                  </button>
+                  </Button>
                 );
               })}
             </div>

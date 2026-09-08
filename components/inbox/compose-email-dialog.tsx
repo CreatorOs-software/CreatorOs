@@ -3,7 +3,7 @@
 import { AlertTriangle, Command, Plus, Sparkles, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Input } from "@talentos/ui";
+import { Button, Input } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { useVariableSlashMenu } from "./templates/variable-slash-menu";
 
@@ -49,13 +49,16 @@ function EmailTagInput({
           className="flex items-center gap-1 rounded-full border border-[#DBDBDB] py-0.5 pl-2 pr-1 text-sm"
         >
           {email}
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             tabIndex={-1}
             onClick={(e) => { e.stopPropagation(); onRemove(email); }}
-            className="ml-0.5 text-[#8C8C8C] hover:text-foreground"
+            className="size-auto ml-0.5 text-[#8C8C8C] hover:text-foreground hover:bg-transparent"
           >
             <X className="h-3 w-3" />
-          </button>
+          </Button>
         </span>
       ))}
       <Input
@@ -150,13 +153,15 @@ export function ComposeEmailDialog({ open, onOpenChange, integrationId, initialT
       <div className="flex w-full max-w-187.5 flex-col gap-2 px-4">
         {/* esc button */}
         <div className="flex justify-start">
-          <button
+          <Button
+            type="button"
+            variant="ghost"
             onClick={handleClose}
-            className="flex items-center gap-1 rounded-lg bg-[#F0F0F0] px-2 py-1.5"
+            className="h-auto gap-1 rounded-lg bg-[#F0F0F0] px-2 py-1.5 hover:bg-[#F0F0F0]/80"
           >
             <X className="h-3.5 w-3.5 text-[#6D6D6D]" />
             <span className="text-sm font-medium text-[#6D6D6D]">esc</span>
-          </button>
+          </Button>
         </div>
 
         {/* Composer card */}
@@ -171,8 +176,8 @@ export function ComposeEmailDialog({ open, onOpenChange, integrationId, initialT
               onRemove={(e) => setTo((p) => p.filter((x) => x !== e))}
             />
             <div className="flex shrink-0 gap-2 text-sm font-medium text-[#8C8C8C]">
-              <button className={cn("hover:text-foreground", showCc && "text-foreground")} onClick={() => { setShowCc((v) => !v); if (showCc) setCc([]); }}>Cc</button>
-              <button className={cn("hover:text-foreground", showBcc && "text-foreground")} onClick={() => { setShowBcc((v) => !v); if (showBcc) setBcc([]); }}>Bcc</button>
+              <Button type="button" variant="ghost" className={cn("h-auto p-0 text-sm font-medium text-[#8C8C8C] hover:bg-transparent hover:text-foreground", showCc && "text-foreground")} onClick={() => { setShowCc((v) => !v); if (showCc) setCc([]); }}>Cc</Button>
+              <Button type="button" variant="ghost" className={cn("h-auto p-0 text-sm font-medium text-[#8C8C8C] hover:bg-transparent hover:text-foreground", showBcc && "text-foreground")} onClick={() => { setShowBcc((v) => !v); if (showBcc) setBcc([]); }}>Bcc</Button>
             </div>
           </div>
 
@@ -209,9 +214,9 @@ export function ComposeEmailDialog({ open, onOpenChange, integrationId, initialT
               placeholder="Re: Design review feedback"
               className="h-auto flex-1 rounded-none border-0 bg-transparent p-0 text-sm placeholder:text-[#8C8C8C] focus-visible:ring-0 focus-visible:ring-offset-0"
             />
-            <button title="Betreff generieren" className="shrink-0 text-[#8C8C8C] hover:text-foreground">
+            <Button type="button" variant="ghost" size="icon" title="Betreff generieren" className="size-auto shrink-0 text-[#8C8C8C] hover:bg-transparent hover:text-foreground">
               <Sparkles className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           </div>
 
           {/* Unresolved variable warning */}
@@ -253,30 +258,31 @@ export function ComposeEmailDialog({ open, onOpenChange, integrationId, initialT
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {/* Send */}
-              <button
+              <Button
+                type="button"
                 onClick={() => void handleSend()}
                 disabled={sending || to.length === 0 || !body.trim()}
-                className="flex h-7 cursor-pointer items-center gap-1 rounded-md bg-black pl-2 pr-1 text-sm text-white disabled:opacity-50"
+                className="h-7 cursor-pointer gap-1 rounded-md bg-black pl-2 pr-1 text-sm text-white hover:bg-black/90"
               >
                 <span>Send</span>
                 <span className="flex h-5 items-center gap-0.5 rounded-sm bg-white/10 px-1">
                   <Command className="h-3 w-3" />
                   <span className="text-xs">↩</span>
                 </span>
-              </button>
+              </Button>
 
               {/* Add attachment (stub) */}
-              <button className="flex h-7 items-center gap-0.5 rounded-md border border-[#E7E7E7] bg-white px-2 text-sm text-[#6D6D6D] hover:bg-muted">
+              <Button type="button" variant="outline" className="h-7 gap-0.5 rounded-md border-[#E7E7E7] bg-white px-2 text-sm text-[#6D6D6D] hover:bg-muted">
                 <Plus className="h-3.5 w-3.5" />
                 <span>Add</span>
-              </button>
+              </Button>
             </div>
 
             {/* Generate (stub) */}
-            <button className="flex h-7 items-center gap-1.5 rounded-md border border-[#8B5CF6] px-2 text-sm text-foreground hover:bg-muted">
+            <Button type="button" variant="outline" className="h-7 gap-1.5 rounded-md border-[#8B5CF6] px-2 text-sm text-foreground hover:bg-muted">
               <Sparkles className="h-3.5 w-3.5 text-[#8B5CF6]" />
               <span>Generate</span>
-            </button>
+            </Button>
           </div>
           </div>
         </div>

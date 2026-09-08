@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
+import { Button } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { QueryKeys } from "@/lib/query-keys";
 import type { RenderResult, Template, TemplateChannel } from "@/domains/templates";
@@ -80,16 +81,17 @@ export function TemplateQuickInsert({
   return (
     <div className={cn("flex flex-wrap gap-1.5", className)}>
       {templates.map((t) => (
-        <button
+        <Button
           key={t.id}
           type="button"
+          variant="ghost"
           onClick={() => pick(t)}
           disabled={renderingId !== null}
-          className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
+          className="h-auto gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground"
         >
           {renderingId === t.id && <Loader2 className="h-3 w-3 animate-spin" />}
           {t.name}
-        </button>
+        </Button>
       ))}
     </div>
   );

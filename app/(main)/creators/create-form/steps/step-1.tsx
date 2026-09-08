@@ -213,10 +213,11 @@ export function Step1({
             {/* Profile image upload */}
             <div className="flex flex-col items-center gap-3 w-52 shrink-0 border border-dashed rounded-sm p-3">
               <div className="relative">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={() => imageInputRef.current?.click()}
-                  className="w-20 h-20 rounded-full border-2 border-dashed border-border flex items-center justify-center bg-muted/30 hover:bg-muted/50 transition-colors overflow-hidden"
+                  className="w-20 h-20 rounded-full border-2 border-dashed border-border bg-muted/30 hover:bg-muted/50 overflow-hidden p-0"
                 >
                   {imagePreview ? (
                     <img
@@ -227,22 +228,26 @@ export function Step1({
                   ) : (
                     <span className="text-xs text-muted-foreground">Bild</span>
                   )}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => imageInputRef.current?.click()}
-                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-background border border-border flex items-center justify-center hover:bg-muted transition-colors shadow-sm"
+                  className="absolute -top-1 -right-1 size-5 rounded-full bg-background border border-border hover:bg-muted shadow-sm"
                 >
                   <Plus className="w-3 h-3 text-foreground" />
-                </button>
+                </Button>
                 {imagePreview && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => handleImageChange(null)}
-                    className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-background border border-border flex items-center justify-center hover:bg-muted transition-colors shadow-sm"
+                    className="absolute -bottom-1 -right-1 size-5 rounded-full bg-background border border-border hover:bg-muted shadow-sm"
                   >
                     <X className="w-2.5 h-2.5 text-foreground" />
-                  </button>
+                  </Button>
                 )}
               </div>
               <div className="text-center">
@@ -396,13 +401,15 @@ export function Step1({
                     {(contractFile.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => onContractFileChange(null)}
-                  className="shrink-0 p-1 rounded-md hover:bg-background text-muted-foreground hover:text-foreground transition-colors"
+                  className="shrink-0 size-auto p-1 rounded-md hover:bg-background text-muted-foreground hover:text-foreground"
                 >
                   <X className="w-4 h-4" />
-                </button>
+                </Button>
               </div>
             ) : (
               <div

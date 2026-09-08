@@ -1,3 +1,4 @@
+import { Avatar as UIAvatar, AvatarFallback } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 
 type AvatarSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
@@ -12,12 +13,12 @@ interface AvatarProps {
 }
 
 const SIZE_CLASS: Record<AvatarSize, string> = {
-  xs: "w-6 h-6 text-[10px]",
-  sm: "w-8 h-8 text-xs",
-  md: "w-10 h-10 text-sm",
-  lg: "w-11 h-11 text-sm",
-  xl: "w-14 h-14 text-base",
-  "2xl": "w-20 h-20 text-2xl",
+  xs: "size-6 text-[10px]",
+  sm: "size-8 text-xs",
+  md: "size-10 text-sm",
+  lg: "size-11 text-sm",
+  xl: "size-14 text-base",
+  "2xl": "size-20 text-2xl",
 };
 
 const VARIANT_CLASS: Record<AvatarVariant, string> = {
@@ -32,16 +33,13 @@ export function Avatar({
   className,
 }: AvatarProps) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center justify-center rounded-full font-bold shrink-0 uppercase",
-        SIZE_CLASS[size],
-        VARIANT_CLASS[variant],
-        className,
-      )}
-    >
-      {initials}
-    </span>
+    <UIAvatar className={cn(SIZE_CLASS[size], className)}>
+      <AvatarFallback
+        className={cn("font-bold uppercase text-inherit", VARIANT_CLASS[variant])}
+      >
+        {initials}
+      </AvatarFallback>
+    </UIAvatar>
   );
 }
 

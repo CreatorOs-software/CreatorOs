@@ -1,6 +1,7 @@
 "use client"
 
 import { Star, MessageCircle, UserPlus } from "lucide-react"
+import { Button } from "@talentos/ui"
 import { cn } from "@/lib/utils"
 
 type ProfileCardProps = {
@@ -136,12 +137,12 @@ export function ProfileCard({ name, role, status, avatar, tags = [], isVerified,
 
       {/* Action Buttons */}
       <div className="mt-6 flex gap-2 relative z-10">
-        <button className="flex-1 rounded-full bg-white dark:bg-gray-700 py-4 text-sm font-medium text-blue-600 dark:text-blue-400 shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.9)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.2),-6px_-6px_12px_rgba(255,255,255,0.1)] transition-all duration-300 hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] dark:hover:shadow-[2px_2px_4px_rgba(0,0,0,0.15),-2px_-2px_4px_rgba(255,255,255,0.05)] hover:scale-95 active:scale-90 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30">
+        <Button type="button" variant="ghost" className="h-auto flex-1 rounded-full bg-white dark:bg-gray-700 py-4 text-sm font-medium text-blue-600 dark:text-blue-400 shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.9)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.2),-6px_-6px_12px_rgba(255,255,255,0.1)] transition-all duration-300 hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] dark:hover:shadow-[2px_2px_4px_rgba(0,0,0,0.15),-2px_-2px_4px_rgba(255,255,255,0.05)] hover:scale-95 active:scale-90 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30">
           <UserPlus className="mx-auto h-4 w-4 transition-transform duration-300 hover:scale-110" />
-        </button>
-        <button className="flex-1 rounded-full bg-white dark:bg-gray-700 py-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.9)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.2),-6px_-6px_12px_rgba(255,255,255,0.1)] transition-all duration-300 hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] dark:hover:shadow-[2px_2px_4px_rgba(0,0,0,0.15),-2px_-2px_4px_rgba(255,255,255,0.05)] hover:scale-95 active:scale-90 group-hover:bg-gray-50 dark:group-hover:bg-gray-600">
+        </Button>
+        <Button type="button" variant="ghost" className="h-auto flex-1 rounded-full bg-white dark:bg-gray-700 py-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.9)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.2),-6px_-6px_12px_rgba(255,255,255,0.1)] transition-all duration-300 hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] dark:hover:shadow-[2px_2px_4px_rgba(0,0,0,0.15),-2px_-2px_4px_rgba(255,255,255,0.05)] hover:scale-95 active:scale-90 group-hover:bg-gray-50 dark:group-hover:bg-gray-600">
           <MessageCircle className="mx-auto h-4 w-4 transition-transform duration-300 hover:scale-110" />
-        </button>
+        </Button>
       </div>
 
       {/* Animated border on hover */}

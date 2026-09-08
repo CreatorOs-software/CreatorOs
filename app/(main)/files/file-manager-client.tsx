@@ -147,12 +147,15 @@ function PinnedCard({
         <div className="absolute top-3 left-3 w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center shadow-sm">
           <Star className="w-3.5 h-3.5 text-white fill-white" />
         </div>
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
           onClick={(e) => { e.stopPropagation(); onMenu(file, e); }}
-          className="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-sm flex items-center justify-center transition-colors"
+          className="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-sm"
         >
           <MoreHorizontal className="w-4 h-4 text-white" />
-        </button>
+        </Button>
         {file.isDirectory ? (
           <Folder className="w-14 h-14 text-white/40" />
         ) : (
@@ -240,17 +243,19 @@ function CtxMenu({
       className="bg-card border border-border rounded-xl shadow-2xl overflow-hidden min-w-[170px] py-1"
     >
       {actions.map((a) => (
-        <button
+        <Button
           key={a.label}
+          type="button"
+          variant="ghost"
           onClick={() => { a.fn(); onClose(); }}
           className={cn(
-            "w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted/60 transition-colors text-left",
+            "h-auto w-full justify-start rounded-none flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted/60 text-left",
             a.danger && "text-destructive hover:bg-destructive/5",
           )}
         >
           {a.icon}
           {a.label}
-        </button>
+        </Button>
       ))}
     </motion.div>
   );
@@ -276,9 +281,9 @@ function NewFolderDialog({ onClose, onCreate }: { onClose: () => void; onCreate:
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold">Neuer Ordner</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+          <Button type="button" variant="ghost" size="icon" onClick={onClose} className="size-auto p-1 text-muted-foreground hover:text-foreground hover:bg-transparent">
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
         <form
           onSubmit={(e) => { e.preventDefault(); if (name.trim()) onCreate(name.trim()); }}
@@ -520,21 +525,26 @@ export function FileManagerClient({ initialFiles }: { initialFiles: FMFile[] }) 
           {/* Breadcrumb */}
           {breadcrumbs.length > 0 && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1.5">
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => setCurrentPath("")}
-                className="hover:text-foreground transition-colors"
+                className="size-auto p-0.5 hover:text-foreground hover:bg-transparent"
               >
                 <Home className="w-3 h-3" />
-              </button>
+              </Button>
               {breadcrumbs.map((crumb) => (
                 <span key={crumb.path} className="flex items-center gap-1">
                   <ChevronRight className="w-3 h-3 shrink-0" />
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
                     onClick={() => setCurrentPath(crumb.path)}
-                    className="hover:text-foreground transition-colors"
+                    className="h-auto p-0 text-xs hover:text-foreground hover:bg-transparent"
                   >
                     {crumb.name}
-                  </button>
+                  </Button>
                 </span>
               ))}
             </div>
@@ -546,9 +556,10 @@ export function FileManagerClient({ initialFiles }: { initialFiles: FMFile[] }) 
 
         {/* Upload dropdown */}
         <div ref={uploadMenuRef} className="relative">
-          <button
+          <Button
+            type="button"
             onClick={() => setUploadMenuOpen((v) => !v)}
-            className="flex items-center gap-2 h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium transition-colors shadow-sm"
+            className="gap-2 h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium shadow-sm"
           >
             <Upload className="w-4 h-4" />
             Upload
@@ -558,7 +569,7 @@ export function FileManagerClient({ initialFiles }: { initialFiles: FMFile[] }) 
                 uploadMenuOpen && "rotate-180",
               )}
             />
-          </button>
+          </Button>
           <AnimatePresence>
             {uploadMenuOpen && (
               <motion.div
@@ -585,14 +596,16 @@ export function FileManagerClient({ initialFiles }: { initialFiles: FMFile[] }) 
                     fn: () => { setUploadMenuOpen(false); folderInputRef.current?.click(); },
                   },
                 ].map((item) => (
-                  <button
+                  <Button
                     key={item.label}
+                    type="button"
+                    variant="ghost"
                     onClick={item.fn}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/60 transition-colors text-left"
+                    className="h-auto w-full justify-start rounded-none flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/60 text-left"
                   >
                     <span className="text-muted-foreground">{item.icon}</span>
                     {item.label}
-                  </button>
+                  </Button>
                 ))}
               </motion.div>
             )}
@@ -646,12 +659,15 @@ export function FileManagerClient({ initialFiles }: { initialFiles: FMFile[] }) 
                       {folder.name}
                     </span>
                   )}
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={(e) => openCtxMenu(folder, e)}
-                    className="ml-auto opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-muted transition-all shrink-0"
+                    className="size-auto ml-auto opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-muted shrink-0"
                   >
                     <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>
@@ -664,11 +680,14 @@ export function FileManagerClient({ initialFiles }: { initialFiles: FMFile[] }) 
             <h2 className="text-sm font-semibold text-foreground">Dateien</h2>
             <div className="flex items-center bg-muted/50 rounded-lg p-0.5 gap-0.5">
               {(["grid", "list"] as const).map((mode) => (
-                <button
+                <Button
                   key={mode}
+                  type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setViewMode(mode)}
                   className={cn(
-                    "p-1.5 rounded-md transition-colors",
+                    "size-auto p-1.5 rounded-md",
                     viewMode === mode
                       ? "bg-card shadow-sm text-foreground"
                       : "text-muted-foreground hover:text-foreground",
@@ -679,7 +698,7 @@ export function FileManagerClient({ initialFiles }: { initialFiles: FMFile[] }) 
                   ) : (
                     <List className="w-3.5 h-3.5" />
                   )}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -698,12 +717,15 @@ export function FileManagerClient({ initialFiles }: { initialFiles: FMFile[] }) 
                 >
                   <div className="flex items-start justify-between mb-3">
                     <span className="text-[11px] text-muted-foreground">{fmtSize(file.size)}</span>
-                    <button
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={(e) => openCtxMenu(file, e)}
-                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded-md hover:bg-muted transition-all"
+                      className="size-auto opacity-0 group-hover:opacity-100 p-0.5 rounded-md hover:bg-muted"
                     >
                       <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
-                    </button>
+                    </Button>
                   </div>
                   <div className="flex justify-center mb-3">
                     <FileTypeIcon name={file.name} size={52} />
@@ -744,12 +766,15 @@ export function FileManagerClient({ initialFiles }: { initialFiles: FMFile[] }) 
                   <span className="text-xs text-muted-foreground w-12 text-right shrink-0">
                     {fmtSize(file.size)}
                   </span>
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={(e) => openCtxMenu(file, e)}
-                    className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-muted/60 transition-all"
+                    className="size-auto opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-muted/60"
                   >
                     <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>

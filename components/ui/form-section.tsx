@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Button } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 
 interface FormSectionProps {
@@ -33,11 +34,12 @@ export function FormSection({
       )}
     >
       {/* Header */}
-      <button
+      <Button
         type="button"
+        variant="ghost"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "w-full flex items-center justify-between bg-card hover:bg-muted/30 transition-colors text-left",
+          "h-auto rounded-none w-full flex items-center justify-between bg-card hover:bg-muted/30 text-left",
           nested ? "px-4 py-2.5" : "px-5 py-3.5",
         )}
       >
@@ -56,7 +58,7 @@ export function FormSection({
             open && "rotate-180",
           )}
         />
-      </button>
+      </Button>
 
       {/* Content */}
       <AnimatePresence initial={false}>

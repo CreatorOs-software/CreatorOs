@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { QueryKeys } from "@/lib/query-keys";
 import { Calendar, Edit3, Plus, Search, StickyNote, Trash2 } from "lucide-react";
-import { Input } from "@talentos/ui";
+import { Button, Input } from "@talentos/ui";
 import { FloatingWindow } from "@/components/ui/floating-window";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import {
@@ -166,14 +166,16 @@ export function NotesPanel() {
                 className="h-8 pl-8 pr-3 text-xs"
               />
             </div>
-            <button
+            <Button
+              type="button"
+              variant="ghost"
               onClick={addNote}
               disabled={creating}
-              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-foreground px-3 py-1.5 text-xs font-medium text-background transition-opacity hover:opacity-80 disabled:opacity-50"
+              className="h-auto w-full gap-1.5 rounded-lg bg-foreground px-3 py-1.5 text-xs font-medium text-background hover:bg-foreground hover:opacity-80"
             >
               <Plus className="size-3.5" />
               Neue Notiz
-            </button>
+            </Button>
           </div>
 
           <div className="flex-1 overflow-y-auto">
@@ -187,10 +189,12 @@ export function NotesPanel() {
               const creator = creators.find((c) => c.id === note.creator_id);
               const brand = brands.find((b) => b.id === note.brand_id);
               return (
-                <button
+                <Button
                   key={note.id}
+                  type="button"
+                  variant="ghost"
                   onClick={() => setActiveNote(note)}
-                  className={`group w-full border-b border-border/60 p-3 text-left transition-colors hover:bg-muted/60 ${
+                  className={`h-auto flex-col items-stretch group w-full rounded-none border-b border-border/60 p-3 text-left hover:bg-muted/60 ${
                     activeNote?.id === note.id
                       ? "border-l-2 border-l-foreground bg-background"
                       : ""
@@ -198,12 +202,15 @@ export function NotesPanel() {
                 >
                   <div className="flex items-start justify-between gap-1">
                     <div className="truncate text-xs font-semibold text-foreground">{note.title || "Ohne Titel"}</div>
-                    <button
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={(e) => { e.stopPropagation(); deleteNote(note); }}
-                      className="invisible shrink-0 rounded p-0.5 text-muted-foreground hover:text-red-600 group-hover:visible"
+                      className="size-auto invisible shrink-0 rounded p-0.5 text-muted-foreground hover:text-red-600 hover:bg-transparent group-hover:visible"
                     >
                       <Trash2 className="size-3" />
-                    </button>
+                    </Button>
                   </div>
                   <div className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
                     {stripHtml(note.content) || "Leere Notiz"}
@@ -232,7 +239,7 @@ export function NotesPanel() {
                       )}
                     </div>
                   </div>
-                </button>
+                </Button>
               );
             })}
           </div>

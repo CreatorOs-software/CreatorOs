@@ -79,9 +79,12 @@ function InviteCard({ creatorId, platform, platformLabel }: InviteCardProps) {
           <code className="flex-1 truncate text-xs bg-background rounded-lg px-3 py-1.5 border border-border-light text-muted-foreground ">
             {inviteUrl}
           </code>
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={copyLink}
-            className="shrink-0 p-1.5 rounded-md hover:bg-background transition-colors text-muted-foreground hover:text-foreground"
+            className="shrink-0 size-auto p-1.5 rounded-md hover:bg-background text-muted-foreground hover:text-foreground"
             title="Kopieren"
           >
             {copied ? (
@@ -89,7 +92,7 @@ function InviteCard({ creatorId, platform, platformLabel }: InviteCardProps) {
             ) : (
               <Copy className="w-3.5 h-3.5" />
             )}
-          </button>
+          </Button>
           <a
             href={inviteUrl}
             target="_blank"

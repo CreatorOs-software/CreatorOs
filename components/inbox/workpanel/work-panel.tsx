@@ -282,13 +282,15 @@ export function WorkPanel({
       {open && (
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
           {selected && workState.phase !== "idle" && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
               onClick={() => onSetWorkState({ phase: "idle" })}
-              className="mb-3 flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+              className="h-auto p-0 mb-3 flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground hover:bg-transparent"
             >
               <ChevronLeft className="h-3 w-3" />
               Zurück
-            </button>
+            </Button>
           )}
           {!selected && (
             <p className="pt-8 text-center text-xs text-muted-foreground">

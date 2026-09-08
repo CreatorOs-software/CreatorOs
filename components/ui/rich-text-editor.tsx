@@ -17,6 +17,7 @@ import {
   Trash2,
   Underline as UnderlineIcon,
 } from "lucide-react";
+import { Button } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 
 interface RichTextEditorProps {
@@ -83,46 +84,48 @@ export function RichTextEditor({
     <div className={cn("flex flex-col overflow-hidden", className)}>
       {/* Toolbar */}
       <div className="flex shrink-0 items-center gap-0.5 border-b border-border px-3 py-1.5">
-        <button type="button" title="Fett (Ctrl+B)" onClick={() => editor.chain().focus().toggleBold().run()} className={btn(editor.isActive("bold"))}>
+        <Button type="button" variant="ghost" size="icon" title="Fett (Ctrl+B)" onClick={() => editor.chain().focus().toggleBold().run()} className={btn(editor.isActive("bold"))}>
           <Bold className="size-3.5" />
-        </button>
-        <button type="button" title="Kursiv (Ctrl+I)" onClick={() => editor.chain().focus().toggleItalic().run()} className={btn(editor.isActive("italic"))}>
+        </Button>
+        <Button type="button" variant="ghost" size="icon" title="Kursiv (Ctrl+I)" onClick={() => editor.chain().focus().toggleItalic().run()} className={btn(editor.isActive("italic"))}>
           <Italic className="size-3.5" />
-        </button>
-        <button type="button" title="Unterstrichen (Ctrl+U)" onClick={() => editor.chain().focus().toggleUnderline().run()} className={btn(editor.isActive("underline"))}>
+        </Button>
+        <Button type="button" variant="ghost" size="icon" title="Unterstrichen (Ctrl+U)" onClick={() => editor.chain().focus().toggleUnderline().run()} className={btn(editor.isActive("underline"))}>
           <UnderlineIcon className="size-3.5" />
-        </button>
+        </Button>
 
         <div className="mx-1.5 h-4 w-px bg-border" />
 
-        <button type="button" title="Aufzählung" onClick={() => editor.chain().focus().toggleBulletList().run()} className={btn(editor.isActive("bulletList"))}>
+        <Button type="button" variant="ghost" size="icon" title="Aufzählung" onClick={() => editor.chain().focus().toggleBulletList().run()} className={btn(editor.isActive("bulletList"))}>
           <List className="size-3.5" />
-        </button>
-        <button type="button" title="Nummerierte Liste" onClick={() => editor.chain().focus().toggleOrderedList().run()} className={btn(editor.isActive("orderedList"))}>
+        </Button>
+        <Button type="button" variant="ghost" size="icon" title="Nummerierte Liste" onClick={() => editor.chain().focus().toggleOrderedList().run()} className={btn(editor.isActive("orderedList"))}>
           <ListOrdered className="size-3.5" />
-        </button>
+        </Button>
 
         <div className="mx-1.5 h-4 w-px bg-border" />
 
-        <button type="button" title="Zitat" onClick={() => editor.chain().focus().toggleBlockquote().run()} className={btn(editor.isActive("blockquote"))}>
+        <Button type="button" variant="ghost" size="icon" title="Zitat" onClick={() => editor.chain().focus().toggleBlockquote().run()} className={btn(editor.isActive("blockquote"))}>
           <Quote className="size-3.5" />
-        </button>
-        <button type="button" title="Code" onClick={() => editor.chain().focus().toggleCode().run()} className={btn(editor.isActive("code"))}>
+        </Button>
+        <Button type="button" variant="ghost" size="icon" title="Code" onClick={() => editor.chain().focus().toggleCode().run()} className={btn(editor.isActive("code"))}>
           <Code className="size-3.5" />
-        </button>
-        <button type="button" title="Link setzen" onClick={setLink} className={btn(editor.isActive("link"))}>
+        </Button>
+        <Button type="button" variant="ghost" size="icon" title="Link setzen" onClick={setLink} className={btn(editor.isActive("link"))}>
           <LinkIcon className="size-3.5" />
-        </button>
+        </Button>
 
         <div className="ml-auto">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             title="Inhalt leeren"
             onClick={() => { editor.chain().focus().clearContent().run(); onChange(""); }}
             className={cn(btn(false), "hover:bg-red-50 hover:text-red-600")}
           >
             <Trash2 className="size-3.5" />
-          </button>
+          </Button>
         </div>
       </div>
 

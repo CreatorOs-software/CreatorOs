@@ -64,18 +64,19 @@ function InviteForm({ onSuccess }: { onSuccess: (token: string) => void }) {
         <div className="divide-y divide-border-light">
           {PERMISSION_GROUPS.map(({ label, permissions: [readKey, editKey] }) => (
             <div key={label} className="py-2.5 flex items-center gap-3">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => toggleGroup(readKey, editKey)}
                 className={cn(
-                  "text-xs font-medium w-24 text-left",
+                  "h-auto p-0 justify-start hover:bg-transparent text-xs font-medium w-24 text-left",
                   permissions[readKey] || permissions[editKey]
                     ? "text-foreground"
                     : "text-muted-foreground",
                 )}
               >
                 {label}
-              </button>
+              </Button>
               <div className="flex items-center gap-4 ml-auto">
                 {(
                   [
@@ -135,9 +136,15 @@ function InviteLinkBanner({ token, onDismiss }: { token: string; onDismiss: () =
         {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
         {copied ? "Kopiert" : "Kopieren"}
       </Button>
-      <button onClick={onDismiss} className="text-xs text-muted-foreground hover:text-foreground">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={onDismiss}
+        className="size-auto p-1 text-xs text-muted-foreground hover:text-foreground hover:bg-transparent"
+      >
         ✕
-      </button>
+      </Button>
     </div>
   );
 }

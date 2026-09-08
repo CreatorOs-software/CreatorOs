@@ -2,20 +2,24 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { Button } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { STATUS_STYLE } from "./constants";
 
 export function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <button
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
       onClick={() => {
         navigator.clipboard.writeText(value).then(() => {
           setCopied(true);
           setTimeout(() => setCopied(false), 1500);
         });
       }}
-      className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+      className="size-auto p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
       title="Kopieren"
     >
       {copied ? (
@@ -23,7 +27,7 @@ export function CopyButton({ value }: { value: string }) {
       ) : (
         <Copy className="w-3.5 h-3.5" />
       )}
-    </button>
+    </Button>
   );
 }
 

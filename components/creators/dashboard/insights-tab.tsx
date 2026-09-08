@@ -26,14 +26,17 @@ import { OAUTH_SUPPORTED, PLATFORM_ICONS, fmt, fmtDuration, fmtMoney, shortDay }
 function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <button
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
       onClick={() => {
         navigator.clipboard.writeText(value).then(() => {
           setCopied(true);
           setTimeout(() => setCopied(false), 1500);
         });
       }}
-      className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+      className="size-auto p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
       title="Kopieren"
     >
       {copied ? (
@@ -41,7 +44,7 @@ function CopyButton({ value }: { value: string }) {
       ) : (
         <Copy className="w-3.5 h-3.5" />
       )}
-    </button>
+    </Button>
   );
 }
 
@@ -91,18 +94,20 @@ export function MiniBarChart({
         <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
         <div className="flex items-center gap-1">
           {([7, 30] as const).map((d) => (
-            <button
+            <Button
               key={d}
+              type="button"
+              variant="ghost"
               onClick={() => setDays(d)}
               className={cn(
-                "text-[10px] px-1.5 py-0.5 rounded-md transition-colors",
+                "h-auto text-[10px] px-1.5 py-0.5 rounded-md hover:bg-transparent",
                 days === d
                   ? "bg-primary/10 text-primary font-medium"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
               {d}T
-            </button>
+            </Button>
           ))}
           <CopyButton value={formatter(total)} />
         </div>
@@ -493,7 +498,10 @@ export function DisconnectedPlatformTab({
             <p className="flex-1 text-xs font-mono truncate text-muted-foreground">
               {inviteUrl}
             </p>
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => {
                 if (!inviteUrl) return;
                 navigator.clipboard.writeText(inviteUrl).then(() => {
@@ -501,14 +509,14 @@ export function DisconnectedPlatformTab({
                   setTimeout(() => setCopied(false), 1500);
                 });
               }}
-              className="shrink-0 p-1 rounded hover:bg-background transition-colors"
+              className="size-auto shrink-0 p-1 rounded hover:bg-background"
             >
               {copied ? (
                 <Check className="w-4 h-4 text-green-500" />
               ) : (
                 <Copy className="w-4 h-4 text-muted-foreground" />
               )}
-            </button>
+            </Button>
           </div>
           <a
             href={inviteUrl ?? "#"}

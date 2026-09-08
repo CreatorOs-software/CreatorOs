@@ -6,6 +6,7 @@ import { ArrowLeft, Calendar, User } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar-creator";
+import { Button } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import type { DealFull, Invoice } from "./types";
 import { fmtMoney } from "./constants";
@@ -288,22 +289,28 @@ function TodosWidget({ creatorId }: { creatorId: string }) {
     return (
       <Card className="p-5 flex flex-col gap-4 w-72 shrink-0 h-full">
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => setSelected(null)}
-            className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted transition-colors"
+            className="size-7 rounded-md text-muted-foreground hover:bg-muted"
           >
             <ArrowLeft className="size-3.5" />
-          </button>
+          </Button>
           <span className="text-sm font-semibold">Detail</span>
         </div>
 
         <div className="flex flex-col gap-4 flex-1">
           {/* Checkbox + title */}
           <div className="flex items-start gap-3">
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => toggleTodo(selected)}
               className={cn(
-                "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border transition-all duration-150",
+                "mt-0.5 size-5 shrink-0 rounded-md border transition-all duration-150 hover:bg-transparent",
                 selected.done
                   ? "border-foreground bg-foreground"
                   : "border-border bg-background",
@@ -314,7 +321,7 @@ function TodosWidget({ creatorId }: { creatorId: string }) {
                   <path d="M1 4.2L4 7L11 1" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               )}
-            </button>
+            </Button>
             <p className={cn("text-sm font-semibold leading-snug", selected.done && "line-through text-muted-foreground")}>
               {selected.title}
             </p>
@@ -406,10 +413,13 @@ function TodosWidget({ creatorId }: { creatorId: string }) {
                 onClick={() => setSelected(todo)}
               >
                 {/* Checkbox */}
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={(e) => { e.stopPropagation(); toggleTodo(todo); }}
                   className={cn(
-                    "flex size-4 shrink-0 items-center justify-center rounded border transition-all duration-150",
+                    "size-4 shrink-0 rounded border transition-all duration-150 hover:bg-transparent",
                     todo.done
                       ? "border-foreground bg-foreground"
                       : "border-border bg-background",
@@ -420,7 +430,7 @@ function TodosWidget({ creatorId }: { creatorId: string }) {
                       <path d="M1 4.2L4 7L11 1" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   )}
-                </button>
+                </Button>
 
                 {/* Priority dot */}
                 {pCfg && <span className={cn("size-1.5 rounded-full shrink-0", pCfg.dot)} />}

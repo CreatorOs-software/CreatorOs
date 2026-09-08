@@ -129,12 +129,14 @@ export function AnfragenPanel({
                   </label>
                 ))}
                 {formatFilter.size > 0 && (
-                  <button
-                    className="text-[10px] text-muted-foreground hover:text-foreground mt-2 px-1 text-left"
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-auto justify-start text-[10px] text-muted-foreground hover:text-foreground hover:bg-transparent mt-2 px-1 text-left"
                     onClick={() => setFormatFilter(new Set())}
                   >
                     Zurücksetzen
-                  </button>
+                  </Button>
                 )}
               </div>
             ) : undefined

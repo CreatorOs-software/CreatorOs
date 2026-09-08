@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { QueryKeys } from "@/lib/query-keys";
 import {
@@ -139,12 +140,15 @@ function ReplyComposer({
             kein Vorgang – wird nicht dokumentiert
           </span>
         </div>
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
           onClick={onClose}
-          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="h-6 w-6 rounded text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <X className="h-3.5 w-3.5" />
-        </button>
+        </Button>
       </div>
 
       {/* To line */}
@@ -227,29 +231,31 @@ function ReplyComposer({
       {/* Footer */}
       <div className="flex items-center justify-between border-t border-[#E7E7E7] px-4 py-2.5">
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground">
+          <Button type="button" variant="ghost" className="h-auto p-0 gap-1.5 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground">
             <Paperclip className="h-3.5 w-3.5" />
             Mediakit anhängen
-          </button>
+          </Button>
           <VariablePicker onPick={slashMenu.insertVariable} />
-          <button
+          <Button
             type="button"
+            variant="ghost"
             disabled={!reply.trim() || correcting}
             onClick={() => setSavingAsTemplate(true)}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            className="h-auto p-0 gap-1.5 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground"
           >
             <FilePlus className="h-3.5 w-3.5" />
             Vorlage erstellen
-          </button>
+          </Button>
         </div>
-        <button
+        <Button
+          type="button"
           disabled={!reply.trim() || sending || correcting}
           onClick={handleSend}
-          className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-40"
+          className="h-auto gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
         >
           {sending && <Loader2 className="h-3 w-3 animate-spin" />}
           {sending ? "Senden…" : "Senden"}
-        </button>
+        </Button>
       </div>
 
       <NeueTemplateDialog
@@ -355,35 +361,47 @@ export function EmailDetailPanel({
       {/* Toolbar */}
       <div className="flex items-center justify-between border-b border-[#E7E7E7] px-4 py-2">
         <div className="flex items-center gap-1">
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted"
+            className="h-7 w-7 rounded hover:bg-muted"
           >
             <X className="h-4 w-4" />
-          </button>
+          </Button>
           <div className="mx-1 h-4 w-px bg-border" />
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={onPrev}
             disabled={selectedIndex <= 0}
-            className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted disabled:opacity-30"
+            className="h-7 w-7 rounded hover:bg-muted"
           >
             <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={onNext}
             disabled={selectedIndex >= threads.length - 1}
-            className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted disabled:opacity-30"
+            className="h-7 w-7 rounded hover:bg-muted"
           >
             <ChevronRight className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
         <div className="flex items-center gap-1">
-          <button className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted">
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-muted">
             <Copy className="h-4 w-4 text-muted-foreground" />
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={onStar}
-            className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted"
+            className="h-7 w-7 rounded hover:bg-muted"
           >
             <Star
               className={cn(
@@ -393,8 +411,11 @@ export function EmailDetailPanel({
                   : "text-muted-foreground",
               )}
             />
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => {
               if (labeling) return;
               setLabeling(true);
@@ -402,10 +423,10 @@ export function EmailDetailPanel({
             }}
             disabled={labeling || thread.label_status === "processing"}
             title="Diese E-Mail labeln"
-            className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted disabled:opacity-40"
+            className="h-7 w-7 rounded hover:bg-muted"
           >
             <Sparkles className={cn("h-4 w-4 text-muted-foreground", labeling && "animate-pulse")} />
-          </button>
+          </Button>
           {/* Label picker */}
           <Popover>
             <PopoverTrigger
@@ -422,8 +443,10 @@ export function EmailDetailPanel({
               {SYSTEM_LABELS.map((sys) => {
                 const assigned = thread.labels.some((l) => l.name === sys.name);
                 return (
-                  <button
+                  <Button
                     key={sys.name}
+                    type="button"
+                    variant="ghost"
                     onClick={() =>
                       onToggleCategoryLabel(
                         thread.id,
@@ -432,7 +455,7 @@ export function EmailDetailPanel({
                         !assigned,
                       )
                     }
-                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted"
+                    className="h-auto justify-start flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm font-normal hover:bg-muted"
                   >
                     <span
                       className="h-2.5 w-2.5 shrink-0 rounded-full"
@@ -444,7 +467,7 @@ export function EmailDetailPanel({
                     {assigned && (
                       <Check className="h-3.5 w-3.5 shrink-0 text-foreground" />
                     )}
-                  </button>
+                  </Button>
                 );
               })}
               {/* User labels */}
@@ -465,12 +488,14 @@ export function EmailDetailPanel({
                         (l2) => l2.id === label.id,
                       );
                       return (
-                        <button
+                        <Button
                           key={label.id}
+                          type="button"
+                          variant="ghost"
                           onClick={() =>
                             onToggleLabel(thread.id, label.id, !assigned)
                           }
-                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted"
+                          className="h-auto justify-start flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm font-normal hover:bg-muted"
                         >
                           <span
                             className="h-2.5 w-2.5 shrink-0 rounded-full"
@@ -482,7 +507,7 @@ export function EmailDetailPanel({
                           {assigned && (
                             <Check className="h-3.5 w-3.5 shrink-0 text-foreground" />
                           )}
-                        </button>
+                        </Button>
                       );
                     })}
                 </>
@@ -490,22 +515,28 @@ export function EmailDetailPanel({
             </PopoverContent>
           </Popover>
 
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={onArchive}
-            className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted"
+            className="h-7 w-7 rounded hover:bg-muted"
             title="Archivieren"
           >
             <Archive className="h-4 w-4 text-muted-foreground" />
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={onDelete}
-            className="flex h-7 w-7 items-center justify-center rounded border border-[#FCCDD5] bg-[#FDE4E9] hover:bg-[#FDE4E9]/80"
+            className="h-7 w-7 rounded border border-[#FCCDD5] bg-[#FDE4E9] hover:bg-[#FDE4E9]/80"
           >
             <Trash2 className="h-4 w-4 text-[#F43F5E]" />
-          </button>
-          <button className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted">
+          </Button>
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-muted">
             <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -580,12 +611,14 @@ export function EmailDetailPanel({
             ) : bodyError ? (
               <div className="flex flex-col items-start gap-2 py-6 text-sm text-muted-foreground">
                 <p>Nachricht konnte nicht geladen werden.</p>
-                <button
+                <Button
+                  type="button"
+                  variant="link"
                   onClick={() => void refetchBody()}
-                  className="text-xs underline hover:text-foreground"
+                  className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
                 >
                   Nochmal versuchen
-                </button>
+                </Button>
               </div>
             ) : body?.body_html ? (
               <div
@@ -667,17 +700,19 @@ export function EmailDetailPanel({
                 },
               ] as const
             ).map(({ icon, label, shortcut, action }) => (
-              <button
+              <Button
                 key={label}
+                type="button"
+                variant="outline"
                 onClick={action}
-                className="flex items-center gap-2 rounded-lg border border-[#E7E7E7]  px-3 py-2 text-sm hover:bg-muted"
+                className="h-auto gap-2 rounded-lg border-[#E7E7E7] px-3 py-2 text-sm font-normal hover:bg-muted"
               >
                 {icon}
                 <span>{label}</span>
                 <kbd className="rounded border border-[#E7E7E7] bg-muted px-1 font-mono text-[10px] text-muted-foreground">
                   {shortcut}
                 </kbd>
-              </button>
+              </Button>
             ))}
           </div>
         ) : (
@@ -717,12 +752,14 @@ export function EmptyState({ onCompose }: { onCompose?: () => void }) {
             Wähle eine E-Mail aus oder
           </p>
           <div className="mt-4 grid grid-cols-1 gap-2">
-            <button
+            <Button
+              type="button"
+              variant="outline"
               onClick={onCompose}
-              className="rounded-lg border border-[#E7E7E7] bg-white px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+              className="h-auto rounded-lg border-[#E7E7E7] bg-white px-4 py-2 text-sm font-normal text-foreground hover:bg-muted"
             >
               E-Mail senden
-            </button>
+            </Button>
           </div>
         </div>
       </div>

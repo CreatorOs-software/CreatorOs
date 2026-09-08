@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@talentos/ui";
+import { Button, Input } from "@talentos/ui";
 import { Avatar } from "@/components/ui/avatar-creator";
 import { QueryKeys } from "@/lib/query-keys";
 import { GOOGLE_PATHS } from "./constants";
@@ -221,12 +221,15 @@ function FormStep({ provider, form, setForm, testResult, testing, saving, saveEr
     <div className="flex flex-col gap-4">
       <DialogHeader>
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={onBack}
-            className="flex h-6 w-6 items-center justify-center rounded hover:bg-muted text-muted-foreground"
+            className="h-6 w-6 rounded hover:bg-muted text-muted-foreground"
           >
             <ChevronLeft className="h-4 w-4" />
-          </button>
+          </Button>
           <DialogTitle>{PROVIDER_LABELS[provider]} verbinden</DialogTitle>
         </div>
         <p className="text-xs text-muted-foreground ml-8">
@@ -361,31 +364,36 @@ function FormStep({ provider, form, setForm, testResult, testing, saving, saveEr
 
       {/* Footer */}
       <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#E7E7E7]">
-        <button
+        <Button
+          type="button"
+          variant="outline"
           onClick={onTest}
           disabled={!canTest || testing}
-          className="flex items-center gap-1.5 rounded-lg border border-[#E7E7E7] px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+          className="h-auto gap-1.5 rounded-lg border-[#E7E7E7] px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
         >
           {testing
             ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
             : <RefreshCw className="h-3.5 w-3.5" />}
           {testing ? "Teste…" : "Verbindung testen"}
-        </button>
+        </Button>
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            type="button"
+            variant="ghost"
             onClick={onBack}
-            className="px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="h-auto px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-transparent"
           >
             Zurück
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
             onClick={onSave}
             disabled={!canSave || saving}
-            className="flex items-center gap-1.5 rounded-lg bg-foreground px-4 py-1.5 text-xs font-semibold text-background disabled:opacity-40 disabled:cursor-not-allowed"
+            className="h-auto gap-1.5 rounded-lg bg-foreground px-4 py-1.5 text-xs font-semibold text-background hover:bg-foreground/90"
           >
             {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
             {saving ? "Verbinde…" : "Postfach verbinden"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -429,11 +437,13 @@ function CreatorStep({ integrationEmail, creators, assigning, onAssign }: Creato
         ) : (
           <div className="grid grid-cols-2 gap-2">
             {creators.map((c) => (
-              <button
+              <Button
                 key={c.id}
+                type="button"
+                variant="ghost"
                 onClick={() => setSelected(selected === c.id ? null : c.id)}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors",
+                  "h-auto justify-start flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left",
                   selected === c.id
                     ? "border-foreground bg-foreground/5"
                     : "border-[#E7E7E7] hover:bg-muted/50",
@@ -444,27 +454,30 @@ function CreatorStep({ integrationEmail, creators, assigning, onAssign }: Creato
                 {selected === c.id && (
                   <Check className="h-3.5 w-3.5 shrink-0 text-foreground" />
                 )}
-              </button>
+              </Button>
             ))}
           </div>
         )}
       </div>
 
       <div className="flex items-center justify-end gap-2 pt-1 border-t border-[#E7E7E7]">
-        <button
+        <Button
+          type="button"
+          variant="ghost"
           onClick={() => onAssign(null)}
-          className="px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="h-auto px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-transparent"
         >
           Überspringen
-        </button>
-        <button
+        </Button>
+        <Button
+          type="button"
           onClick={() => onAssign(selected)}
           disabled={!selected || assigning}
-          className="flex items-center gap-1.5 rounded-lg bg-foreground px-4 py-1.5 text-xs font-semibold text-background disabled:opacity-40 disabled:cursor-not-allowed"
+          className="h-auto gap-1.5 rounded-lg bg-foreground px-4 py-1.5 text-xs font-semibold text-background hover:bg-foreground/90"
         >
           {assigning && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
           {assigning ? "Speichere…" : "Zuordnen"}
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Combobox as ComboboxPrimitive } from "@base-ui/react/combobox";
 
+import { Button } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { CheckIcon, ChevronDownIcon, XIcon } from "lucide-react";
 
@@ -38,7 +39,12 @@ function ComboboxInputGroup({
       {children}
       <ComboboxPrimitive.Trigger
         render={
-          <button className="flex items-center justify-center px-1.5 text-muted-foreground outline-none" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-auto rounded-none px-1.5 text-muted-foreground hover:bg-transparent"
+          />
         }
       >
         <ChevronDownIcon className="size-4" />
