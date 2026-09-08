@@ -4,10 +4,12 @@ import { QueryKeys } from "@/lib/query-keys";
 import { useQueries, UseQueryOptions } from "@tanstack/react-query";
 
 const PREFETCH_QUERIES: UseQueryOptions[] = [
+  // Nur der schlanke Ungelesen-Zähler fürs Sidebar-Badge. Der vollständige
+  // Inbox-Payload (`/api/inbox`) wird erst auf der Inbox-Seite selbst geladen.
   {
-    queryKey: QueryKeys.inbox.all(),
-    queryFn: () => fetch("/api/inbox").then((r) => r.json()),
-    staleTime: 5 * 60_000,
+    queryKey: QueryKeys.inbox.unreadCount(),
+    queryFn: () => fetch("/api/inbox/unread-count").then((r) => r.json()),
+    staleTime: 60_000,
   },
   {
     queryKey: QueryKeys.creators.list(),

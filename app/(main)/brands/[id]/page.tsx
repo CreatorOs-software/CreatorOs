@@ -17,7 +17,7 @@ import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Card } from "@/components/ui/card";
 import { Auflister } from "@/components/ui/auflister";
-import { Button } from "@talentos/ui";
+import { Button, Input } from "@talentos/ui";
 import {
   Dialog,
   DialogContent,
@@ -35,7 +35,6 @@ import {
   fmtDate,
   fmtMoney,
 } from "@/components/creators/dashboard/constants";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 // ── Types ──────────────────────────────────────────────────────────────────────

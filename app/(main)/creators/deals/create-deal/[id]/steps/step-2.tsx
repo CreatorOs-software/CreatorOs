@@ -1,9 +1,8 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@talentos/ui";
+import { Button, Input } from "@talentos/ui";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { FormSection } from "@/components/ui/form-section";
 import { Plus, X } from "lucide-react";

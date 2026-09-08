@@ -233,6 +233,10 @@ export function OrbitInbox() {
       });
       try {
         await patchThread(id, patch);
+        // Sidebar-Badge zieht seinen Zähler aus einem eigenen, schlanken Query.
+        if (patch.unread !== undefined || patch.folder !== undefined) {
+          void queryClient.invalidateQueries({ queryKey: QueryKeys.inbox.unreadCount() });
+        }
       } catch {
         queryClient.setQueryData(QueryKeys.inbox.all(), previous);
       }

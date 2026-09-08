@@ -19,6 +19,12 @@ export const CommunicationService = {
     return CommunicationRepository.findThreadBody(supabase, id, agencyId);
   },
 
+  async getUnreadCount(): Promise<number> {
+    const supabase = await createClient();
+    const { agencyId } = await getAuthContext(supabase);
+    return CommunicationRepository.countUnreadInbox(supabase, agencyId);
+  },
+
   async patchThread(id: string, patch: ThreadPatch): Promise<void> {
     const supabase = await createClient();
     await getAuthContext(supabase);

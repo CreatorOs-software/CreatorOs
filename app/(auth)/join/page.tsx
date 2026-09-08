@@ -3,8 +3,7 @@
 import { Suspense, useState, useTransition } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { register } from "@/domains/auth";
-import { Button } from "@talentos/ui";
-import { Input } from "@/components/ui/input";
+import { Button, Input } from "@talentos/ui";
 import { Label } from "@/components/ui/label";
 
 function JoinForm() {

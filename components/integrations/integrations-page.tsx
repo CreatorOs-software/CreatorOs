@@ -5,8 +5,7 @@ import { QueryKeys } from "@/lib/query-keys";
 import { useState } from "react";
 import { Inbox, RefreshCw, X, Check, AlertCircle, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@talentos/ui";
-import { Input } from "@/components/ui/input";
+import { Button, Input } from "@talentos/ui";
 import {
   Select,
   SelectContent,

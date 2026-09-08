@@ -24,8 +24,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Button } from "@talentos/ui";
-import { Input } from "@/components/ui/input";
+import { Button, Input } from "@talentos/ui";
 import {
   Popover,
   PopoverContent,

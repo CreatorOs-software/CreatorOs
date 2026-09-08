@@ -23,7 +23,7 @@ export async function getAuthContext(supabase: SupabaseClient): Promise<AuthCont
 
   const { data } = await supabase
     .from("profiles")
-    .select("*")
+    .select("agency_id, display_name, role, permissions")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -36,6 +36,7 @@ export async function getAuthContext(supabase: SupabaseClient): Promise<AuthCont
   return {
     userId: user.id,
     email: user.email ?? null,
+    fullName: (user.user_metadata?.full_name as string | undefined) ?? null,
     agencyId: profile.agency_id as string,
     displayName: (profile.display_name as string | null) ?? null,
     role,

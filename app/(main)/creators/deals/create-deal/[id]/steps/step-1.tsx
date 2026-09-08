@@ -1,9 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@talentos/ui";
+import { Button, Input } from "@talentos/ui";
 import {
   Select,
   SelectContent,

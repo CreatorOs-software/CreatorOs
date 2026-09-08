@@ -19,6 +19,8 @@ export type PermissionMap = Record<Permission, boolean>;
 export type AuthContext = {
   userId: string;
   email: string | null;
+  /** Name aus den Supabase-User-Metadaten (`user_metadata.full_name`). */
+  fullName: string | null;
   agencyId: string;
   displayName: string | null;
   role: Role;

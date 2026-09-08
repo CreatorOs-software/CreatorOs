@@ -14,8 +14,7 @@ import {
 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { QueryKeys } from "@/lib/query-keys";
-import { Input } from "@/components/ui/input";
-import { Button } from "@talentos/ui";
+import { Button, Input } from "@talentos/ui";
 import { Badge } from "@/components/ui/badge";
 import { AvatarCreator } from "@/components/ui/avatar-creator";
 import { Auflister } from "@/components/ui/auflister";
@@ -180,13 +179,9 @@ export default function CreatorsPage() {
     },
   });
 
-  const { data: listData, isPending } = useQuery<{ creators: Creator[] }>({
-    queryKey: QueryKeys.creators.list(),
-    queryFn: () => fetch("/api/creators/list").then((r) => r.json()),
-    staleTime: 5 * 60_000,
-  });
-
-  const { data: allData } = useQuery<CreatorsPageData>({
+  // `/api/creators` liefert die Creator-Liste bereits mit (plus Deals für die
+  // Kennzahlen). Kein zweiter Abruf von `/api/creators/list` auf dieser Seite.
+  const { data: allData, isPending } = useQuery<CreatorsPageData>({
     queryKey: QueryKeys.creators.all(),
     queryFn: () => fetch("/api/creators").then((r) => r.json()),
     staleTime: 5 * 60_000,
@@ -231,7 +226,7 @@ export default function CreatorsPage() {
     }
   }
 
-  const filtered = (listData?.creators ?? []).filter(
+  const filtered = creators.filter(
     (c) =>
       !search ||
       c.full_name.toLowerCase().includes(search.toLowerCase()) ||

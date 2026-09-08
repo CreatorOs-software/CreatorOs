@@ -35,8 +35,7 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@talentos/ui";
-import { Input } from "@/components/ui/input"
+import { Button, Input } from "@talentos/ui";
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Select,

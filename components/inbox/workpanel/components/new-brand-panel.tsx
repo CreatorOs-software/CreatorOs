@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Building2, Loader2 } from "lucide-react";
-import { Button } from "@talentos/ui";
-import { Input } from "@/components/ui/input";
+import { Button, Input } from "@talentos/ui";
 import { SectionLabel, FormField } from "./shared";
 import type { WorkPanelState, NewBrandData } from "../types";
 

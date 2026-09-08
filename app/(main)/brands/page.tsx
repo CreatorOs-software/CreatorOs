@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Loader2, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@talentos/ui";
+import { Button, Input } from "@talentos/ui";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -20,7 +20,6 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Auflister } from "@/components/ui/auflister";
 import { cn } from "@/lib/utils";
 import { fmtMoney, fmtDate } from "@/components/creators/dashboard/constants";
-import { Input } from "@/components/ui/input";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 

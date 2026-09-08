@@ -23,8 +23,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Button } from "@talentos/ui";
-import { Input } from "@/components/ui/input";
+import { Button, Input } from "@talentos/ui";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 

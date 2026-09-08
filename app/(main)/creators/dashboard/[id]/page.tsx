@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBar, StatusBarGroup } from "@/components/dashboard/status-bar";
 import { cn } from "@/lib/utils";
 import { usePageHeader } from "@/components/layout/page-header-context";
+import { QueryKeys } from "@/lib/query-keys";
 import type { Creator } from "@/domains/creators/types";
 
 import {
@@ -45,7 +46,7 @@ export default function CreatorDashboardPage() {
   const { data: creatorData, isPending: creatorPending } = useQuery<{
     creator: Creator;
   }>({
-    queryKey: ["creator", id],
+    queryKey: QueryKeys.creators.detail(id),
     queryFn: () => fetch(`/api/creators/${id}`).then((r) => r.json()),
     staleTime: 5 * 60_000,
   });

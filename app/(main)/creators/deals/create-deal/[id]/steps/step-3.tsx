@@ -1,6 +1,5 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import {
@@ -11,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@talentos/ui";
+import { Button, Input } from "@talentos/ui";
 import { Plus, X } from "lucide-react";
 import { PAYMENT_TERMS } from "../deal-form.constants";
 import type { PaymentItem, PaymentTerm } from "../deal-form.schema";

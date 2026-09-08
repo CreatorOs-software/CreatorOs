@@ -69,6 +69,22 @@ export const CommunicationRepository = {
     };
   },
 
+  /** Ungelesen-Zähler für das Sidebar-Badge — nur `count`, keine Zeilen (`head: true`). */
+  async countUnreadInbox(
+    supabase: SupabaseClient,
+    agencyId: string,
+  ): Promise<number> {
+    const { count, error } = await supabase
+      .from("email_threads")
+      .select("id", { count: "exact", head: true })
+      .eq("agency_id", agencyId)
+      .eq("unread", true)
+      .eq("folder", "INBOX");
+
+    if (error) throw new Error(error.message);
+    return count ?? 0;
+  },
+
   async patchThread(
     supabase: SupabaseClient,
     id: string,

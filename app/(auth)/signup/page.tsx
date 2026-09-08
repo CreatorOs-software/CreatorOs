@@ -3,8 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { register } from "@/domains/auth";
-import { Button } from "@talentos/ui";
-import { Input } from "@/components/ui/input";
+import { Button, Input } from "@talentos/ui";
 import { Label } from "@/components/ui/label";
 
 export default function SignupPage() {

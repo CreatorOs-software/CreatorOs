@@ -110,16 +110,12 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { isAdmin } = usePermissions();
 
-  const { data } = useQuery<{
-    threads: { unread: boolean; folder: string | null }[];
-  }>({
-    queryKey: QueryKeys.inbox.all(),
-    queryFn: () => fetch("/api/inbox").then((r) => r.json()),
-    staleTime: 2 * 60_000,
+  const { data } = useQuery<{ count: number }>({
+    queryKey: QueryKeys.inbox.unreadCount(),
+    queryFn: () => fetch("/api/inbox/unread-count").then((r) => r.json()),
+    staleTime: 60_000,
   });
-  const unreadCount = (data?.threads ?? []).filter(
-    (t) => t.unread && t.folder !== "sent",
-  ).length;
+  const unreadCount = data?.count ?? 0;
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");

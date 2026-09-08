@@ -8,8 +8,7 @@ import { QueryKeys } from "@/lib/query-keys";
 import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion";
 import { AccordionContent } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
-import { Button } from "@talentos/ui";
-import { Input } from "@/components/ui/input";
+import { Button, Input } from "@talentos/ui";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
