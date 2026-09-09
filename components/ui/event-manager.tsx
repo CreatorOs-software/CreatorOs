@@ -1320,14 +1320,20 @@ export function EventManager() {
 
       {/* ── Filters ── */}
       <div className="flex shrink-0 flex-wrap items-center gap-2">
-        <div className="relative min-w-45 flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Events suchen…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
-          {searchQuery && (
-            <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2" onClick={() => setSearchQuery("")}>
-              <X className="h-4 w-4" />
-            </Button>
-          )}
+        <div className="min-w-45 flex-1">
+          <Input
+            placeholder="Events suchen…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            startAdornment={<Search />}
+            endAdornment={
+              searchQuery ? (
+                <button type="button" aria-label="Suche leeren" onClick={() => setSearchQuery("")}>
+                  <X className="h-4 w-4" />
+                </button>
+              ) : undefined
+            }
+          />
         </div>
 
         <Select value={filterType} onValueChange={(v) => setFilterType(v as EventType | "all")}>

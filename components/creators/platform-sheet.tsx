@@ -4,15 +4,14 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Link2Off, Loader2, RefreshCw } from "lucide-react";
 import {
+  Button,
   Sheet,
   SheetContent,
   SheetHeader,
-  SheetBody,
   SheetTitle,
   SheetDescription,
-} from "@/components/ui/sheet";
+} from "@talentos/ui";
 import { Card } from "@/components/ui/card";
-import { Button } from "@talentos/ui";
 import {
   Dialog,
   DialogContent,
@@ -162,7 +161,7 @@ export function PlatformSheet({
             </div>
           </SheetHeader>
 
-          <SheetBody className="flex flex-col gap-6">
+          <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
             {/* Verbundene Schnittstellen */}
             <div>
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
@@ -367,7 +366,7 @@ export function PlatformSheet({
                 </div>
               </div>
             )}
-          </SheetBody>
+          </div>
         </SheetContent>
       </Sheet>
 

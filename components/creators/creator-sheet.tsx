@@ -1,6 +1,12 @@
 "use client";
 
-import { Button } from "@talentos/ui";
+import {
+  Button,
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@talentos/ui";
 import {
   Dialog,
   DialogContent,
@@ -9,12 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Pencil, Trash2 } from "lucide-react";
@@ -80,7 +80,7 @@ export function CreatorSheet({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="right"
-          className="flex flex-col gap-0 p-0 overflow-hidden rounded-tl-4xl rounded-bl-4xl"
+          aria-describedby={undefined}
           style={{ width: "50vw", minWidth: "400px", maxWidth: "95vw" }}
         >
           {/* Header */}

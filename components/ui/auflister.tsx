@@ -166,27 +166,18 @@ export function Auflister<T>({
               <div className="flex items-center gap-2">{filterLeft}</div>
             )}
             {searchPlaceholder != null && (
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+              <div className="w-56 shrink-0">
                 <Input
                   value={globalFilter}
                   onChange={(e) => setGlobalFilter(e.target.value)}
                   placeholder={searchPlaceholder}
-                  className="h-8 pl-8 pr-3 text-sm w-44"
+                  startAdornment={<Search />}
                 />
               </div>
             )}
             {filterContent != null && (
               <Popover>
-                <PopoverTrigger
-                  render={
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 gap-1.5 text-xs"
-                    />
-                  }
-                >
+                <PopoverTrigger render={<Button variant="outline" />}>
                   <SlidersHorizontal className="w-3.5 h-3.5" />
                   Filter
                   {activeFilterCount > 0 && (

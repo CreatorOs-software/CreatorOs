@@ -9,7 +9,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button, Card, CardHeader, CardTitle, CardContent } from "@talentos/ui";
+import { Button, Card, CardAction, CardHeader, CardTitle, CardContent } from "@talentos/ui";
 import {
   Dialog,
   DialogContent,
@@ -89,9 +89,9 @@ export function MiniBarChart({
 
   return (
     <Card className={cn("p-5 gap-0", className)}>
-      <CardHeader className="flex flex-row items-center justify-between p-0 mb-4 gap-0">
+      <CardHeader className="items-center p-0 mb-4 gap-0">
         <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
-        <div className="flex items-center gap-1">
+        <CardAction className="flex items-center gap-1 self-center">
           {([7, 30] as const).map((d) => (
             <Button
               key={d}
@@ -109,7 +109,7 @@ export function MiniBarChart({
             </Button>
           ))}
           <CopyButton value={formatter(total)} />
-        </div>
+        </CardAction>
       </CardHeader>
       <CardContent className="p-0">
         <div className="flex items-baseline gap-2 mb-6">
@@ -172,9 +172,11 @@ export function SubscriberChart({
 
   return (
     <Card className={cn("p-5 gap-0", className)}>
-      <CardHeader className="flex flex-row items-center justify-between p-0 mb-4 gap-0">
+      <CardHeader className="items-center p-0 mb-4 gap-0">
         <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
-        <CopyButton value={fmt(values[values.length - 1] ?? 0)} />
+        <CardAction className="self-center">
+          <CopyButton value={fmt(values[values.length - 1] ?? 0)} />
+        </CardAction>
       </CardHeader>
       <CardContent className="p-0">
         <div className="flex items-baseline gap-2 mb-6">

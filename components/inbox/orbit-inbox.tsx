@@ -509,15 +509,12 @@ export function OrbitInbox() {
           </div>
 
           <div className="px-4 pb-2 pt-3">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Suchen..."
-                className="h-8 bg-muted pl-8 pr-3"
-              />
-            </div>
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Suchen..."
+              startAdornment={<Search />}
+            />
           </div>
 
           {folder === "inbox" && (

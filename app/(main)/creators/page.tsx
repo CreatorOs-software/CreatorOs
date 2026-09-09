@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { QueryKeys } from "@/lib/query-keys";
-import { Button, Input } from "@talentos/ui";
+import { Button, Input, ToggleGroup, ToggleGroupItem } from "@talentos/ui";
 import { Badge } from "@/components/ui/badge";
 import { AvatarCreator } from "@/components/ui/avatar-creator";
 import { Auflister } from "@/components/ui/auflister";
@@ -269,36 +269,19 @@ export default function CreatorsPage() {
 
         <div className="ml-auto flex items-center gap-2">
           {/* View toggle */}
-          <div className="flex items-center rounded-lg border border-border overflow-hidden">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setView("grid")}
-              className={`h-8 w-8 rounded-none ${
-                view === "grid"
-                  ? "bg-secondary text-secondary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-              aria-label="Kartenansicht"
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setView("table")}
-              className={`h-8 w-8 rounded-none ${
-                view === "table"
-                  ? "bg-secondary text-secondary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-              aria-label="Tabellenansicht"
-            >
-              <List className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+          <ToggleGroup
+            type="single"
+            value={view}
+            variant="outline"
+            onValueChange={(v) => v && setView(v as "grid" | "table")}
+          >
+            <ToggleGroupItem value="grid" aria-label="Kartenansicht">
+              <LayoutGrid />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="table" aria-label="Tabellenansicht">
+              <List />
+            </ToggleGroupItem>
+          </ToggleGroup>
 
           {view === "grid" && (
             <Input

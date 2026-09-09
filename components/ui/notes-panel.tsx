@@ -156,16 +156,14 @@ export function NotesPanel() {
         {/* ── Sidebar ─────────────────────────────────────── */}
         <div className="flex w-52 shrink-0 flex-col border-r border-border bg-muted/40">
           <div className="space-y-2 p-3">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Suchen…"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-8 pl-8 pr-3 text-xs"
-              />
-            </div>
+            <Input
+              type="text"
+              placeholder="Suchen…"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              startAdornment={<Search />}
+              className="text-xs"
+            />
             <Button
               type="button"
               variant="ghost"

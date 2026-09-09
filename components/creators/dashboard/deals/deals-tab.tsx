@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowUpRight, Plus } from "lucide-react";
-import { Button, Card, CardHeader, CardTitle, CardContent, Checkbox, SegmentedControl } from "@talentos/ui";
+import { Button, Card, CardAction, CardHeader, CardTitle, CardContent, Checkbox, SegmentedControl } from "@talentos/ui";
 import { Auflister } from "@/components/ui/auflister";
 import {
   Dialog,
@@ -51,13 +51,15 @@ function StatCard({
 }) {
   return (
     <Card className="p-5 gap-0">
-      <CardHeader className="flex flex-row items-center justify-between p-0 mb-3 gap-0">
+      <CardHeader className="items-center p-0 mb-3 gap-0">
         <CardTitle className="text-sm font-semibold text-foreground">
           {label}
         </CardTitle>
-        <Button variant="outline" size="icon">
-          <ArrowUpRight />
-        </Button>
+        <CardAction className="self-center">
+          <Button variant="outline" size="icon" className="size-7">
+            <ArrowUpRight />
+          </Button>
+        </CardAction>
       </CardHeader>
       <CardContent className="p-0">
         <span className="text-3xl font-bold tracking-tight">{value}</span>
