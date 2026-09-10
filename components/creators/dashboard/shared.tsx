@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
-import { Button } from "@talentos/ui";
+import { Badge, Button } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { STATUS_STYLE } from "./constants";
 
@@ -54,14 +54,8 @@ export function BrandAvatar({
 export function StatusBadge({ status }: { status: string }) {
   const s = STATUS_STYLE[status] ?? STATUS_STYLE.incoming;
   return (
-    <span
-      className={cn(
-        "shrink-0 text-[9px] font-medium px-1.5 py-0.5 rounded-full leading-none",
-        s.bg,
-        s.text,
-      )}
-    >
-      {s.label}
-    </span>
+    <Badge variant="outline" className={cn("border-transparent", s.bg)}>
+      <span className={s.text}>{s.label}</span>
+    </Badge>
   );
 }

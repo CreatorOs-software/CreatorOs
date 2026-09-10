@@ -2,8 +2,7 @@
 
 import { CheckCircle2, Info, TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button, SegmentedControl } from "@talentos/ui";
-import { Badge } from "@/components/ui/badge";
+import { Badge, Button, SegmentedControl } from "@talentos/ui";
 import type { Creator, Thread } from "../../types";
 import type { WorkPanelState, LocalVorgang } from "../types";
 import { SectionLabel } from "./shared";

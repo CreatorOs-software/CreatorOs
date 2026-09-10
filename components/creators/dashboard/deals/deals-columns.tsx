@@ -1,7 +1,7 @@
 import { Clock } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
+import { Badge, Progress } from "@talentos/ui";
 import { cn } from "@/lib/utils";
-import { TableProgress } from "@/components/ui/table-progress";
 import type { DealFull } from "../types";
 import {
   PLATFORM_ICONS,
@@ -87,15 +87,9 @@ export function StatusBadge({ status }: { status: string }) {
   const style = STATUS_STYLE[status];
   if (!style) return null;
   return (
-    <span
-      className={cn(
-        "text-[9px] font-medium px-2 py-0.5 rounded-full",
-        style.bg,
-        style.text,
-      )}
-    >
-      {style.label}
-    </span>
+    <Badge variant="outline" className={cn("border-transparent", style.bg)}>
+      <span className={style.text}>{style.label}</span>
+    </Badge>
   );
 }
 
@@ -124,7 +118,14 @@ export const laufendColumns: ColumnDef<DealFull>[] = [
     accessorFn: (row) => dealProgress(row.status),
     cell: ({ row }) => {
       const pct = dealProgress(row.original.status);
-      return <TableProgress value={pct} segments={10} />;
+      return (
+        <div className="flex items-center gap-2">
+          <Progress value={pct} className="min-w-0 flex-1" />
+          <span className="w-7 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+            {pct}%
+          </span>
+        </div>
+      );
     },
     size: 140,
     enableSorting: false,

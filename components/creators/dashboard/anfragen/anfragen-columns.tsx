@@ -1,5 +1,6 @@
 import { Clock } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
+import { Badge } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import type { Anfrage } from "../types";
 import { fmtMoney } from "../constants";
@@ -54,15 +55,9 @@ export function AnfrageBrandAvatar({ anfrage }: { anfrage: Anfrage }) {
 export function AnfrageStatusBadge({ status }: { status: Anfrage["status"] }) {
   const meta = STATUS_META[status];
   return (
-    <span
-      className={cn(
-        "text-[9px] font-medium px-2 py-0.5 rounded-full",
-        meta.bg,
-        meta.text,
-      )}
-    >
-      {meta.label}
-    </span>
+    <Badge variant="outline" className={cn("border-transparent", meta.bg)}>
+      <span className={meta.text}>{meta.label}</span>
+    </Badge>
   );
 }
 

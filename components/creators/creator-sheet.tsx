@@ -1,25 +1,24 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Pencil, Trash2 } from "lucide-react";
 import {
   Button,
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@talentos/ui";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Card } from "@/components/ui/card";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  Typography,
+} from "@talentos/ui";
 import { cn } from "@/lib/utils";
-import { Pencil, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 import {
   CREATOR_STATUS_CLASS as STATUS_CLASS,
   CREATOR_STATUS_LABEL as STATUS_LABEL,
@@ -38,6 +37,19 @@ import type {
 } from "@/domains/creators";
 
 export type { Creator, Brand, Deal, Mailbox, CreatorsData };
+
+// ─── Metric ───────────────────────────────────────────────────────────────────
+
+function Metric({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-0.5">
+      <Typography variant="muted">{label}</Typography>
+      <Typography variant="large" className="truncate tabular-nums">
+        {value}
+      </Typography>
+    </div>
+  );
+}
 
 // ─── Creator Sheet ────────────────────────────────────────────────────────────
 
@@ -59,6 +71,7 @@ export function CreatorSheet({
   const router = useRouter();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
   async function handleDelete() {
     if (!creator || !onDelete) return;
     setIsDeleting(true);
@@ -73,161 +86,100 @@ export function CreatorSheet({
 
   if (!creator) return null;
 
-  const creatorDeals = deals.filter((d) => d.creator_id === creator.id);
+  const dealCount = deals.filter((d) => d.creator_id === creator.id).length;
+  const subtitle = [creator.handle ?? "—", creator.niche.join(", ")]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent
-          side="right"
-          aria-describedby={undefined}
-          style={{ width: "50vw", minWidth: "400px", maxWidth: "95vw" }}
-        >
-          {/* Header */}
-          <SheetHeader className="px-12 pb-5 border-b border-border-light shrink-0">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-[10px] font-mono bg-muted px-2 py-0.5 rounded-md text-muted-foreground">
-                {creator.id.slice(0, 8).toUpperCase()}
-              </span>
-              <div className="ml-auto flex items-center gap-1.5">
-                <Button
-                  variant="outline"
-                  className="gap-1.5"
-                  onClick={() =>
-                    router.push(`/creators/edit-form/${creator.id}`)
-                  }
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                  Bearbeiten
-                </Button>
-                {onDelete && (
+        <SheetContent side="right">
+          <SheetHeader>
+            <div className="flex flex-col gap-5 text-left">
+              <div className="flex flex-wrap items-center gap-2">
+                <Typography variant="code" className="text-xs">
+                  {creator.id.slice(0, 8).toUpperCase()}
+                </Typography>
+                <div className="ml-auto flex items-center gap-1.5">
                   <Button
-                    variant={"outline"}
-                    className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => setConfirmDelete(true)}
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      router.push(`/creators/edit-form/${creator.id}`)
+                    }
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Löschen
+                    <Pencil />
+                    Bearbeiten
                   </Button>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4">
-              <AvatarCreator initials={creator.initials} size="xl" />
-              <div className="flex-1 min-w-0">
-                <SheetTitle className="text-xl font-semibold tracking-tight">
-                  {creator.full_name}
-                </SheetTitle>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {creator.handle ?? "—"}
-                  {creator.niche.length > 0
-                    ? ` · ${creator.niche.join(", ")}`
-                    : ""}
-                </p>
-                {creator.phone && (
-                  <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                    {creator.phone}
-                    {creator.whatsapp_opt_in && (
-                      <span className="rounded-full bg-brand/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-brand">
-                        WA
-                      </span>
-                    )}
-                  </p>
-                )}
-                <span
-                  className={cn(
-                    "inline-block mt-2 text-[10px] px-1.5 py-0.5 rounded-full font-medium",
-                    STATUS_CLASS[creator.status],
+                  {onDelete && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => setConfirmDelete(true)}
+                    >
+                      <Trash2 />
+                      Löschen
+                    </Button>
                   )}
-                >
-                  {STATUS_LABEL[creator.status]}
-                </span>
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-5 shrink-0 pt-1 text-right">
-                {[
-                  { label: "Reach", value: creator.followers ?? "—" },
-                  { label: "Deals", value: creatorDeals.length },
-                  { label: "MTD", value: formatMoney(creator.monthly_revenue) },
-                ].map((s) => (
-                  <div key={s.label}>
-                    <div className="text-[10px] text-muted-foreground mb-0.5">
-                      {s.label}
-                    </div>
-                    <div className="text-lg font-semibold tabular-nums">
-                      {s.value}
-                    </div>
-                  </div>
-                ))}
+
+              <div className="flex items-start gap-3">
+                <AvatarCreator initials={creator.initials} size="lg" />
+                <div className="min-w-0 flex-1">
+                  <SheetTitle className="truncate">
+                    {creator.full_name}
+                  </SheetTitle>
+                  <SheetDescription className="truncate">
+                    {subtitle}
+                  </SheetDescription>
+                  <span
+                    className={cn(
+                      "mt-2 inline-block rounded-full px-2 py-0.5 text-xs font-medium",
+                      STATUS_CLASS[creator.status],
+                    )}
+                  >
+                    {STATUS_LABEL[creator.status]}
+                  </span>
+                </div>
+              </div>
+
+              {creator.phone && (
+                <Typography
+                  variant="muted"
+                  className="flex items-center gap-1.5 text-xs"
+                >
+                  {creator.phone}
+                  {creator.whatsapp_opt_in && (
+                    <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                      WA
+                    </span>
+                  )}
+                </Typography>
+              )}
+
+              <div className="grid grid-cols-3 gap-3">
+                <Metric label="Reach" value={creator.followers ?? "—"} />
+                <Metric label="Deals" value={dealCount} />
+                <Metric
+                  label="MTD"
+                  value={formatMoney(creator.monthly_revenue)}
+                />
               </div>
             </div>
           </SheetHeader>
-
-          {/* ── Übersicht ── */}
-          <div className="flex-1 overflow-y-auto p-6">
-            {creatorDeals.length > 0 &&
-              (() => {
-                const totalBudget = creatorDeals.reduce(
-                  (s, d) => s + (d.budget ?? 0),
-                  0,
-                );
-                const upcoming = creatorDeals
-                  .filter(
-                    (d) => d.deadline && new Date(d.deadline) >= new Date(),
-                  )
-                  .sort(
-                    (a, b) =>
-                      new Date(a.deadline!).getTime() -
-                      new Date(b.deadline!).getTime(),
-                  );
-                const nextDl = upcoming[0]?.deadline
-                  ? new Date(upcoming[0].deadline).toLocaleDateString("de-DE", {
-                      day: "2-digit",
-                      month: "2-digit",
-                    })
-                  : "—";
-                return (
-                  <>
-                    <div className="border-t border-border-light my-5" />
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                      Übersicht
-                    </h3>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { label: "Deals", value: String(creatorDeals.length) },
-                        {
-                          label: "Budget gesamt",
-                          value: `€${(totalBudget / 1000).toFixed(1)}k`,
-                        },
-                        { label: "Nächste Deadline", value: nextDl },
-                      ].map((s) => (
-                        <Card
-                          key={s.label}
-                          className="px-3 py-2.5 gap-0 bg-muted/30 shadow-none border border-border-light"
-                        >
-                          <div className="text-[10px] text-muted-foreground">
-                            {s.label}
-                          </div>
-                          <div className="text-sm font-semibold tabular-nums mt-0.5">
-                            {s.value}
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </>
-                );
-              })()}
-          </div>
         </SheetContent>
       </Sheet>
 
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <DialogContent showCloseButton={false}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Creator löschen?</DialogTitle>
             <DialogDescription>
-              <strong>{creator.full_name}</strong> wird dauerhaft gelöscht.
-              Diese Aktion kann nicht rückgängig gemacht werden.
+              <strong>{creator.full_name}</strong> wird dauerhaft gelöscht. Diese
+              Aktion kann nicht rückgängig gemacht werden.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

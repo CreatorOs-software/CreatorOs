@@ -3,13 +3,13 @@
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import {
+  Badge,
   Card,
   CardHeader,
   CardTitle,
   CardDescription,
   CardAction,
 } from "@talentos/ui";
-import { Badge } from "@/components/ui/badge";
 
 interface CreatorCardProps {
   name: string;

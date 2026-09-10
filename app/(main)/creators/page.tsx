@@ -14,8 +14,7 @@ import {
 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { QueryKeys } from "@/lib/query-keys";
-import { Button, Input, ToggleGroup, ToggleGroupItem } from "@talentos/ui";
-import { Badge } from "@/components/ui/badge";
+import { Badge, Button, Input, ToggleGroup, ToggleGroupItem } from "@talentos/ui";
 import { AvatarCreator } from "@/components/ui/avatar-creator";
 import { Auflister } from "@/components/ui/auflister";
 import { CreatorCard, formatMoney } from "@/components/creators/creator-card";
@@ -68,12 +67,10 @@ function buildColumns(
       size: 100,
       cell: ({ getValue }) => {
         const s = getValue() as string;
-        return s === "active" ? (
-          <Badge className="bg-secondary text-secondary-foreground hover:bg-orange-100">
-            {STATUS_LABEL[s]}
+        return (
+          <Badge variant={s === "active" ? "default" : "secondary"}>
+            {STATUS_LABEL[s] ?? s}
           </Badge>
-        ) : (
-          <Badge variant="secondary">{STATUS_LABEL[s] ?? s}</Badge>
         );
       },
     },

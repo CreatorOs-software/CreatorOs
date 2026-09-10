@@ -3,8 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Button } from "@talentos/ui";
-import { Badge } from "@/components/ui/badge";
+import { Badge, Button } from "@talentos/ui";
 import type { Thread, Integration, Creator } from "../types";
 import type { WorkPanelState, ExtractedEmailData } from "./types";
 import { IdlePanel } from "./components/idle-panel";

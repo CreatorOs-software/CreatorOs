@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { QueryKeys } from "@/lib/query-keys"
-import { Button, Input } from "@talentos/ui";
+import { Badge, Button, Input } from "@talentos/ui";
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -26,7 +26,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import {
   ChevronLeft,

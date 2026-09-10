@@ -1,8 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Card, CardHeader, CardTitle, CardContent } from "@talentos/ui";
-import { Badge } from "@/components/ui/badge";
+import { Badge, Card, CardHeader, CardTitle, CardContent } from "@talentos/ui";
 
 interface OnboardingCardProps {
   className?: string;

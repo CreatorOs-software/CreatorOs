@@ -6,7 +6,7 @@ import { OnboardingCard } from "@/components/dashboard/onboarding-card";
 import { OnboardingTaskCard } from "@/components/dashboard/onboarding-task.card";
 import { StatGroup } from "@/components/dashboard/stat-card";
 import { StatusBar, StatusBarGroup } from "@/components/dashboard/status-bar";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@talentos/ui";
 import { Label } from "@/components/ui/label";
 import { Sparkles } from "lucide-react";
 
@@ -63,7 +63,7 @@ export default function DashboardPage() {
         <div className="col-span-12 lg:col-span-3 bg-card rounded-2xl  overflow-hidden">
           <div className="px-4 py-4 flex justify-between">
             <Label className="text-lg font-semibold">Anfragen </Label>
-            <Badge variant={"striped"}>
+            <Badge variant="outline">
               KI Extrahiert <Sparkles />
             </Badge>
           </div>

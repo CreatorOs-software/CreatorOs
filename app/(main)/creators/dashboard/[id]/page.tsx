@@ -204,14 +204,14 @@ export default function CreatorDashboardPage() {
 
           <div className="flex gap-2 mb-0.5">
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => router.push(`/creators/edit-form/${id}`)}
             >
               <Pencil className="w-3.5 h-3.5" />
               Bearbeiten
             </Button>
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => router.push(`/creators/${id}/events/create`)}
             >
               <Plus className="w-3.5 h-3.5" />

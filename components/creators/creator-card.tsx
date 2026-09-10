@@ -38,22 +38,9 @@ export function CreatorCard({
   return (
     <div
       onClick={() => router.push(`/creators/dashboard/${c.id}`)}
-      className="group relative overflow-hidden rounded-xl bg-card border border-border p-6 cursor-pointer flex flex-col
-        transition-all duration-200
-        hover:shadow-md hover:-translate-y-0.5"
+      className="group relative overflow-hidden rounded-xl bg-card  p-6 cursor-pointer flex flex-col
+        hover:shadow-md "
     >
-      {/* Status dot */}
-      <div className="absolute right-4 top-4 z-10">
-        <div className="relative">
-          <div
-            className={cn(
-              "h-3 w-3 rounded-full border-2 border-white transition-all duration-300 group-hover:scale-125",
-              dot === "online" ? "bg-brand " : "bg-gray-400",
-            )}
-          />
-        </div>
-      </div>
-
       {/* Initials avatar */}
       <div className="mb-5 flex justify-center relative z-10">
         <div className="relative">
@@ -119,9 +106,6 @@ export function CreatorCard({
           <Eye className="mx-auto h-4 w-4 " />
         </Button>
       </div>
-
-      {/* Hover border */}
-      <div className="absolute inset-0 rounded-2xl border border-foreground/15 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
     </div>
   );
 }
