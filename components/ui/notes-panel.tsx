@@ -4,16 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { QueryKeys } from "@/lib/query-keys";
 import { Calendar, Edit3, Plus, Search, StickyNote, Trash2 } from "lucide-react";
-import { Button, Input } from "@talentos/ui";
+import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@talentos/ui";
 import { FloatingWindow } from "@/components/ui/floating-window";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type { Creator, Brand } from "@/domains/creators/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

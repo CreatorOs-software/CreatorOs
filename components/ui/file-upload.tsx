@@ -35,14 +35,16 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button, Checkbox, Input } from "@talentos/ui";
 import {
+  Button,
+  Checkbox,
+  Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@talentos/ui";
 import {
   Table,
   TableBody,

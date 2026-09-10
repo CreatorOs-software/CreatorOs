@@ -2,15 +2,7 @@
 
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Button, Checkbox, Input } from "@talentos/ui";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button, Checkbox, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from "@talentos/ui";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Plus, Trash2, ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";

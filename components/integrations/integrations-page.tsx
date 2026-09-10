@@ -5,14 +5,7 @@ import { QueryKeys } from "@/lib/query-keys";
 import { useState } from "react";
 import { Inbox, RefreshCw, X, Check, AlertCircle, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button, Input } from "@talentos/ui";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@talentos/ui";
 import type { Creator } from "@/domains/creators";
 
 type Provider = "gmail" | "outlook" | "imap";
@@ -344,9 +337,9 @@ export function IntegrationsPage() {
                       </span>
                     )}
                     <Select
-                      value={integ.creator_id ?? ""}
+                      value={integ.creator_id ?? "none"}
                       onValueChange={(v) =>
-                        handleAssignCreator(integ.id, v || null)
+                        handleAssignCreator(integ.id, v === "none" ? null : v)
                       }
                     >
                       <SelectTrigger
@@ -356,7 +349,7 @@ export function IntegrationsPage() {
                         <SelectValue placeholder="Kein Creator" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Kein Creator</SelectItem>
+                        <SelectItem value="none">Kein Creator</SelectItem>
                         {creators.map((c) => (
                           <SelectItem key={c.id} value={c.id}>
                             {c.full_name}

@@ -1,10 +1,9 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Button, Checkbox, Input } from "@talentos/ui";
+import { Button, Checkbox, Input, Textarea } from "@talentos/ui";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Check } from "lucide-react";
 import type { DealForm, StepErrors } from "../deal-form.types";
 import { StepNav } from "@/app/(main)/creators/create-form/steps/step-nav";

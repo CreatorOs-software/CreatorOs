@@ -8,15 +8,7 @@ import { QueryKeys } from "@/lib/query-keys";
 import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion";
 import { AccordionContent } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
-import { Button, Input, Tabs, TabsContent, TabsList, TabsTrigger } from "@talentos/ui";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger, Textarea } from "@talentos/ui";
 import type { Creator } from "../../types";
 import type { WorkPanelState, ExtractedEmailData, LocalVorgang } from "../types";
 import { SectionLabel, FormField } from "./shared";

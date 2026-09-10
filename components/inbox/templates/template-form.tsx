@@ -1,15 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { Input } from "@talentos/ui";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import type { Template, TemplateChannel } from "@/domains/templates";
 import { useVariableSlashMenu } from "./variable-slash-menu";

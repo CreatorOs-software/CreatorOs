@@ -4,17 +4,10 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/lib/query-keys";
 import { ArrowUpDown, Plus } from "lucide-react";
-import { Button, Checkbox, Input } from "@talentos/ui";
+import { Button, Checkbox, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@talentos/ui";
 import { DatePicker } from "@/components/ui/date-picker";
 import { FloatingWindow } from "@/components/ui/floating-window";
 import { Avatar } from "@/components/ui/avatar-creator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { Creator } from "@/domains/creators/types";
 

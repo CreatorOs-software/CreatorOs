@@ -2,14 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
-import { Button, Input } from "@talentos/ui";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@talentos/ui";
 import { DatePicker } from "@/components/ui/date-picker";
 import { FormSection } from "@/components/ui/form-section";
 import { Upload, FileIcon, X } from "lucide-react";
@@ -86,7 +79,6 @@ export function Step1({ form, errors, brands, users, documents, onDocumentsChang
                   <Select
                     value={field.state.value}
                     onValueChange={(val) => { if (val) field.handleChange(val); }}
-                    items={brands.map((b) => ({ value: b.id, label: b.company_name }))}
                   >
                     <SelectTrigger className="mt-2 w-full">
                       <SelectValue placeholder="Brand auswählen" />

@@ -1,7 +1,7 @@
 "use client";
 
 import { Label } from "@/components/ui/label";
-import { Button, Input } from "@talentos/ui";
+import { Chip, ChipGroup, Input } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { PLATFORM_OPTIONS } from "../creator-form.constants";
 import type {
@@ -44,31 +44,17 @@ export function Step3({ form, errors, onNext, onPrev }: Step3Props) {
                   <>
                     <Label className="text-sm font-medium">Plattformen</Label>
 
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <ChipGroup
+                      className="mt-2"
+                      value={field.state.value}
+                      onValueChange={(val) => field.handleChange(val)}
+                    >
                       {PLATFORM_OPTIONS.map((p) => (
-                        <Button
-                          key={p}
-                          type="button"
-                          variant="ghost"
-                          onClick={() => {
-                            const current = field.state.value;
-                            field.handleChange(
-                              current.includes(p)
-                                ? current.filter((x: string) => x !== p)
-                                : [...current, p],
-                            );
-                          }}
-                          className={cn(
-                            "h-auto text-xs px-3 py-1.5 rounded-xl border",
-                            field.state.value.includes(p)
-                              ? "bg-primary text-primary-foreground border-primary"
-                              : "border-border-light bg-input text-muted-foreground hover:text-foreground hover:border-foreground/30",
-                          )}
-                        >
+                        <Chip key={p} value={p}>
                           {p}
-                        </Button>
+                        </Chip>
                       ))}
-                    </div>
+                    </ChipGroup>
 
                     {/* Connection cards for selected platforms */}
                     {field.state.value.length > 0 && (

@@ -5,21 +5,13 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AlertTriangle, Loader2, MessageCircle, Send, Sparkles } from "lucide-react";
-import { Button } from "@talentos/ui";
-import { Textarea } from "@/components/ui/textarea";
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from "@talentos/ui";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { QueryKeys } from "@/lib/query-keys";
 import { normalizeE164 } from "@/lib/formatters";
 import type { WhatsAppConnectionPublic } from "@/domains/whatsapp/types";

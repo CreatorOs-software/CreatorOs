@@ -3,17 +3,10 @@
 import { useState, useCallback, useMemo, useEffect } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { QueryKeys } from "@/lib/query-keys"
-import { Badge, Button, Input } from "@talentos/ui";
+import { Badge, Button, Input, Select, SelectContent, SelectItem, SelectTrigger, Textarea } from "@talentos/ui";
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { DatePicker } from "@/components/ui/date-picker"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
