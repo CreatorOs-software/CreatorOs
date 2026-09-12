@@ -17,15 +17,20 @@ import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
 
 import { Auflister } from "@/components/ui/auflister";
-import { Button, Card, Checkbox, Input, SegmentedControl, Textarea } from "@talentos/ui";
 import {
+  Button,
+  Card,
+  Checkbox,
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
+  Input,
+  SegmentedControl,
+  Textarea,
+} from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { usePageHeader } from "@/components/layout/page-header-context";
 import {
@@ -230,7 +235,10 @@ function CreatorHistoryDialog({
         if (!o) onClose();
       }}
     >
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-2xl max-h-[80vh] overflow-y-auto"
+        aria-describedby={undefined}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CreatorAvatar creator={creator} />
@@ -488,7 +496,7 @@ function ContactDialog({
         if (!o) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>
             {editing ? "Kontakt bearbeiten" : "Ansprechpartner hinzufügen"}
@@ -540,8 +548,10 @@ function ContactDialog({
             </div>
           </div>
           <DialogFooter className="mt-1">
-            <DialogClose render={<Button type="button" variant="outline" />}>
-              Abbrechen
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Abbrechen
+              </Button>
             </DialogClose>
             <Button type="submit" disabled={loading || !name.trim()}>
               {loading ? "Speichern…" : "Speichern"}

@@ -9,14 +9,19 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button, Card, CardAction, CardHeader, CardTitle, CardContent } from "@talentos/ui";
 import {
+  Button,
+  Card,
+  CardAction,
+  CardHeader,
+  CardTitle,
+  CardContent,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@talentos/ui";
 import type { CreatorAccount, MetricsCurrent, MetricsDaily } from "@/domains/social-accounts/types";
 import { OAUTH_SUPPORTED, PLATFORM_ICONS, fmt, fmtDuration, fmtMoney, shortDay } from "./constants";
 

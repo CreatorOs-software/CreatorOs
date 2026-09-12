@@ -17,19 +17,20 @@ import {
   X,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { Button, Input } from "@talentos/ui";
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Input,
+} from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import type { Creator, Folder, Integration } from "./types";
 import type { EmailLabel } from "@/domains/communication";
 import { AddMailboxDialog } from "./add-mailbox-dialog";
@@ -74,7 +75,7 @@ function CreateLabelDialog({ onAdd }: { onAdd: (name: string, color: string) => 
         <Plus className="h-3 w-3" />
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-xs">
+        <DialogContent className="sm:max-w-xs" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Neues Label</DialogTitle>
           </DialogHeader>

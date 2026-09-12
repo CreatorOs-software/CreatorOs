@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  Button,
   Dialog,
+  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
-import { Button } from "@talentos/ui";
+} from "@talentos/ui";
 import { QueryKeys } from "@/lib/query-keys";
 import type { Template } from "@/domains/templates";
 import { TemplateForm, templateToFormValue } from "./template-form";
@@ -55,7 +55,7 @@ export function TemplateDialog({
 
   return (
     <Dialog open={!!template} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Vorlage bearbeiten</DialogTitle>
         </DialogHeader>
@@ -67,8 +67,10 @@ export function TemplateDialog({
           />
           {error && <p className="text-xs text-destructive">{error}</p>}
           <DialogFooter>
-            <DialogClose render={<Button type="button" variant="outline" />}>
-              Abbrechen
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Abbrechen
+              </Button>
             </DialogClose>
             <Button type="submit" disabled={saving || !value.name.trim() || !value.body.trim()}>
               {saving ? "Speichern…" : "Speichern"}

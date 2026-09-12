@@ -5,15 +5,19 @@ import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Loader2, Plus } from "lucide-react";
-import { Button, Card, Checkbox, Input, SegmentedControl } from "@talentos/ui";
 import {
+  Button,
+  Card,
+  Checkbox,
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
+  Input,
+  SegmentedControl,
+} from "@talentos/ui";
 import { Auflister } from "@/components/ui/auflister";
 import { cn } from "@/lib/utils";
 import { fmtMoney, fmtDate } from "@/components/creators/dashboard/constants";
@@ -130,7 +134,7 @@ function NeueBrandDialog({
         if (!o) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Neue Brand</DialogTitle>
         </DialogHeader>
@@ -188,8 +192,10 @@ function NeueBrandDialog({
           )}
 
           <DialogFooter>
-            <DialogClose render={<Button type="button" variant="outline" />}>
-              Abbrechen
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Abbrechen
+              </Button>
             </DialogClose>
             <Button type="submit" disabled={loading || !name.trim()}>
               {loading ? "Speichern…" : "Brand anlegen"}

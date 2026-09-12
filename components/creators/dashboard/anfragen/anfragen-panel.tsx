@@ -3,15 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { Button, Card, Checkbox, SegmentedControl } from "@talentos/ui";
 import {
+  Button,
+  Card,
+  Checkbox,
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
+  SegmentedControl,
+} from "@talentos/ui";
 import { Auflister } from "@/components/ui/auflister";
 import type { Anfrage } from "../types";
 import { anfrageColumns, daysSince, isEndState } from "./anfragen-columns";
@@ -189,7 +192,7 @@ export function AnfragenPanel({
         open={deleteTarget !== null}
         onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
       >
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Anfrage löschen?</DialogTitle>
           </DialogHeader>
@@ -201,7 +204,9 @@ export function AnfragenPanel({
             wird unwiderruflich gelöscht.
           </p>
           <DialogFooter>
-            <DialogClose render={<Button variant="outline" />}>Abbrechen</DialogClose>
+            <DialogClose asChild>
+              <Button variant="outline">Abbrechen</Button>
+            </DialogClose>
             <Button variant="destructive" onClick={handleConfirmDelete}>
               Löschen
             </Button>

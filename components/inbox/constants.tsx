@@ -1,4 +1,4 @@
-import { Briefcase, Clock, FileText, HelpCircle, Mail, Star, Tag as TagIcon } from "lucide-react";
+import { Clock, Handshake, Mail, MoreHorizontal, Receipt, Star, Tag as TagIcon } from "lucide-react";
 import type { Category } from "./types";
 
 export const SYSTEM_LABELS = [
@@ -19,37 +19,37 @@ export const CATEGORIES: Category[] = [
   {
     id: "all",
     label: "All Mail",
-    icon: <Mail className="h-3.5 w-3.5 fill-current" />,
+    icon: <Mail className="h-3.5 w-3.5" />,
     color: "bg-[#6D6D6D]",
   },
   {
     id: "anfrage",
     label: "Anfrage",
-    icon: <Briefcase className="h-3.5 w-3.5 fill-current" />,
+    icon: <Handshake className="h-3.5 w-3.5" />,
     color: "bg-[#006FFE]",
   },
   {
     id: "laufend",
     label: "Laufend",
-    icon: <Clock className="h-3.5 w-3.5 fill-current" />,
+    icon: <Clock className="h-3.5 w-3.5" />,
     color: "bg-[#39AE4A]",
   },
   {
     id: "promotions",
     label: "Promotions",
-    icon: <TagIcon className="h-3.5 w-3.5 fill-current" />,
+    icon: <TagIcon className="h-3.5 w-3.5" />,
     color: "bg-[#F43F5E]",
   },
   {
     id: "rechnung",
     label: "Rechnung",
-    icon: <FileText className="h-3.5 w-3.5 fill-current" />,
+    icon: <Receipt className="h-3.5 w-3.5" />,
     color: "bg-[#8B5CF6]",
   },
   {
     id: "anderes",
     label: "Anderes",
-    icon: <HelpCircle className="h-3.5 w-3.5 fill-current" />,
+    icon: <MoreHorizontal className="h-3.5 w-3.5" />,
     color: "bg-[#8C8C8C]",
   },
 ];

@@ -3,15 +3,18 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Button, Card, Checkbox, SegmentedControl } from "@talentos/ui";
 import {
+  Button,
+  Card,
+  Checkbox,
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
+  SegmentedControl,
+} from "@talentos/ui";
 import { Auflister } from "@/components/ui/auflister";
 import type { Creator } from "@/domains/creators/types";
 import type { DealFull } from "../types";
@@ -158,7 +161,7 @@ export function DealsPanel({ deals, creator }: DealsPanelProps) {
           if (!o) setDeleteTarget(null);
         }}
       >
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Deal löschen?</DialogTitle>
           </DialogHeader>
@@ -170,8 +173,8 @@ export function DealsPanel({ deals, creator }: DealsPanelProps) {
             gemacht werden.
           </p>
           <DialogFooter>
-            <DialogClose render={<Button variant="outline" />}>
-              Abbrechen
+            <DialogClose asChild>
+              <Button variant="outline">Abbrechen</Button>
             </DialogClose>
             <Button
               variant="destructive"

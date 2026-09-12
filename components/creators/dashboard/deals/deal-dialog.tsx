@@ -17,8 +17,20 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Button, Checkbox, Input, Stepper, type Step as StepperStep, Tabs, TabsContent, TabsList, TabsTrigger } from "@talentos/ui";
+import {
+  Button,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Input,
+  Stepper,
+  type Step as StepperStep,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@talentos/ui";
 import { Switch } from "@/components/ui/switch";
 import { BrandAvatar } from "../shared";
 import type {
@@ -1756,7 +1768,7 @@ export function DealDialog({
     >
       <DialogContent
         className="max-w-5xl sm:max-w-5xl p-0 gap-0 overflow-hidden"
-        showCloseButton={false}
+        aria-describedby={undefined}
       >
         {deal && (
           <DealDialogContent

@@ -4,16 +4,16 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@talentos/ui";
-import { Auflister } from "@/components/ui/auflister";
 import {
+  Button,
   Dialog,
+  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
+} from "@talentos/ui";
+import { Auflister } from "@/components/ui/auflister";
 import { QueryKeys } from "@/lib/query-keys";
 import type { Template } from "@/domains/templates";
 import { templatesColumns } from "./templates-columns";
@@ -80,7 +80,7 @@ export function TemplatesPanel() {
       {editing && <TemplateDialog template={editing} onClose={() => setEditing(null)} />}
 
       <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Vorlage löschen?</DialogTitle>
           </DialogHeader>
@@ -90,7 +90,9 @@ export function TemplatesPanel() {
             unwiderruflich gelöscht.
           </p>
           <DialogFooter>
-            <DialogClose render={<Button variant="outline" />}>Abbrechen</DialogClose>
+            <DialogClose asChild>
+              <Button variant="outline">Abbrechen</Button>
+            </DialogClose>
             <Button variant="destructive" disabled={deleting} onClick={handleConfirmDelete}>
               {deleting ? "Löschen…" : "Löschen"}
             </Button>

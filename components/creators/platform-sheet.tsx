@@ -5,22 +5,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Link2Off, Loader2, RefreshCw } from "lucide-react";
 import {
   Button,
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@talentos/ui";
-import { Card } from "@/components/ui/card";
-import {
   Dialog,
+  DialogClose,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
+  DialogHeader,
+  DialogTitle,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@talentos/ui";
+import { Card } from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
 import { AvatarCreator } from "@/components/ui/avatar-creator";
 import {
@@ -402,8 +400,8 @@ export function PlatformSheet({
             Link im Browser öffnen
           </a>
           <DialogFooter>
-            <DialogClose render={<Button variant="outline" />}>
-              Schließen
+            <DialogClose asChild>
+              <Button variant="outline">Schließen</Button>
             </DialogClose>
           </DialogFooter>
         </DialogContent>

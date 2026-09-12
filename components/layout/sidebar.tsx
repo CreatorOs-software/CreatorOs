@@ -62,7 +62,7 @@ function DockToggleMenuItem() {
     <SidebarMenuItem>
       <SidebarMenuButton onClick={toggleDock} tooltip={label}>
         {dockVisible ? <PanelBottomClose /> : <PanelBottom />}
-        <span>{label}</span>
+        <span className="group-data-[collapsible=icon]:hidden">{label}</span>
       </SidebarMenuButton>
     </SidebarMenuItem>
   );
@@ -85,7 +85,7 @@ function ProfileMenuItems() {
       <SidebarMenuItem>
         <SidebarMenuButton onClick={signOut} tooltip="Abmelden">
           <LogOut />
-          <span>Abmelden</span>
+          <span className="group-data-[collapsible=icon]:hidden">Abmelden</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
       <SidebarMenuItem>

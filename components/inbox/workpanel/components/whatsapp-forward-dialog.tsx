@@ -5,13 +5,19 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AlertTriangle, Loader2, MessageCircle, Send, Sparkles } from "lucide-react";
-import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from "@talentos/ui";
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from "@talentos/ui";
 import { QueryKeys } from "@/lib/query-keys";
 import { normalizeE164 } from "@/lib/formatters";
 import type { WhatsAppConnectionPublic } from "@/domains/whatsapp/types";
@@ -133,16 +139,19 @@ export function WhatsappForwardDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {trigger ? (
-        <DialogTrigger render={trigger} />
-      ) : (
-        <DialogTrigger render={<Button variant="secondary" className="w-full gap-1.5" />}>
-          <MessageCircle className="h-3.5 w-3.5" />
-          An {name} weiterleiten
-        </DialogTrigger>
-      )}
+      <DialogTrigger asChild>
+        {trigger ?? (
+          <Button variant="secondary" className="w-full gap-1.5">
+            <MessageCircle className="h-3.5 w-3.5" />
+            An {name} weiterleiten
+          </Button>
+        )}
+      </DialogTrigger>
 
-      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+      <DialogContent
+        className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
+        aria-describedby={undefined}
+      >
         <div className="flex items-center gap-2 border-b border-border px-4 py-3">
           <DialogTitle className="text-sm">Per WhatsApp weiterleiten</DialogTitle>
           <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">

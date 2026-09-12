@@ -14,13 +14,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Button, Input } from "@talentos/ui";
+  Input,
+} from "@talentos/ui";
 import { Avatar } from "@/components/ui/avatar-creator";
 import { QueryKeys } from "@/lib/query-keys";
 import { GOOGLE_PATHS } from "./constants";
@@ -624,6 +625,7 @@ export function AddMailboxDialog() {
           "transition-all duration-200",
           step === "provider" ? "sm:max-w-sm" : "sm:max-w-md",
         )}
+        aria-describedby={undefined}
       >
         <AnimatePresence mode="wait">
           {step === "provider" && (

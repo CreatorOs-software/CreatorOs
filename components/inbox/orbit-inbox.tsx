@@ -1,12 +1,13 @@
 "use client";
 
-import { ChevronLeft, Eye, Inbox, Loader2, MoreVertical, RefreshCcw, Search, Sparkles } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  ChevronLeft,
+  Inbox,
+  Loader2,
+  RefreshCcw,
+  Search,
+  Sparkles,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +21,14 @@ import { ComposeEmailDialog } from "./compose-email-dialog";
 import type { Folder, InboxData, Thread, ThreadPatch } from "./types";
 import type { WorkPanelState } from "./workpanel/types";
 import { QueryKeys } from "@/lib/query-keys";
-import { Button, Input } from "@talentos/ui";
+import {
+  Button,
+  Input,
+  Toggle,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@talentos/ui";
 import { cn } from "@/lib/utils";
 
 // ─── Work panel resize ────────────────────────────────────────────────────────
@@ -46,7 +54,6 @@ async function fetchInboxData(params: URLSearchParams): Promise<InboxData> {
   return res.json() as Promise<InboxData>;
 }
 
-
 async function patchThread(id: string, patch: ThreadPatch): Promise<void> {
   const res = await fetch(`/api/inbox/${id}`, {
     method: "PATCH",
@@ -65,37 +72,53 @@ export function OrbitInbox() {
   // geöffneten Thread einmalig beim Laden.
   const searchParams = useSearchParams();
   const [selectedId, setSelectedId] = useState<string | null>(
-    () => searchParams.get("thread") ?? localStorage.getItem("inbox:selectedThreadId"),
+    () =>
+      searchParams.get("thread") ??
+      localStorage.getItem("inbox:selectedThreadId"),
   );
-  const [selectedIntegrationId, setSelectedIntegrationId] = useState<string | null>(
-    () => localStorage.getItem("inbox:selectedIntegrationId"),
-  );
+  const [selectedIntegrationId, setSelectedIntegrationId] = useState<
+    string | null
+  >(() => localStorage.getItem("inbox:selectedIntegrationId"));
   const [category, setCategory] = useState("all");
   const [folder, setFolder] = useState<Folder>("inbox");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [workPanelOpen, setWorkPanelOpen] = useState(true);
-  const [workPanelWidth, setWorkPanelWidth] = useState<number>(readStoredWorkPanelWidth);
+  const [workPanelWidth, setWorkPanelWidth] = useState<number>(
+    readStoredWorkPanelWidth,
+  );
   const [isResizing, setIsResizing] = useState(false);
   const shellRef = useRef<HTMLDivElement | null>(null);
-  const resizeRef = useRef<{ startX: number; startWidth: number; max: number } | null>(null);
+  const resizeRef = useRef<{
+    startX: number;
+    startWidth: number;
+    max: number;
+  } | null>(null);
   const [mergedMode, setMergedMode] = useState(true);
-  const [mergedView, setMergedView] = useState<"sidebar" | "threads">("sidebar");
+  const [mergedView, setMergedView] = useState<"sidebar" | "threads">(
+    "sidebar",
+  );
   const [syncing, setSyncing] = useState(false);
-  const [filterUnread, setFilterUnread] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const [activeLabelId, setActiveLabelId] = useState<string | null>(null);
-  const [workStates, setWorkStates] = useState<Record<string, WorkPanelState>>({});
+  const [workStates, setWorkStates] = useState<Record<string, WorkPanelState>>(
+    {},
+  );
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 250);
+    const timer = window.setTimeout(
+      () => setDebouncedSearch(search.trim()),
+      250,
+    );
     return () => window.clearTimeout(timer);
   }, [search]);
 
-  const params = new URLSearchParams({ folder: folder === "bin" ? "TRASH" : folder.toUpperCase() });
-  if (selectedIntegrationId) params.set("integration_id", selectedIntegrationId);
+  const params = new URLSearchParams({
+    folder: folder === "bin" ? "TRASH" : folder.toUpperCase(),
+  });
+  if (selectedIntegrationId)
+    params.set("integration_id", selectedIntegrationId);
   if (activeLabelId) params.set("label_id", activeLabelId);
-  if (filterUnread) params.set("unread", "true");
   if (category !== "all") params.set("category", category);
   if (debouncedSearch) params.set("search", debouncedSearch);
   const queryString = params.toString();
@@ -111,12 +134,17 @@ export function OrbitInbox() {
     refetchOnWindowFocus: false,
     refetchInterval: (query) => {
       const threads = query.state.data?.threads ?? [];
-      return threads.some((t) => t.label_status === "processing") ? 4000 : false;
+      return threads.some((t) => t.label_status === "processing")
+        ? 4000
+        : false;
     },
   });
 
   const threads = data?.threads ?? [];
-  const integrations = useMemo(() => data?.integrations ?? [], [data?.integrations]);
+  const integrations = useMemo(
+    () => data?.integrations ?? [],
+    [data?.integrations],
+  );
   const labels = data?.labels ?? [];
   const creators = data?.creators ?? [];
 
@@ -144,16 +172,23 @@ export function OrbitInbox() {
 
   // Persist the work-panel width across sessions.
   useEffect(() => {
-    localStorage.setItem(WORK_PANEL_WIDTH_KEY, String(Math.round(workPanelWidth)));
+    localStorage.setItem(
+      WORK_PANEL_WIDTH_KEY,
+      String(Math.round(workPanelWidth)),
+    );
   }, [workPanelWidth]);
 
   function handleResizeStart(e: React.PointerEvent<HTMLDivElement>) {
     e.preventDefault();
-    const shellWidth = shellRef.current?.getBoundingClientRect().width ?? Infinity;
+    const shellWidth =
+      shellRef.current?.getBoundingClientRect().width ?? Infinity;
     resizeRef.current = {
       startX: e.clientX,
       startWidth: workPanelWidth,
-      max: Math.max(WORK_PANEL_MIN, Math.min(WORK_PANEL_MAX, shellWidth - INBOX_MIN)),
+      max: Math.max(
+        WORK_PANEL_MIN,
+        Math.min(WORK_PANEL_MAX, shellWidth - INBOX_MIN),
+      ),
     };
     setIsResizing(true);
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -177,12 +212,13 @@ export function OrbitInbox() {
   }
 
   // Derive effective integration: user pick → first available → null
-  const effectiveIntegrationId = (
-    integrations.some((i) => i.id === selectedIntegrationId)
-      ? selectedIntegrationId
-      : integrations[0]?.id ?? null
-  );
-  const selectedIntegration = integrations.find((i) => i.id === effectiveIntegrationId) ?? null;
+  const effectiveIntegrationId = integrations.some(
+    (i) => i.id === selectedIntegrationId,
+  )
+    ? selectedIntegrationId
+    : (integrations[0]?.id ?? null);
+  const selectedIntegration =
+    integrations.find((i) => i.id === effectiveIntegrationId) ?? null;
   const autoLabel = selectedIntegration?.auto_label ?? false;
 
   // ── Derived ──────────────────────────────────────────────────────────────────
@@ -202,14 +238,18 @@ export function OrbitInbox() {
         if (!old) return old;
         return {
           ...old,
-          threads: old.threads.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+          threads: old.threads.map((t) =>
+            t.id === id ? { ...t, ...patch } : t,
+          ),
         };
       });
       try {
         await patchThread(id, patch);
         // Sidebar-Badge zieht seinen Zähler aus einem eigenen, schlanken Query.
         if (patch.unread !== undefined || patch.folder !== undefined) {
-          void queryClient.invalidateQueries({ queryKey: QueryKeys.inbox.unreadCount() });
+          void queryClient.invalidateQueries({
+            queryKey: QueryKeys.inbox.unreadCount(),
+          });
         }
       } catch {
         queryClient.setQueryData(inboxQueryKey, previous);
@@ -250,7 +290,11 @@ export function OrbitInbox() {
     setActiveLabelId(null);
   }
 
-  async function handleToggleLabel(threadId: string, labelId: string, assign: boolean) {
+  async function handleToggleLabel(
+    threadId: string,
+    labelId: string,
+    assign: boolean,
+  ) {
     const previous = queryClient.getQueryData<InboxData>(inboxQueryKey);
 
     queryClient.setQueryData<InboxData>(inboxQueryKey, (old) => {
@@ -264,7 +308,9 @@ export function OrbitInbox() {
           return {
             ...t,
             labels: assign
-              ? t.labels.some((l) => l.id === labelId) ? t.labels : [...t.labels, labelObj]
+              ? t.labels.some((l) => l.id === labelId)
+                ? t.labels
+                : [...t.labels, labelObj]
               : t.labels.filter((l) => l.id !== labelId),
           };
         }),
@@ -276,7 +322,12 @@ export function OrbitInbox() {
       : `/api/inbox/${threadId}/labels/${labelId}`;
     const res = await fetch(url, {
       method: assign ? "POST" : "DELETE",
-      ...(assign ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify({ labelId }) } : {}),
+      ...(assign
+        ? {
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ labelId }),
+          }
+        : {}),
     });
 
     if (!res.ok) {
@@ -333,7 +384,12 @@ export function OrbitInbox() {
     }
   }
 
-  async function handleToggleCategoryLabel(threadId: string, name: string, color: string, assign: boolean) {
+  async function handleToggleCategoryLabel(
+    threadId: string,
+    name: string,
+    color: string,
+    assign: boolean,
+  ) {
     // Find label by name in local list, or create it first
     let label = labels.find((l) => l.name === name);
     if (!label) {
@@ -343,7 +399,7 @@ export function OrbitInbox() {
         body: JSON.stringify({ name, color }),
       });
       if (!res.ok) return;
-      label = await res.json() as typeof labels[number];
+      label = (await res.json()) as (typeof labels)[number];
       // Refresh labels list so new label appears in sidebar
       await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.list() });
     }
@@ -393,7 +449,11 @@ export function OrbitInbox() {
         <Button
           type="button"
           variant="link"
-          onClick={() => void queryClient.refetchQueries({ queryKey: QueryKeys.inbox.list() })}
+          onClick={() =>
+            void queryClient.refetchQueries({
+              queryKey: QueryKeys.inbox.list(),
+            })
+          }
           className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
         >
           Nochmal versuchen
@@ -413,11 +473,16 @@ export function OrbitInbox() {
       )}
     >
       {/* Main inbox card: sidebar + thread list + email detail */}
-      <div className="flex flex-1 min-w-0 overflow-hidden rounded-2xl border border-[#E7E7E7] bg-white shadow-sm">
-
+      <div className="flex flex-1 min-w-0 overflow-hidden rounded-2xl bg-white ">
         {/* Sidebar — hidden in merged+threads mode */}
         {(!mergedMode || mergedView === "sidebar") && (
-          <div className={mergedMode ? "flex w-72 shrink-0 flex-col overflow-hidden border-r border-[#E7E7E7]" : "contents"}>
+          <div
+            className={
+              mergedMode
+                ? "flex w-72 shrink-0 flex-col overflow-hidden border-r border-[#E7E7E7]"
+                : "contents"
+            }
+          >
             <InboxSidebar
               folder={folder}
               unreadCount={inboxUnread}
@@ -435,7 +500,9 @@ export function OrbitInbox() {
                 setSelectedId(null);
               }}
               onCompose={() => setComposeOpen(true)}
-              onLabelClick={(id) => setActiveLabelId((prev) => (prev === id ? null : id))}
+              onLabelClick={(id) =>
+                setActiveLabelId((prev) => (prev === id ? null : id))
+              }
               onCreateLabel={handleCreateLabel}
               onDeleteLabel={handleDeleteLabel}
               creators={creators}
@@ -450,106 +517,102 @@ export function OrbitInbox() {
 
         {/* Thread list — hidden in merged+sidebar mode */}
         {(!mergedMode || mergedView === "threads") && (
-        <div className={cn("flex shrink-0 flex-col overflow-hidden", mergedMode ? "w-72 border-r border-[#E7E7E7]" : "w-80 border-x border-[#E7E7E7]")}>
-          <div className="flex items-center justify-between border-b border-[#E7E7E7] px-4 py-3">
-            <div className="flex items-center gap-1.5">
-              {mergedMode && (
+          <div
+            className={cn(
+              "flex shrink-0 flex-col overflow-hidden",
+              mergedMode
+                ? "w-72 border-r border-[#E7E7E7]"
+                : "w-80 border-x border-[#E7E7E7]",
+            )}
+          >
+            <div className="flex items-center justify-between border-b border-[#E7E7E7] px-4 py-3">
+              <div className="flex items-center gap-1.5">
+                {mergedMode && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setMergedView("sidebar")}
+                    className="h-6 w-6 rounded hover:bg-muted"
+                  >
+                    <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                )}
+                <span className="text-sm font-semibold capitalize">
+                  {folder}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Toggle
+                      size="sm"
+                      pressed={autoLabel}
+                      onPressedChange={() => void handleToggleAutoLabel()}
+                      aria-label="Auto Label"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                    </Toggle>
+                  </TooltipTrigger>
+                  <TooltipContent>Auto Label</TooltipContent>
+                </Tooltip>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  onClick={() => setMergedView("sidebar")}
-                  className="h-6 w-6 rounded hover:bg-muted"
+                  onClick={() => void handleSync()}
+                  disabled={syncing}
+                  className="h-7 w-7 rounded hover:bg-muted"
                 >
-                  <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+                  <RefreshCcw
+                    className={`h-4 w-4 text-muted-foreground ${syncing ? "animate-spin" : ""}`}
+                  />
                 </Button>
-              )}
-              <span className="text-sm font-semibold capitalize">{folder}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => void handleToggleAutoLabel()}
-                className={cn(
-                  "h-auto gap-1.5 rounded-md border px-2 py-1 text-[11px] font-medium uppercase",
-                  autoLabel
-                    ? "border-transparent bg-brand/10 text-brand hover:bg-brand/15"
-                    : "border-[#E7E7E7] text-muted-foreground hover:bg-muted/50",
-                )}
-              >
-                <Sparkles className={cn("h-3 w-3", autoLabel ? "text-brand" : "text-muted-foreground")} />
-                Auto Label
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => void handleSync()}
-                disabled={syncing}
-                className="h-7 w-7 rounded hover:bg-muted"
-              >
-                <RefreshCcw className={`h-4 w-4 text-muted-foreground ${syncing ? "animate-spin" : ""}`} />
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex h-7 w-7 items-center justify-center rounded hover:bg-muted outline-none">
-                  <MoreVertical className="h-4 w-4 text-muted-foreground" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuCheckboxItem
-                    checked={filterUnread}
-                    onCheckedChange={setFilterUnread}
-                  >
-                    <Eye className="mr-2 h-3.5 w-3.5" />
-                    Nur Ungelesen
-                  </DropdownMenuCheckboxItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-
-          <div className="px-4 pb-2 pt-3">
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Suchen..."
-              startAdornment={<Search />}
-            />
-          </div>
-
-          {folder === "inbox" && (
-            <div className="px-4 pb-3">
-              <CategorySelect category={category} onCategory={setCategory} />
-            </div>
-          )}
-
-          <div className="flex-1 overflow-y-auto py-1">
-            {filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-2 py-12 text-center text-muted-foreground">
-                <Inbox className="h-8 w-8 opacity-20" />
-                <p className="text-sm">
-                  {folder !== "inbox"
-                    ? "Keine Nachrichten"
-                    : search
-                      ? "Keine Ergebnisse"
-                      : "Alles gelesen"}
-                </p>
               </div>
-            ) : (
-              filtered.map((t) => (
-                <ThreadItem
-                  key={t.id}
-                  thread={t}
-                  isSelected={selectedId === t.id}
-                  onClick={() => handleSelect(t)}
-                  onStar={() => handleStar(t.id)}
-                  onArchive={() => handleArchive(t.id)}
-                  onDelete={() => handleDelete(t.id)}
-                />
-              ))
+            </div>
+
+            <div className="px-4 pb-2 pt-3">
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Suchen..."
+                startAdornment={<Search />}
+              />
+            </div>
+
+            {folder === "inbox" && (
+              <div className="px-4 pb-3">
+                <CategorySelect category={category} onCategory={setCategory} />
+              </div>
             )}
+
+            <div className="flex-1 overflow-y-auto py-1">
+              {filtered.length === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-2 py-12 text-center text-muted-foreground">
+                  <Inbox className="h-8 w-8 opacity-20" />
+                  <p className="text-sm">
+                    {folder !== "inbox"
+                      ? "Keine Nachrichten"
+                      : search
+                        ? "Keine Ergebnisse"
+                        : "Alles gelesen"}
+                  </p>
+                </div>
+              ) : (
+                filtered.map((t) => (
+                  <ThreadItem
+                    key={t.id}
+                    thread={t}
+                    isSelected={selectedId === t.id}
+                    onClick={() => handleSelect(t)}
+                    onStar={() => handleStar(t.id)}
+                    onArchive={() => handleArchive(t.id)}
+                    onDelete={() => handleDelete(t.id)}
+                  />
+                ))
+              )}
+            </div>
           </div>
-        </div>
         )}
 
         {/* Email detail */}
@@ -562,7 +625,10 @@ export function OrbitInbox() {
               allLabels={labels}
               selectedIndex={selectedIndex}
               onClose={() => setSelectedId(null)}
-              onPrev={() => selectedIndex > 0 && setSelectedId(filtered[selectedIndex - 1]!.id)}
+              onPrev={() =>
+                selectedIndex > 0 &&
+                setSelectedId(filtered[selectedIndex - 1]!.id)
+              }
               onNext={() =>
                 selectedIndex < filtered.length - 1 &&
                 setSelectedId(filtered[selectedIndex + 1]!.id)
@@ -570,9 +636,17 @@ export function OrbitInbox() {
               onStar={() => handleStar(selected.id)}
               onArchive={() => handleArchive(selected.id)}
               onDelete={() => handleDelete(selected.id)}
-              onAfterSend={() => void queryClient.refetchQueries({ queryKey: QueryKeys.inbox.list() })}
-              onToggleLabel={(threadId, labelId, assign) => void handleToggleLabel(threadId, labelId, assign)}
-              onToggleCategoryLabel={(threadId, name, color, assign) => void handleToggleCategoryLabel(threadId, name, color, assign)}
+              onAfterSend={() =>
+                void queryClient.refetchQueries({
+                  queryKey: QueryKeys.inbox.list(),
+                })
+              }
+              onToggleLabel={(threadId, labelId, assign) =>
+                void handleToggleLabel(threadId, labelId, assign)
+              }
+              onToggleCategoryLabel={(threadId, name, color, assign) =>
+                void handleToggleCategoryLabel(threadId, name, color, assign)
+              }
               onLabelThread={handleLabelThread}
             />
           ) : (
@@ -581,7 +655,11 @@ export function OrbitInbox() {
         </div>
       </div>
 
-      <ComposeEmailDialog open={composeOpen} onOpenChange={setComposeOpen} integrationId={effectiveIntegrationId} />
+      <ComposeEmailDialog
+        open={composeOpen}
+        onOpenChange={setComposeOpen}
+        integrationId={effectiveIntegrationId}
+      />
 
       {/* Drag handle — resize inbox vs. work panel */}
       {workPanelOpen && (
@@ -613,12 +691,23 @@ export function OrbitInbox() {
         resizing={isResizing}
         integrations={integrations}
         creators={creators}
-        workState={selected ? (workStates[selected.id] ?? { phase: "idle" }) : { phase: "idle" }}
-        analyseCount={Object.values(workStates).filter((s) => s.phase === "extracted" || s.phase === "vorgang").length}
-        vorgangCount={Object.values(workStates).filter((s) => s.phase === "vorgang").length}
+        workState={
+          selected
+            ? (workStates[selected.id] ?? { phase: "idle" })
+            : { phase: "idle" }
+        }
+        analyseCount={
+          Object.values(workStates).filter(
+            (s) => s.phase === "extracted" || s.phase === "vorgang",
+          ).length
+        }
+        vorgangCount={
+          Object.values(workStates).filter((s) => s.phase === "vorgang").length
+        }
         onToggle={() => setWorkPanelOpen((v) => !v)}
         onSetWorkState={(state) => {
-          if (selected) setWorkStates((prev) => ({ ...prev, [selected.id]: state }));
+          if (selected)
+            setWorkStates((prev) => ({ ...prev, [selected.id]: state }));
         }}
         onPatch={handlePatch}
       />

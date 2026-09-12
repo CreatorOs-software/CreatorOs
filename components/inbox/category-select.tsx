@@ -1,8 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Button } from "@talentos/ui";
-import { cn } from "@/lib/utils";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@talentos/ui";
 import { CATEGORIES } from "./constants";
 
 type Props = {
@@ -22,48 +27,39 @@ export function CategorySelect({ category, onCategory }: Props) {
     const containerWidth = overlay.offsetWidth;
     if (!containerWidth) return;
     const clipLeft = Math.max(0, offsetLeft - 2);
-    const clipRight = Math.max(0, containerWidth - (offsetLeft + offsetWidth + 2));
+    const clipRight = Math.max(
+      0,
+      containerWidth - (offsetLeft + offsetWidth + 2),
+    );
     overlay.style.clipPath = `inset(0 ${((clipRight / containerWidth) * 100).toFixed(2)}% 0 ${((clipLeft / containerWidth) * 100).toFixed(2)}%)`;
   }, [category]);
 
-  const renderButtons = (isOverlay: boolean) =>
-    CATEGORIES.map((cat) => {
-      const isActive = cat.id === category;
-      return (
-        <Button
-          key={cat.id}
-          type="button"
-          variant="ghost"
-          ref={!isOverlay && isActive ? activeRef : undefined}
-          onClick={() => onCategory(cat.id)}
-          tabIndex={isOverlay ? -1 : undefined}
-          className={cn(
-            "h-8 flex items-center justify-center gap-1 overflow-hidden rounded-md border transition-all duration-300 ease-out",
-            isActive
-              ? cn("flex-1 border-none px-3 text-white", cat.color)
-              : "w-8 border-[#E7E7E7] bg-white hover:bg-gray-100",
-          )}
-        >
-          <div className="relative shrink-0">{cat.icon}</div>
-          {isActive && (
-            <span className="animate-in fade-in-0 slide-in-from-right-4 text-sm leading-none text-white duration-300">
-              {cat.label}
-            </span>
-          )}
-        </Button>
-      );
-    });
-
   return (
     <div className="relative flex w-full gap-2">
-      {renderButtons(false)}
-      <div
-        aria-hidden
-        ref={overlayRef}
-        className="pointer-events-none absolute inset-0 z-10 flex gap-2 overflow-hidden transition-[clip-path] duration-300 ease-in-out"
+      <ToggleGroup
+        type="single"
+        variant="outline"
+        value={category}
+        onValueChange={(v) => v && onCategory(v)}
+        size="sm"
       >
-        {renderButtons(true)}
-      </div>
+        {CATEGORIES.map((cat) => {
+          const isActive = cat.id === category;
+          return (
+            <Tooltip key={cat.id}>
+              <TooltipTrigger asChild>
+                <ToggleGroupItem
+                  value={cat.id}
+                  ref={isActive ? activeRef : undefined}
+                >
+                  {cat.icon}
+                </ToggleGroupItem>
+              </TooltipTrigger>
+              <TooltipContent>{cat.label}</TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </ToggleGroup>
     </div>
   );
 }

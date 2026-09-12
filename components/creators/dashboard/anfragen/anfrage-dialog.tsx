@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, CheckCircle2, XCircle, Pencil, X } from "lucide-react";
+import { Trash2, CheckCircle2, XCircle, Pencil } from "lucide-react";
 import {
+  Button,
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
-import { Button, Input, Textarea } from "@talentos/ui";
+  Input,
+  Textarea,
+} from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import type { Anfrage } from "../types";
 import { fmtMoney } from "../constants";
@@ -161,7 +163,7 @@ export function AnfrageDialog({
       <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
         <DialogContent
           className="max-w-lg sm:max-w-lg p-0 gap-0 overflow-hidden"
-          showCloseButton={false}
+          aria-describedby={undefined}
         >
           {/* Header */}
           <div className="p-5 pb-4 border-b">
@@ -169,7 +171,9 @@ export function AnfrageDialog({
               <div className="flex items-center gap-3 min-w-0">
                 <AnfrageBrandAvatar anfrage={anfrage} />
                 <div className="min-w-0">
-                  <h2 className="text-sm font-semibold leading-tight truncate">{brandDisplay}</h2>
+                  <DialogTitle className="text-sm font-semibold leading-tight truncate">
+                    {brandDisplay}
+                  </DialogTitle>
                   {anfrage.contact_person && (
                     <p className="text-xs text-muted-foreground">{anfrage.contact_person}</p>
                   )}
@@ -188,12 +192,6 @@ export function AnfrageDialog({
                   <Pencil className="w-3 h-3" />
                   Bearbeiten
                 </Button>
-                <DialogClose
-                  render={<Button variant="ghost" size="icon" className="-mt-0.5 -mr-1" />}
-                >
-                  <X className="w-4 h-4" />
-                  <span className="sr-only">Schließen</span>
-                </DialogClose>
               </div>
             </div>
 
@@ -383,7 +381,7 @@ export function AnfrageDialog({
 
       {/* Ablehnen */}
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Anfrage ablehnen</DialogTitle>
           </DialogHeader>
@@ -400,7 +398,9 @@ export function AnfrageDialog({
             />
           </div>
           <DialogFooter>
-            <DialogClose render={<Button variant="outline" />}>Abbrechen</DialogClose>
+            <DialogClose asChild>
+              <Button variant="outline">Abbrechen</Button>
+            </DialogClose>
             <Button variant="destructive" disabled={statusLoading} onClick={handleReject}>
               {statusLoading ? "…" : "Ablehnen"}
             </Button>
@@ -410,7 +410,7 @@ export function AnfrageDialog({
 
       {/* Löschen bestätigen */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Anfrage löschen?</DialogTitle>
           </DialogHeader>
@@ -420,7 +420,9 @@ export function AnfrageDialog({
             wird unwiderruflich gelöscht.
           </p>
           <DialogFooter>
-            <DialogClose render={<Button variant="outline" />}>Abbrechen</DialogClose>
+            <DialogClose asChild>
+              <Button variant="outline">Abbrechen</Button>
+            </DialogClose>
             <Button variant="destructive" disabled={deleteLoading} onClick={handleDelete}>
               {deleteLoading ? "Löschen…" : "Löschen"}
             </Button>

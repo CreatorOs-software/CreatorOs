@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  Button,
   Dialog,
+  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
-import { Button } from "@talentos/ui";
+} from "@talentos/ui";
 import { QueryKeys } from "@/lib/query-keys";
 import { TemplateForm, templateToFormValue, type TemplateFormValue } from "./template-form";
 
@@ -83,7 +83,7 @@ export function NeueTemplateDialog({
         }
       }}
     >
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Neue Vorlage</DialogTitle>
         </DialogHeader>
@@ -95,8 +95,10 @@ export function NeueTemplateDialog({
           />
           {error && <p className="text-xs text-destructive">{error}</p>}
           <DialogFooter>
-            <DialogClose render={<Button type="button" variant="outline" />}>
-              Abbrechen
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Abbrechen
+              </Button>
             </DialogClose>
             <Button type="submit" disabled={saving || !value.name.trim() || !value.body.trim()}>
               {saving ? "Anlegen…" : "Vorlage anlegen"}
