@@ -1,9 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Label } from "@/components/ui/label";
-import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@talentos/ui";
-import { DatePicker } from "@/components/ui/date-picker";
+import { Button, DatePicker, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@talentos/ui";
 import { FormSection } from "@/components/ui/form-section";
 import { Upload, FileIcon, X } from "lucide-react";
 import type { DealForm, DealField, StepErrors, BrandOption } from "../deal-form.types";

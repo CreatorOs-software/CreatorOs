@@ -17,21 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  Button,
-  Checkbox,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  Input,
-  Stepper,
-  type Step as StepperStep,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@talentos/ui";
-import { Switch } from "@/components/ui/switch";
+import { Button, Checkbox, DatePicker, Dialog, DialogContent, DialogTitle, Input, Stepper, Switch, Tabs, TabsContent, TabsList, TabsTrigger, type Step as StepperStep } from "@talentos/ui";
 import { BrandAvatar } from "../shared";
 import type {
   ApprovalInfo,
@@ -47,7 +33,6 @@ import type {
   WhitelistingInfo,
 } from "../types";
 import { ALT, LAUFEND, PIPELINE, fmtMoney } from "../constants";
-import { DatePicker } from "@/components/ui/date-picker";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -1457,7 +1442,6 @@ function GeldTab({
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
                         <Switch
-                          size="sm"
                           checked={!!item.invoice_date}
                           onCheckedChange={(checked) => {
                             const today = new Date()

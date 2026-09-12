@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Briefcase, ChevronDown, ChevronUp, HelpCircle, Sparkles } from "lucide-react";
-import { Button } from "@talentos/ui";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@talentos/ui";
 import type { SystemLabel } from "@/domains/communication";
 import {
   ACTION_META,

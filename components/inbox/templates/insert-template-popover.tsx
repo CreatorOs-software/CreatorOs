@@ -3,8 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Loader2 } from "lucide-react";
-import { Button } from "@talentos/ui";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button, Popover, PopoverContent, PopoverTrigger } from "@talentos/ui";
 import { QueryKeys } from "@/lib/query-keys";
 import type { RenderResult, Template, TemplateChannel } from "@/domains/templates";
 
@@ -69,7 +68,7 @@ export function InsertTemplatePopover({
           </>
         )}
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-0" align="start">
+      <PopoverContent className="w-64! p-0!" align="start">
         <div className="max-h-72 overflow-y-auto py-1">
           {templates.length === 0 ? (
             <p className="px-3 py-2 text-xs text-muted-foreground">

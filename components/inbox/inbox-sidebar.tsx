@@ -17,20 +17,8 @@ import {
   X,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  Input,
-} from "@talentos/ui";
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, Popover, PopoverContent, PopoverTrigger } from "@talentos/ui";
 import { cn } from "@/lib/utils";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import type { Creator, Folder, Integration } from "./types";
 import type { EmailLabel } from "@/domains/communication";
 import { AddMailboxDialog } from "./add-mailbox-dialog";
@@ -316,7 +304,7 @@ function AccountSwitcher({ integrations, selectedId, creators, onSelect }: Accou
         <PopoverContent
           side="bottom"
           align="start"
-          className="w-56 p-1"
+          className="w-56! p-1!"
           sideOffset={6}
         >
           {integrations.map((integ) => (

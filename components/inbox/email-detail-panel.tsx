@@ -24,14 +24,9 @@ import {
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@talentos/ui";
+import { Button, Popover, PopoverContent, PopoverTrigger } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { QueryKeys } from "@/lib/query-keys";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import type { Thread } from "./types";
 import type { ConversationMessage, EmailLabel, EmailThreadBody } from "@/domains/communication";
 import { SYSTEM_LABELS } from "./constants";
@@ -435,7 +430,7 @@ export function EmailDetailPanel({
             >
               <Tag className="h-4 w-4 text-muted-foreground" />
             </PopoverTrigger>
-            <PopoverContent align="end" sideOffset={6} className="w-52 p-1">
+            <PopoverContent align="end" sideOffset={6} className="w-52! p-1!">
               {/* System categories */}
               <p className="px-2 pb-1 pt-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
                 Kategorien
@@ -562,7 +557,7 @@ export function EmailDetailPanel({
                     <PopoverContent
                       side="bottom"
                       align="start"
-                      className="w-72 p-3"
+                      className="w-72 p-3!"
                     >
                       <div className="flex flex-col gap-2 text-xs">
                         <div className="flex gap-2">

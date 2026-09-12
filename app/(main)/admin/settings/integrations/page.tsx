@@ -4,8 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronLeft, ChevronRight, Inbox, MessageCircle } from "lucide-react";
-import { Button, Input } from "@talentos/ui";
-import { Label } from "@/components/ui/label";
+import { Button, Input, Label } from "@talentos/ui";
 import { QueryKeys } from "@/lib/query-keys";
 import type { WhatsAppConnectionPublic } from "@/domains/whatsapp";
 

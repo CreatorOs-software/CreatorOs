@@ -6,8 +6,7 @@ import { OnboardingCard } from "@/components/dashboard/onboarding-card";
 import { OnboardingTaskCard } from "@/components/dashboard/onboarding-task.card";
 import { StatGroup } from "@/components/dashboard/stat-card";
 import { StatusBar, StatusBarGroup } from "@/components/dashboard/status-bar";
-import { Badge } from "@talentos/ui";
-import { Label } from "@/components/ui/label";
+import { Badge, Label } from "@talentos/ui";
 import { Sparkles } from "lucide-react";
 
 export default function DashboardPage() {

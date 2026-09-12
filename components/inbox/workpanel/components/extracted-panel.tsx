@@ -5,10 +5,8 @@ import { Sparkles, Plus, Trash2, ChevronDown, ChevronUp, RefreshCw } from "lucid
 import { useForm } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/lib/query-keys";
-import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion";
-import { AccordionContent } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
-import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger, Textarea } from "@talentos/ui";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger, Textarea } from "@talentos/ui";
 import type { Creator } from "../../types";
 import type { WorkPanelState, ExtractedEmailData, LocalVorgang } from "../types";
 import { SectionLabel, FormField } from "./shared";
@@ -917,22 +915,21 @@ export function ExtractedPanel({
                       </p>
                     )}
 
-                    <AccordionPrimitive.Root multiple className="flex flex-col gap-2">
+                    <Accordion type="multiple" className="flex flex-col gap-2">
                       {items.map((d, i) => {
                         const summary = d.content_type
                           ? `${d.count}x ${d.content_type}${d.platform ? ` · ${d.platform}` : ""}`
                           : `Deliverable ${i + 1}`;
                         return (
-                          <AccordionPrimitive.Item
+                          <AccordionItem
                             key={i}
                             value={String(i)}
                             className="rounded-xl border border-border bg-muted/40"
                           >
-                            <AccordionPrimitive.Header className="flex items-center">
-                              <AccordionPrimitive.Trigger className="group flex flex-1 cursor-pointer items-center gap-1.5 px-3 py-2.5 text-left text-xs font-medium outline-none">
-                                <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground transition-transform group-aria-expanded:rotate-180" />
+                            <div className="flex items-center">
+                              <AccordionTrigger className="flex-1 cursor-pointer gap-1.5 px-3 py-2.5! text-left text-xs! font-medium outline-none hover:no-underline!">
                                 <span className="flex-1 truncate">{summary}</span>
-                              </AccordionPrimitive.Trigger>
+                              </AccordionTrigger>
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -942,7 +939,7 @@ export function ExtractedPanel({
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>
-                            </AccordionPrimitive.Header>
+                            </div>
 
                             <AccordionContent className="px-3">
                               <div className="grid grid-cols-5 gap-1.5 pb-1">
@@ -1042,10 +1039,10 @@ export function ExtractedPanel({
                                 </div>
                               </div>
                             </AccordionContent>
-                          </AccordionPrimitive.Item>
+                          </AccordionItem>
                         );
                       })}
-                    </AccordionPrimitive.Root>
+                    </Accordion>
 
                     <Button
                       variant="outline"

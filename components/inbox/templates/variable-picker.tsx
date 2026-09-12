@@ -3,12 +3,7 @@
 import { useMemo, useState } from "react";
 import { Braces } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button, Input } from "@talentos/ui";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Button, Input, Popover, PopoverContent, PopoverTrigger } from "@talentos/ui";
 import {
   VARIABLE_REGISTRY,
   type VariableGroup,
@@ -77,7 +72,7 @@ export function VariablePicker({ onPick, align = "start", className }: Props) {
         <Braces className="h-3.5 w-3.5" />
         Variable einfügen
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-0" align={align}>
+      <PopoverContent className="w-72 p-0!" align={align}>
         <div className="border-b border-border p-2">
           <Input
             autoFocus

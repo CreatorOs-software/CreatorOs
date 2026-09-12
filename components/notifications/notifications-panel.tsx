@@ -4,17 +4,17 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BellOff, ListTodo, MoreHorizontal, X } from "lucide-react";
-import { Button } from "@talentos/ui";
-import { QueryKeys } from "@/lib/query-keys";
-import { cn } from "@/lib/utils";
-import { FloatingWindow } from "@/components/ui/floating-window";
-import { Avatar } from "@/components/ui/avatar-creator";
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@talentos/ui";
+import { QueryKeys } from "@/lib/query-keys";
+import { cn } from "@/lib/utils";
+import { FloatingWindow } from "@/components/ui/floating-window";
+import { Avatar } from "@/components/ui/avatar-creator";
 import type {
   Notification,
   NotificationSeverity,

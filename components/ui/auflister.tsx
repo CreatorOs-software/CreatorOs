@@ -24,12 +24,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@talentos/ui";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Button, Input, Popover, PopoverContent, PopoverTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@talentos/ui";
 import {
   Table,
   TableBody,
@@ -170,16 +165,18 @@ export function Auflister<T>({
             )}
             {filterContent != null && (
               <Popover>
-                <PopoverTrigger render={<Button variant="outline" />}>
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
-                  Filter
-                  {activeFilterCount > 0 && (
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-accent text-background text-[9px] font-medium">
-                      {activeFilterCount}
-                    </span>
-                  )}
+                <PopoverTrigger asChild>
+                  <Button variant="outline">
+                    <SlidersHorizontal className="w-3.5 h-3.5" />
+                    Filter
+                    {activeFilterCount > 0 && (
+                      <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-accent text-background text-[9px] font-medium">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </Button>
                 </PopoverTrigger>
-                <PopoverContent align="start" className="w-56">
+                <PopoverContent align="start" className="w-56!">
                   {filterContent}
                 </PopoverContent>
               </Popover>

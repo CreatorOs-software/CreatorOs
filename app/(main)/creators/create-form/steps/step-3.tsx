@@ -1,7 +1,6 @@
 "use client";
 
-import { Label } from "@/components/ui/label";
-import { Chip, ChipGroup, Input } from "@talentos/ui";
+import { Chip, ChipGroup, Input, Label } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { PLATFORM_OPTIONS } from "../creator-form.constants";
 import type {

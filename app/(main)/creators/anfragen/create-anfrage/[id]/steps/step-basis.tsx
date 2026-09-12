@@ -1,8 +1,6 @@
 "use client";
 
-import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@talentos/ui";
-import { Label } from "@/components/ui/label";
-import { DatePicker } from "@/components/ui/date-picker";
+import { DatePicker, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@talentos/ui";
 import { FormSection } from "@/components/ui/form-section";
 import { StepNav } from "@/app/(main)/creators/create-form/steps/step-nav";
 import type { AnfrageSource } from "@/domains/anfragen";

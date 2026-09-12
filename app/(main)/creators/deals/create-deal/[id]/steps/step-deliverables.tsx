@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Label } from "@/components/ui/label";
-import { Button, Checkbox, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from "@talentos/ui";
-import { DatePicker } from "@/components/ui/date-picker";
+import { Button, Checkbox, DatePicker, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from "@talentos/ui";
 import { Plus, Trash2, ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PLATFORM_OPTIONS, CONTENT_TYPE_OPTIONS } from "../deal-form.constants";

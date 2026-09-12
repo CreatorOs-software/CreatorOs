@@ -6,7 +6,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@talentos/ui";
 import { cn } from "@/lib/utils";
 
 type AiActionsMenuProps = {

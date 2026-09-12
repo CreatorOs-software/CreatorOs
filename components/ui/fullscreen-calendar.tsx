@@ -24,8 +24,7 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@talentos/ui";
-import { Separator } from "@/components/ui/separator"
+import { Button, Separator } from "@talentos/ui";
 import { useMediaQuery } from "@/hooks/use-media-query"
 
 interface Event {
@@ -114,7 +113,7 @@ export function FullScreenCalendar({ data, onNewEvent }: FullScreenCalendarProps
             <SearchIcon size={16} strokeWidth={2} aria-hidden="true" />
           </Button>
 
-          <Separator orientation="vertical" className="hidden h-6 lg:block" />
+          <Separator orientation="vertical" className="hidden h-6! lg:block" />
 
           <div className="inline-flex w-full -space-x-px rounded-lg shadow-sm md:w-auto">
             <Button
@@ -144,7 +143,7 @@ export function FullScreenCalendar({ data, onNewEvent }: FullScreenCalendarProps
             </Button>
           </div>
 
-          <Separator orientation="vertical" className="hidden h-6 md:block" />
+          <Separator orientation="vertical" className="hidden h-6! md:block" />
           <Separator
             orientation="horizontal"
             className="block w-full md:hidden"

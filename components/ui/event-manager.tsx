@@ -3,30 +3,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/lib/query-keys";
-import {
-  Badge,
-  Button,
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  Textarea,
-} from "@talentos/ui";
-import { Card } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { DatePicker } from "@/components/ui/date-picker";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
+import { Badge, Button, Card, DatePicker, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, Input, Label, Popover, PopoverContent, PopoverTrigger, Select, SelectContent, SelectItem, SelectTrigger, Switch, Textarea } from "@talentos/ui";
 import {
   ChevronLeft,
   ChevronRight,
@@ -711,7 +688,7 @@ function ListView({
 
   if (groups.length === 0) {
     return (
-      <Card className="flex flex-1 items-center justify-center p-8">
+      <Card className="flex flex-1 items-center justify-center p-8!">
         <p className="text-sm text-muted-foreground">Keine Events gefunden.</p>
       </Card>
     );
@@ -1018,7 +995,7 @@ function EventDialog({
                 )}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
               </PopoverTrigger>
-              <PopoverContent className="w-80 p-2" align="start">
+              <PopoverContent className="w-80! p-2!" align="start">
                 {teamMembers.length === 0 ? (
                   <p className="px-2 py-4 text-center text-sm text-muted-foreground">
                     Keine Teammitglieder gefunden

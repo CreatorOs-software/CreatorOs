@@ -3,8 +3,7 @@
 import { Suspense, useState, useTransition } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { register } from "@/domains/auth";
-import { Button, Input } from "@talentos/ui";
-import { Label } from "@/components/ui/label";
+import { Button, Input, Label } from "@talentos/ui";
 
 function JoinForm() {
   const searchParams = useSearchParams();

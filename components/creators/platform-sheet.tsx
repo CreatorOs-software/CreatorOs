@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Link2Off, Loader2, RefreshCw } from "lucide-react";
 import {
   Button,
+  Card,
   Dialog,
   DialogClose,
   DialogContent,
@@ -18,7 +19,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@talentos/ui";
-import { Card } from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
 import { AvatarCreator } from "@/components/ui/avatar-creator";
 import {
@@ -183,7 +183,7 @@ export function PlatformSheet({
                     return (
                       <Card
                         key={p}
-                        className="flex-row items-center gap-3 px-4 py-3 border border-border rounded-sm"
+                        className="flex-row! items-center gap-3! px-4 py-3! border border-border rounded-sm!"
                       >
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium">{p}</p>
@@ -333,7 +333,7 @@ export function PlatformSheet({
                   {furtherPlatforms.map((key) => (
                     <Card
                       key={key}
-                      className="flex-row items-center gap-3 px-4 py-3 border border-border rounded-sm"
+                      className="flex-row! items-center gap-3! px-4 py-3! border border-border rounded-sm!"
                     >
                       <span className="text-lg text-muted-foreground shrink-0">
                         {PLATFORM_ICONS[key]}
