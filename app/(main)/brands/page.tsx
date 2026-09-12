@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Loader2, Plus } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button, Checkbox, Input, SegmentedControl } from "@talentos/ui";
+import { Button, Card, Checkbox, Input, SegmentedControl } from "@talentos/ui";
 import {
   Dialog,
   DialogContent,

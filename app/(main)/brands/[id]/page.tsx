@@ -15,9 +15,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Card } from "@/components/ui/card";
+
 import { Auflister } from "@/components/ui/auflister";
-import { Button, Checkbox, Input, SegmentedControl, Textarea } from "@talentos/ui";
+import { Button, Card, Checkbox, Input, SegmentedControl, Textarea } from "@talentos/ui";
 import {
   Dialog,
   DialogContent,
