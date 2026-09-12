@@ -79,7 +79,7 @@ export function OrbitInbox() {
   const [isResizing, setIsResizing] = useState(false);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const resizeRef = useRef<{ startX: number; startWidth: number; max: number } | null>(null);
-  const [mergedMode, setMergedMode] = useState(false);
+  const [mergedMode, setMergedMode] = useState(true);
   const [mergedView, setMergedView] = useState<"sidebar" | "threads">("sidebar");
   const [syncing, setSyncing] = useState(false);
   const [filterUnread, setFilterUnread] = useState(false);
