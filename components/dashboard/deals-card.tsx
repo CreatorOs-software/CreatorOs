@@ -3,8 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { QueryKeys } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
-import { Card, CardHeader, CardContent } from "@talentos/ui";
-import { Loader2 } from "lucide-react";
+import { Card, CardHeader, CardContent, Skeleton } from "@talentos/ui";
 import { BrandAvatar } from "@/components/creators/dashboard/shared";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -84,8 +83,16 @@ export function DealsCard({ creatorId, className }: DealsCardProps) {
 
       <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto">
         {isPending ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+          <div className="flex flex-col divide-y divide-border-light">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
+                <Skeleton className="w-1.5 h-1.5 rounded-full shrink-0" />
+                <Skeleton className="w-6 h-6 rounded-md shrink-0" />
+                <Skeleton className="h-3 flex-1" />
+                <Skeleton className="h-4 w-14 rounded-full shrink-0" />
+                <Skeleton className="h-3 w-10 shrink-0" />
+              </div>
+            ))}
           </div>
         ) : deals.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-8">

@@ -3,11 +3,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { QueryKeys } from "@/lib/query-keys";
 import { useParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import { Button } from "@talentos/ui";
 import { EditCreatorWizard } from "../edit-creator-wizard";
 import type { Creator } from "@/domains/creators/types";
 import { useRouter } from "next/navigation";
+import { EditFormSkeleton } from "@/components/creators/edit-form-skeleton";
 
 export default function EditCreatorPage() {
   const router = useRouter();
@@ -20,11 +20,7 @@ export default function EditCreatorPage() {
   });
 
   if (isPending) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <EditFormSkeleton />;
   }
 
   if (!data?.creator) {

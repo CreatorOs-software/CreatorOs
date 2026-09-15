@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Calendar, User } from "lucide-react";
-import { Loader2 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar-creator";
-import { Button, Card } from "@talentos/ui";
+import { Button, Card, Skeleton } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import type { DealFull, Invoice } from "./types";
 import { fmtMoney } from "./constants";
@@ -607,8 +606,25 @@ export function UebersichtTab({
 }) {
   if (isPending) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      <div className="flex flex-col gap-4 pb-6">
+        <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 18rem" }}>
+          <Card className="p-5 flex flex-col gap-3">
+            <Skeleton className="h-4 w-24" />
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-10 w-full rounded-lg" />
+            ))}
+          </Card>
+          <Card className="p-5 flex flex-col gap-3">
+            <Skeleton className="h-4 w-16" />
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-6 w-full rounded-md" />
+            ))}
+          </Card>
+        </div>
+        <Card className="p-5 flex flex-col gap-3">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-20 w-full rounded-lg" />
+        </Card>
       </div>
     );
   }

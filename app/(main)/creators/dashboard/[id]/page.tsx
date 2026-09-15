@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, Loader2, Pencil, Plus } from "lucide-react";
+import { ChevronLeft, Pencil, Plus } from "lucide-react";
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@talentos/ui";
 import { StatusBar, StatusBarGroup } from "@/components/dashboard/status-bar";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,7 @@ import type {
   Anfrage,
 } from "@/components/creators/dashboard/types";
 import { DashboardSkeleton } from "@/components/creators/dashboard/skeleton";
+import { InsightsTabSkeleton } from "@/components/creators/dashboard/insights-tab-skeleton";
 import {
   PlatformContent,
   DisconnectedPlatformTab,
@@ -246,9 +247,7 @@ export default function CreatorDashboardPage() {
           {/* Insights */}
           <TabsContent value="insights">
             {metricsPending ? (
-              <div className="flex items-center justify-center py-24">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-              </div>
+              <InsightsTabSkeleton />
             ) : !hasPlatforms ? (
               <InsightsEmptyState />
             ) : (

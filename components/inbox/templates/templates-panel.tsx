@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import {
   Button,
   Card,
@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@talentos/ui";
 import { Auflister } from "@/components/ui/auflister";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { QueryKeys } from "@/lib/query-keys";
 import type { Template } from "@/domains/templates";
 import { templatesColumns } from "./templates-columns";
@@ -52,9 +53,7 @@ export function TemplatesPanel() {
     <div className="flex flex-col gap-4">
       <Card className="p-0! gap-0! overflow-hidden">
         {isPending ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-          </div>
+          <TableSkeleton rows={5} />
         ) : (
           <Auflister
             data={templates}

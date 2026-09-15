@@ -1,4 +1,4 @@
-import { Clock, Handshake, Mail, MoreHorizontal, Receipt, Star, Tag as TagIcon } from "lucide-react";
+import { Clock, Handshake, Mail, Receipt, Star, Tag as TagIcon } from "lucide-react";
 import type { Category } from "./types";
 
 export const SYSTEM_LABELS = [
@@ -45,12 +45,6 @@ export const CATEGORIES: Category[] = [
     label: "Rechnung",
     icon: <Receipt className="h-3.5 w-3.5" />,
     color: "bg-[#8B5CF6]",
-  },
-  {
-    id: "anderes",
-    label: "Anderes",
-    icon: <MoreHorizontal className="h-3.5 w-3.5" />,
-    color: "bg-[#8C8C8C]",
   },
 ];
 

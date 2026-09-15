@@ -35,7 +35,7 @@ export function CategorySelect({ category, onCategory }: Props) {
   }, [category]);
 
   return (
-    <div className="relative flex w-full gap-2">
+    <div className="relative flex w-full justify-around  gap-2">
       <ToggleGroup
         type="single"
         variant="outline"
@@ -48,12 +48,14 @@ export function CategorySelect({ category, onCategory }: Props) {
           return (
             <Tooltip key={cat.id}>
               <TooltipTrigger asChild>
-                <ToggleGroupItem
-                  value={cat.id}
-                  ref={isActive ? activeRef : undefined}
-                >
-                  {cat.icon}
-                </ToggleGroupItem>
+                <span>
+                  <ToggleGroupItem
+                    value={cat.id}
+                    ref={isActive ? activeRef : undefined}
+                  >
+                    {cat.icon}
+                  </ToggleGroupItem>
+                </span>
               </TooltipTrigger>
               <TooltipContent>{cat.label}</TooltipContent>
             </Tooltip>

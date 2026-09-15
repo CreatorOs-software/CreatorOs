@@ -7,7 +7,6 @@ import {
   Eye,
   LayoutGrid,
   List,
-  Loader2,
   Plus,
   Puzzle,
   Star,
@@ -18,6 +17,7 @@ import { Badge, Button, Input, ToggleGroup, ToggleGroupItem } from "@talentos/ui
 import { AvatarCreator } from "@/components/ui/avatar-creator";
 import { Auflister } from "@/components/ui/auflister";
 import { CreatorCard, formatMoney } from "@/components/creators/creator-card";
+import { CreatorsListSkeleton } from "@/components/creators/creators-list-skeleton";
 import {
   CreatorSheet,
   type Creator,
@@ -246,11 +246,7 @@ export default function CreatorsPage() {
   );
 
   if (isPending) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <CreatorsListSkeleton />;
   }
 
   return (

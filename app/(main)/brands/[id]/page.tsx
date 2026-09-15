@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   ArrowUpRight,
   ChevronRight,
-  Loader2,
   Mail,
   Pencil,
   Plus,
@@ -17,6 +16,7 @@ import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
 
 import { Auflister } from "@/components/ui/auflister";
+import { BrandDetailSkeleton } from "@/components/brands/brand-detail-skeleton";
 import {
   Button,
   Card,
@@ -960,11 +960,7 @@ export default function BrandDetailPage() {
   }
 
   if (isPending) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <BrandDetailSkeleton />;
   }
 
   if (!data?.brand) {

@@ -3,7 +3,6 @@
 import {
   ChevronLeft,
   Inbox,
-  Loader2,
   RefreshCcw,
   Search,
   Sparkles,
@@ -12,6 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { WorkPanel } from "./workpanel/work-panel";
+import { OrbitInboxSkeleton } from "./orbit-inbox-skeleton";
 import { InboxSidebar } from "./inbox-sidebar";
 import { CategorySelect } from "./category-select";
 import { ThreadItem } from "./thread-item";
@@ -149,11 +149,17 @@ export function OrbitInbox() {
   const creators = data?.creators ?? [];
 
   useEffect(() => {
-    if (!selectedIntegrationId && integrations[0]?.id) {
-      // The first response supplies mailbox metadata; subsequent list requests
-      // are scoped to the selected mailbox on the server.
+    if (integrations.length === 0) return;
+    const stillValid = integrations.some((i) => i.id === selectedIntegrationId);
+    // The first response supplies mailbox metadata; subsequent list requests
+    // are scoped to the selected mailbox on the server. Also self-heals when
+    // the previously selected mailbox (persisted in localStorage) no longer
+    // exists — e.g. it was disconnected/deleted — so the inbox doesn't keep
+    // requesting a dead integration_id and rendering an empty list forever.
+    if (!selectedIntegrationId || !stillValid) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedIntegrationId(integrations[0].id);
+      localStorage.setItem("inbox:selectedIntegrationId", integrations[0].id);
     }
   }, [integrations, selectedIntegrationId]);
 
@@ -435,11 +441,7 @@ export function OrbitInbox() {
   // ── Loading / error states ───────────────────────────────────────────────────
 
   if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
+    return <OrbitInboxSkeleton />;
   }
 
   if (isError) {
@@ -545,14 +547,17 @@ export function OrbitInbox() {
               <div className="flex items-center gap-1">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Toggle
-                      size="sm"
-                      pressed={autoLabel}
-                      onPressedChange={() => void handleToggleAutoLabel()}
-                      aria-label="Auto Label"
-                    >
-                      <Sparkles className="h-3.5 w-3.5" />
-                    </Toggle>
+                    <span>
+                      <Toggle
+                        size="sm"
+                        pressed={autoLabel}
+                        onPressedChange={() => void handleToggleAutoLabel()}
+                        aria-label="Auto Label"
+                        className="data-[state=on]:bg-muted! data-[state=on]:text-foreground!"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                      </Toggle>
+                    </span>
                   </TooltipTrigger>
                   <TooltipContent>Auto Label</TooltipContent>
                 </Tooltip>
@@ -581,7 +586,7 @@ export function OrbitInbox() {
             </div>
 
             {folder === "inbox" && (
-              <div className="px-4 pb-3">
+              <div className="px-4 w-full pb-3">
                 <CategorySelect category={category} onCategory={setCategory} />
               </div>
             )}

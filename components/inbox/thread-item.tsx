@@ -21,7 +21,14 @@ type Props = {
   onDelete: () => void;
 };
 
-export function ThreadItem({ thread, isSelected, onClick, onStar, onArchive, onDelete }: Props) {
+export function ThreadItem({
+  thread,
+  isSelected,
+  onClick,
+  onStar,
+  onArchive,
+  onDelete,
+}: Props) {
   const displayName = getDisplayName(thread.sender_name, thread.sender_email);
   const initial = getInitial(thread.sender_name, thread.sender_email);
 
@@ -29,7 +36,7 @@ export function ThreadItem({ thread, isSelected, onClick, onStar, onArchive, onD
     <div
       onClick={onClick}
       className={cn(
-        "group relative mx-2 flex cursor-pointer flex-col items-start overflow-clip rounded-lg border border-transparent px-4 py-3 text-left text-sm transition-all",
+        "group relative flex cursor-pointer flex-col items-start overflow-clip  border border-transparent px-4 py-3 text-left text-sm transition-all",
         "hover:bg-primary/5",
         isSelected && "border-border bg-primary/5",
       )}
@@ -48,7 +55,12 @@ export function ThreadItem({ thread, isSelected, onClick, onStar, onArchive, onD
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <span className={cn("text-sm", thread.unread && !isSelected ? "font-bold" : "font-medium")}>
+              <span
+                className={cn(
+                  "text-sm",
+                  thread.unread && !isSelected ? "font-bold" : "font-medium",
+                )}
+              >
                 {displayName}
               </span>
               {thread.unread && !isSelected && (
@@ -68,42 +80,55 @@ export function ThreadItem({ thread, isSelected, onClick, onStar, onArchive, onD
               {formatDate(thread.received_at)}
             </span>
           </div>
-          <p className="mt-1 line-clamp-1 text-xs font-medium opacity-80">{thread.subject}</p>
-          <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">{thread.preview}</p>
+          <p className="mt-1 line-clamp-1 text-xs font-medium opacity-80">
+            {thread.subject}
+          </p>
+          <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
+            {thread.preview}
+          </p>
           {thread.label_status === "processing" && (
             <div className="mt-1.5 flex items-center gap-1 text-[10px] text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
               <span>Wird gelabelt…</span>
             </div>
           )}
-          {thread.label_status !== "processing" && (thread.system_labels.length > 0 || thread.labels.length > 0) && (
-            <div className="mt-1.5 flex flex-wrap gap-1">
-              {thread.system_labels.map((name) => {
-                const color = SYSTEM_LABEL_COLOR[name] ?? "#8C8C8C";
-                return (
+          {thread.label_status !== "processing" &&
+            (thread.system_labels.length > 0 || thread.labels.length > 0) && (
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {thread.system_labels.map((name) => {
+                  const color = SYSTEM_LABEL_COLOR[name] ?? "#8C8C8C";
+                  return (
+                    <span
+                      key={name}
+                      className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                      style={{ backgroundColor: color + "22", color }}
+                    >
+                      <span
+                        className="h-1.5 w-1.5 rounded-full"
+                        style={{ backgroundColor: color }}
+                      />
+                      {name}
+                    </span>
+                  );
+                })}
+                {thread.labels.map((label) => (
                   <span
-                    key={name}
-                    className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-                    style={{ backgroundColor: color + "22", color }}
+                    key={label.id}
+                    className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                    style={{
+                      backgroundColor: label.color + "22",
+                      color: label.color,
+                    }}
                   >
-                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
-                    {name}
+                    <span
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ backgroundColor: label.color }}
+                    />
+                    {label.name}
                   </span>
-                );
-              })}
-              {thread.labels.map((label) => (
-                <span
-                  key={label.id}
-                  className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
-                  style={{ backgroundColor: label.color + "22", color: label.color }}
-                >
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: label.color }} />
-                  {label.name}
-                </span>
-              ))}
-            </div>
-          )}
-
+                ))}
+              </div>
+            )}
         </div>
       </div>
 
@@ -113,16 +138,29 @@ export function ThreadItem({ thread, isSelected, onClick, onStar, onArchive, onD
           type="button"
           variant="ghost"
           size="icon"
-          onClick={(e) => { e.stopPropagation(); onStar(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onStar();
+          }}
           className="h-6 w-6 rounded border border-[#E7E7E7] bg-white hover:bg-gray-100"
         >
-          <Star className={cn("h-3 w-3", thread.starred ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground")} />
+          <Star
+            className={cn(
+              "h-3 w-3",
+              thread.starred
+                ? "fill-yellow-400 text-yellow-400"
+                : "text-muted-foreground",
+            )}
+          />
         </Button>
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          onClick={(e) => { e.stopPropagation(); onArchive(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onArchive();
+          }}
           className="h-6 w-6 rounded border border-[#E7E7E7] bg-white hover:bg-gray-100"
         >
           <Archive className="text-muted-foreground h-3 w-3" />
@@ -131,7 +169,10 @@ export function ThreadItem({ thread, isSelected, onClick, onStar, onArchive, onD
           type="button"
           variant="ghost"
           size="icon"
-          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
           className="h-6 w-6 rounded border border-[#FCCDD5] bg-[#FDE4E9] hover:bg-[#FDE4E9]/80"
         >
           <Trash2 className="h-3 w-3 text-[#F43F5E]" />

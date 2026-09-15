@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Loader2, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import {
   Button,
   Card,
@@ -19,6 +19,7 @@ import {
   SegmentedControl,
 } from "@talentos/ui";
 import { Auflister } from "@/components/ui/auflister";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { cn } from "@/lib/utils";
 import { fmtMoney, fmtDate } from "@/components/creators/dashboard/constants";
 
@@ -363,9 +364,7 @@ export default function BrandsPage() {
       {/* Table */}
       <Card className="p-5 gap-0 rounded-2xl">
         {isPending ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-          </div>
+          <TableSkeleton />
         ) : (
           <Auflister
             data={filtered}
