@@ -1,8 +1,14 @@
 export type ReasoningEffort = "minimal" | "low" | "medium" | "high";
 
+export type AIContentPart =
+  | { type: "text"; text: string }
+  | { type: "file"; mimeType: string; base64: string; filename?: string };
+
+export type AIMessage = { role: "user"; content: string | AIContentPart[] };
+
 export type AIRequest = {
   system:   string;
-  messages: { role: "user"; content: string }[];
+  messages: AIMessage[];
   model:    string;
   maxTokens: number;
   /** Optional reasoning effort (OpenAI reasoning models only; ignored elsewhere). */

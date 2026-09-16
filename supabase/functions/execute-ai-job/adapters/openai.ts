@@ -1,4 +1,4 @@
-import { AIProviderAdapter, AIRequest, AIResponse } from "./types.ts";
+import { AIMessage, AIProviderAdapter, AIRequest, AIResponse } from "./types.ts";
 
 const RESPONSES_URL = "https://api.openai.com/v1/responses";
 
@@ -9,12 +9,27 @@ export class OpenAIAdapter implements AIProviderAdapter {
     this.apiKey = apiKey;
   }
 
+  private toResponsesInput(messages: AIMessage[]) {
+    return messages.map((m) => ({
+      role: m.role,
+      content: typeof m.content === "string"
+        ? m.content
+        : m.content.map((part) =>
+            part.type === "text"
+              ? { type: "input_text", text: part.text }
+              : part.mimeType.startsWith("image/")
+                ? { type: "input_image", image_url: `data:${part.mimeType};base64,${part.base64}` }
+                : { type: "input_file", filename: part.filename ?? "attachment", file_data: `data:${part.mimeType};base64,${part.base64}` }
+          ),
+    }));
+  }
+
   private body(req: AIRequest, stream: boolean): string {
     return JSON.stringify({
       model:             req.model,
       max_output_tokens: req.maxTokens,
       instructions:      req.system,
-      input:             req.messages,
+      input:             this.toResponsesInput(req.messages),
       store:             false,
       ...(stream ? { stream: true } : {}),
       ...(req.reasoning ? { reasoning: { effort: req.reasoning } } : {}),

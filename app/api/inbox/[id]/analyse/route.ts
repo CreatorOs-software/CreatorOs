@@ -2,6 +2,7 @@ import { z } from "zod";
 import { getAuthContext } from "@/domains/auth";
 import { createClient } from "@/lib/supabase/server";
 import { toErrorResponse } from "@/lib/auth-context";
+import { EmailAttachmentService } from "@/domains/email-attachments";
 
 type AiDeliverable = {
   count: number;
@@ -53,11 +54,22 @@ type AiResult = {
   suggested_reply: string | null;
 };
 
+type AttachmentSummary = {
+  id: string;
+  filename: string;
+  mimeType: string;
+  classification: "RECHNUNG" | "VERTRAG_BRIEFING" | "ANDERES" | null;
+  classificationConfidence: number | null;
+  extracted: Record<string, unknown> | null;
+  assignedCreatorId: string | null;
+};
+
 export type AnalyseResult = AiResult & {
   brand_name: string | null;
   brand_id: string | null;
   brand_is_new: boolean;
   anfrage_id: string | null;
+  attachments: AttachmentSummary[];
 };
 
 const bodySchema = z.object({ mode: z.enum(["create", "merge"]).optional() });
@@ -170,8 +182,12 @@ export async function POST(
       }
     }
 
-    // Deterministic brand matching (parallel with AI call)
-    const [brandsRes, contactsRes, aiRes] = await Promise.all([
+    // Deterministic brand matching + eligible-attachment lookup (parallel with AI call).
+    // No AI call for attachments here — EmailAttachmentService.list() only
+    // returns metadata (gated by thread relevance), classification/extraction
+    // happens exclusively via an explicit card click, see
+    // attachments/[attachmentId]/analyze/route.ts.
+    const [brandsRes, contactsRes, aiRes, attachmentResults] = await Promise.all([
       supabase
         .from("brands")
         .select("id, company_name")
@@ -193,6 +209,7 @@ export async function POST(
           current_anfrage: currentAnfrage,
         }),
       }),
+      EmailAttachmentService.list(id),
     ]);
 
     if (!aiRes.ok) {
@@ -203,6 +220,15 @@ export async function POST(
     const aiData = await aiRes.json() as AiResult;
     const brands = brandsRes.data ?? [];
     const contacts = contactsRes.data ?? [];
+    const attachments: AttachmentSummary[] = attachmentResults.map((a) => ({
+      id: a.id,
+      filename: a.filename,
+      mimeType: a.mime_type,
+      classification: a.classification,
+      classificationConfidence: a.classification_confidence,
+      extracted: a.extracted,
+      assignedCreatorId: a.assigned_creator_id,
+    }));
 
     const matchedBrand = matchBrand(
       thread.sender_email,
@@ -217,6 +243,7 @@ export async function POST(
       brand_name:  matchedBrand?.company_name ?? null,
       brand_is_new: matchedBrand === null,
       anfrage_id:  anfrageId,
+      attachments,
     };
 
     return Response.json(result);

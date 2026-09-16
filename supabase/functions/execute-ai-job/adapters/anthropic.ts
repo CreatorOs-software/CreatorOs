@@ -14,6 +14,13 @@ export class AnthropicAdapter implements AIProviderAdapter {
   async execute(req: AIRequest): Promise<AIResponse> {
     const start = Date.now();
 
+    // Anthropic's Messages API supports content blocks, but with a different
+    // shape than AIContentPart — sending ours through unmapped would produce
+    // a malformed request. No task uses file content on this provider yet.
+    if (req.messages.some((m) => Array.isArray(m.content))) {
+      throw new Error("AnthropicAdapter: multi-part content not supported yet");
+    }
+
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {

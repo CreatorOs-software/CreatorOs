@@ -1,10 +1,11 @@
 import { ZodSchema } from "npm:zod@3";
-import { AIProviderAdapter, ReasoningEffort } from "./adapters/types.ts";
+import { AIMessage, AIProviderAdapter, ReasoningEffort } from "./adapters/types.ts";
 import { AnthropicAdapter } from "./adapters/anthropic.ts";
 import { OpenAIAdapter } from "./adapters/openai.ts";
 import { incomingEmailAnalysisPrompt } from "./tasks/incoming-email-analysis/prompt.ts";
 import { emailLabelPrompt } from "./tasks/email-label/prompt.ts";
 import { emailDraftProofreadPrompt } from "./tasks/email-proofread/prompt.ts";
+import { attachmentAnalyzePrompt } from "./tasks/attachment-analyze/prompt.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -15,7 +16,8 @@ export type AIProvider = "anthropic" | "openai";
 export type AITaskType =
   | "INCOMING_EMAIL_ANALYSIS"
   | "EMAIL_LABEL"
-  | "EMAIL_DRAFT_PROOFREAD";
+  | "EMAIL_DRAFT_PROOFREAD"
+  | "ATTACHMENT_ANALYZE";
 
 // `mode` decides how the Edge Function consumes the model output:
 //   "structured" (default) — one JSON blob, validated by `outputSchema`
@@ -35,7 +37,7 @@ export type PromptDefinition<TCtx = unknown, TOut = unknown> = {
   reasoning?:       ReasoningEffort;
   mode?:            PromptMode;    // defaults to "structured"
   system:           string;
-  buildMessages:    (ctx: TCtx) => { role: "user"; content: string }[];
+  buildMessages:    (ctx: TCtx) => AIMessage[];
   outputSchema:     ZodSchema<TOut>;
 };
 
@@ -50,6 +52,7 @@ export const PROMPT_REGISTRY = {
   INCOMING_EMAIL_ANALYSIS: incomingEmailAnalysisPrompt,
   EMAIL_LABEL:             emailLabelPrompt,
   EMAIL_DRAFT_PROOFREAD:   emailDraftProofreadPrompt,
+  ATTACHMENT_ANALYZE:      attachmentAnalyzePrompt,
 } satisfies Record<AITaskType, PromptDefinition<never>>;
 
 // ---------------------------------------------------------------------------

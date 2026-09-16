@@ -1,21 +1,68 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Plus, Trash2, ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
+import { Sparkles, Plus, Trash2, ChevronDown, ChevronUp, RefreshCw, Paperclip, Loader2, Check, FileText } from "lucide-react";
 import { useForm } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger, Textarea } from "@talentos/ui";
 import type { Creator } from "../../types";
-import type { WorkPanelState, ExtractedEmailData, LocalVorgang } from "../types";
+import type { WorkPanelState, ExtractedEmailData, ExtractedAttachment, LocalVorgang } from "../types";
 import { SectionLabel, FormField } from "./shared";
+import { AttachmentBadge } from "./attachment-badge";
 import {
   collectErrors,
   type ExtractedErrors,
   type ExtractedField,
   type ExtractedFormValues,
 } from "./extracted-form.schema";
+
+type AttachmentExtractedFields = {
+  creator_id: string | null;
+  contact: string | null;
+  title: string | null;
+  product: string | null;
+  budget: number | null;
+  budget_offer: number | null;
+  fee: number | null;
+  period: string | null;
+  campaign_start: string | null;
+  campaign_end: string | null;
+  notes: string | null;
+  deliverables: {
+    count: number;
+    content_type: string;
+    platform: string;
+    draft_deadline: string | null;
+    freigabe_deadline: string | null;
+    live_date: string | null;
+  }[];
+  payment_items: {
+    label: string;
+    amount: number;
+    invoice_date: string | null;
+    payment_term: 14 | 30 | 45;
+  }[];
+  guidelines: {
+    labeling: string | null;
+    wording: string | null;
+    nogo: string | null;
+    hashtags: string[];
+  } | null;
+  tracking_assets: {
+    discount_code: string | null;
+    affiliate_links: string[];
+    utm_params: string | null;
+  } | null;
+};
+
+type AttachmentAnalyzeResponse = {
+  filename: string;
+  classification: "RECHNUNG" | "VERTRAG_BRIEFING" | "ANDERES";
+  classification_confidence: number;
+  extracted: AttachmentExtractedFields | null;
+};
 
 const TODAY = new Date().toLocaleDateString("de-DE", {
   day: "2-digit",
@@ -144,6 +191,30 @@ export function ExtractedPanel({
   const [saving, setSaving] = useState(false);
   const [showMore, setShowMore] = useState(false);
 
+  const [showAttachmentCards, setShowAttachmentCards] = useState(false);
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const [analyzeResults, setAnalyzeResults] = useState<
+    Record<string, { classification: "RECHNUNG" | "VERTRAG_BRIEFING" | "ANDERES" }>
+  >(() =>
+    Object.fromEntries(
+      data.attachments
+        .filter((a) => a.classification)
+        .map((a) => [a.id, { classification: a.classification! }]),
+    ),
+  );
+  const [fieldSources, setFieldSources] = useState<Record<string, string>>({});
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+
+  const [assigningId, setAssigningId] = useState<string | null>(null);
+  const [creatorSelection, setCreatorSelection] = useState<Record<string, string>>({});
+  const [assignedCreators, setAssignedCreators] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      data.attachments
+        .filter((a) => a.assignedCreatorId)
+        .map((a) => [a.id, a.assignedCreatorId!]),
+    ),
+  );
+
   const form = useForm({
     defaultValues: {
       creatorId: data.creatorId ?? "",
@@ -196,6 +267,132 @@ export function ExtractedPanel({
       }
     },
   });
+
+  // Merges the result of an attachment analysis into the live form — never
+  // called automatically, only from handleAnalyzeAttachment below, and only
+  // for a VERTRAG_BRIEFING result. Non-null attachment fields win over
+  // whatever the form currently holds (email-body value or an earlier
+  // attachment) — last click wins.
+  function applyExtractedFields(filename: string, data: AttachmentExtractedFields) {
+    const sources: Record<string, string> = {};
+    const set = <K extends keyof ExtractedFormValues>(name: K, value: ExtractedFormValues[K]) => {
+      form.setFieldValue(name as never, value as never);
+      sources[name] = filename;
+    };
+
+    if (data.contact) set("contact", data.contact);
+    if (data.title) set("title", data.title);
+    if (data.product) set("product", data.product);
+    if (data.budget != null) set("budget", data.budget);
+    if (data.budget_offer != null) set("budgetOffer", data.budget_offer);
+    if (data.fee != null) set("fee", data.fee);
+    if (data.period) set("period", data.period);
+    if (data.campaign_start) {
+      set("campaign_start", data.campaign_start);
+      sources.campaign = filename;
+    }
+    if (data.campaign_end) {
+      set("campaign_end", data.campaign_end);
+      sources.campaign = filename;
+    }
+    if (data.notes) set("notes", data.notes);
+    if (data.deliverables.length > 0) {
+      set(
+        "deliverables",
+        data.deliverables.map((d) => ({
+          count: d.count,
+          content_type: d.content_type,
+          platform: d.platform,
+          draft_deadline: d.draft_deadline ?? "",
+          freigabe_deadline: d.freigabe_deadline ?? "",
+          live_date: d.live_date ?? "",
+        })),
+      );
+    }
+    if (data.payment_items.length > 0) {
+      set(
+        "paymentItems",
+        data.payment_items.map((p) => ({
+          label: p.label,
+          amount: p.amount,
+          invoiceDate: p.invoice_date ?? "",
+          paymentTerm: p.payment_term,
+        })),
+      );
+    }
+    if (data.guidelines) {
+      set("guidelines", {
+        labeling: data.guidelines.labeling ?? "",
+        wording: data.guidelines.wording ?? "",
+        nogo: data.guidelines.nogo ?? "",
+        hashtags: data.guidelines.hashtags ?? [],
+      });
+    }
+    if (data.tracking_assets) {
+      set("trackingAssets", {
+        discountCode: data.tracking_assets.discount_code ?? "",
+        affiliateLinks: data.tracking_assets.affiliate_links ?? [],
+        utmParams: data.tracking_assets.utm_params ?? "",
+      });
+    }
+    if (!isMerge && data.creator_id) set("creatorId", data.creator_id);
+
+    setFieldSources((prev) => ({ ...prev, ...sources }));
+  }
+
+  // Classifies + (for VERTRAG_BRIEFING) extracts a chosen attachment card in
+  // one call. Never runs automatically — only from a click on the card.
+  async function handleAnalyzeAttachment(attachment: ExtractedAttachment) {
+    setAnalyzingId(attachment.id);
+    setAnalyzeError(null);
+    try {
+      const res = await fetch(`/api/inbox/${threadId}/attachments/${attachment.id}/analyze`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const b = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(b.error ?? "Anhang auslesen fehlgeschlagen");
+      }
+      const result = (await res.json()) as AttachmentAnalyzeResponse;
+      setAnalyzeResults((prev) => ({
+        ...prev,
+        [attachment.id]: { classification: result.classification },
+      }));
+      if (result.classification === "VERTRAG_BRIEFING" && result.extracted) {
+        applyExtractedFields(result.filename, result.extracted);
+      }
+    } catch (e) {
+      setAnalyzeError(e instanceof Error ? e.message : "Unbekannter Fehler");
+    } finally {
+      setAnalyzingId(null);
+    }
+  }
+
+  async function handleAssignCreator(attachment: ExtractedAttachment) {
+    const creatorId = creatorSelection[attachment.id];
+    if (!creatorId) return;
+    setAssigningId(attachment.id);
+    setAnalyzeError(null);
+    try {
+      const res = await fetch(
+        `/api/inbox/${threadId}/attachments/${attachment.id}/assign-creator`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ creatorId }),
+        },
+      );
+      if (!res.ok) {
+        const b = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(b.error ?? "Zuordnen fehlgeschlagen");
+      }
+      setAssignedCreators((prev) => ({ ...prev, [attachment.id]: creatorId }));
+    } catch (e) {
+      setAnalyzeError(e instanceof Error ? e.message : "Unbekannter Fehler");
+    } finally {
+      setAssigningId(null);
+    }
+  }
 
   function deliverablesToApi(items: ExtractedFormValues["deliverables"]) {
     return items.map((d) => ({
@@ -362,7 +559,7 @@ export function ExtractedPanel({
 
   const forced = isMerge ? [] : ["brand", "creatorId"];
   const isShown = (f: string) =>
-    showMore || forced.includes(f) || data.detectedFields.includes(f);
+    showMore || forced.includes(f) || data.detectedFields.includes(f) || f in fieldSources;
   const countPool = isMerge ? ["brand", "creatorId", ...OPTIONAL_FIELDS] : OPTIONAL_FIELDS;
   const hiddenCount = countPool.filter(
     (f) => !forced.includes(f) && !data.detectedFields.includes(f),
@@ -388,6 +585,127 @@ export function ExtractedPanel({
           Erkannte Felder werden in die bestehende Anfrage übernommen. Listen
           (Deliverables, Zahlungen) werden angehängt.
         </p>
+      )}
+
+      {data.attachments.length > 0 && (
+        <div className="mb-3">
+          {!showAttachmentCards ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAttachmentCards(true)}
+              className="w-full gap-1.5"
+            >
+              <Paperclip className="h-3 w-3" />
+              Anhang mit KI auslesen
+            </Button>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {data.attachments.map((a) => {
+                const result = analyzeResults[a.id];
+                const isAnalyzing = analyzingId === a.id;
+                const isAssigning = assigningId === a.id;
+                const assignedCreatorId = assignedCreators[a.id];
+                const assignedCreator = assignedCreatorId
+                  ? creators.find((c) => c.id === assignedCreatorId)
+                  : null;
+
+                if (!result) {
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      disabled={isAnalyzing}
+                      onClick={() => handleAnalyzeAttachment(a)}
+                      className="flex items-center gap-1.5 rounded-lg border border-dashed border-border bg-muted/40 px-2 py-1.5 text-left text-[10px] hover:bg-muted disabled:opacity-60"
+                    >
+                      <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
+                      <span className="flex-1 truncate font-medium">{a.filename}</span>
+                      {isAnalyzing ? (
+                        <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+                      ) : (
+                        <span className="shrink-0 text-muted-foreground">auslesen</span>
+                      )}
+                    </button>
+                  );
+                }
+
+                return (
+                  <div
+                    key={a.id}
+                    className="flex flex-col gap-1.5 rounded-lg bg-muted px-2 py-1.5 text-[10px]"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
+                      <span className="flex-1 truncate font-medium">{a.filename}</span>
+                      <span className="shrink-0 text-muted-foreground">
+                        {result.classification === "RECHNUNG"
+                          ? "Rechnung erkannt"
+                          : result.classification === "VERTRAG_BRIEFING"
+                            ? "Vertrag/Briefing erkannt"
+                            : "kein relevantes Dokument"}
+                      </span>
+                      {result.classification === "VERTRAG_BRIEFING" && (
+                        <span className="flex shrink-0 items-center gap-1 text-emerald-600">
+                          <Check className="h-3 w-3" />
+                          übernommen
+                        </span>
+                      )}
+                    </div>
+
+                    {result.classification === "RECHNUNG" &&
+                      (assignedCreator ? (
+                        <span className="flex items-center gap-1 text-emerald-600">
+                          <Check className="h-3 w-3" />
+                          Zugeordnet zu {assignedCreator.full_name}
+                        </span>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <Select
+                            value={creatorSelection[a.id] || undefined}
+                            onValueChange={(v) => {
+                              if (v !== null) {
+                                setCreatorSelection((prev) => ({ ...prev, [a.id]: v }));
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="h-6 flex-1 text-[10px]">
+                              <SelectValue placeholder="— Creator wählen —" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {creators.map((c) => (
+                                <SelectItem key={c.id} value={c.id}>
+                                  {c.full_name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={!creatorSelection[a.id] || isAssigning}
+                            onClick={() => handleAssignCreator(a)}
+                            className="h-6 shrink-0 px-2 text-[10px]"
+                          >
+                            {isAssigning ? (
+                              <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                            ) : (
+                              "Zuordnen"
+                            )}
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+                );
+              })}
+              {analyzeError && (
+                <p className="text-xs text-destructive">{analyzeError}</p>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       <Tabs defaultValue="uebersicht" className="mb-4 flex flex-col">
@@ -443,7 +761,7 @@ export function ExtractedPanel({
           {isShown("contact") && (
             <form.Field name="contact">
               {(field: ExtractedField<"contact">) => (
-                <FormField label="Ansprechpartner" uncertain={uncertain("contact")}>
+                <FormField label="Ansprechpartner" uncertain={uncertain("contact")} source={fieldSources.contact}>
                   <Input
                     value={field.state.value}
                     className={cn(
@@ -509,7 +827,7 @@ export function ExtractedPanel({
           {isShown("title") && (
             <form.Field name="title">
               {(field: ExtractedField<"title">) => (
-                <FormField label="Titel" uncertain={uncertain("title")}>
+                <FormField label="Titel" uncertain={uncertain("title")} source={fieldSources.title}>
                   <Input
                     value={field.state.value}
                     placeholder="z. B. Sommerkampagne 2026"
@@ -523,7 +841,7 @@ export function ExtractedPanel({
           {isShown("product") && (
             <form.Field name="product">
               {(field: ExtractedField<"product">) => (
-                <FormField label="Produkt" uncertain={uncertain("product")}>
+                <FormField label="Produkt" uncertain={uncertain("product")} source={fieldSources.product}>
                   <Input
                     value={field.state.value}
                     placeholder="z. B. Daily Greens"
@@ -541,7 +859,7 @@ export function ExtractedPanel({
           {isShown("budget") && (
             <form.Field name="budget">
               {(field: ExtractedField<"budget">) => (
-                <FormField label="Budget (Brand)" uncertain={uncertain("budget")}>
+                <FormField label="Budget (Brand)" uncertain={uncertain("budget")} source={fieldSources.budget}>
                   <Input
                     value={field.state.value?.toString() ?? ""}
                     placeholder="z. B. 5500"
@@ -565,7 +883,7 @@ export function ExtractedPanel({
           {isShown("budgetOffer") && (
             <form.Field name="budgetOffer">
               {(field: ExtractedField<"budgetOffer">) => (
-                <FormField label="Unser Angebot">
+                <FormField label="Unser Angebot" source={fieldSources.budgetOffer}>
                   <Input
                     value={field.state.value?.toString() ?? ""}
                     placeholder="z. B. 6000"
@@ -585,7 +903,7 @@ export function ExtractedPanel({
           {isShown("fee") && (
             <form.Field name="fee">
               {(field: ExtractedField<"fee">) => (
-                <FormField label="Honorar (fix)">
+                <FormField label="Honorar (fix)" source={fieldSources.fee}>
                   <Input
                     value={field.state.value?.toString() ?? ""}
                     placeholder="z. B. 5000"
@@ -624,7 +942,7 @@ export function ExtractedPanel({
             <div className="grid grid-cols-2 gap-2">
               <form.Field name="campaign_start">
                 {(field: ExtractedField<"campaign_start">) => (
-                  <FormField label="Kampagnenstart">
+                  <FormField label="Kampagnenstart" source={fieldSources.campaign_start}>
                     <Input
                       type="date"
                       value={field.state.value}
@@ -635,7 +953,7 @@ export function ExtractedPanel({
               </form.Field>
               <form.Field name="campaign_end">
                 {(field: ExtractedField<"campaign_end">) => (
-                  <FormField label="Kampagnenende">
+                  <FormField label="Kampagnenende" source={fieldSources.campaign_end}>
                     <Input
                       type="date"
                       value={field.state.value}
@@ -650,7 +968,7 @@ export function ExtractedPanel({
           {isShown("notes") && (
             <form.Field name="notes">
               {(field: ExtractedField<"notes">) => (
-                <FormField label="Notizen">
+                <FormField label="Notizen" source={fieldSources.notes}>
                   <Textarea
                     rows={2}
                     value={field.state.value}
@@ -663,7 +981,10 @@ export function ExtractedPanel({
 
           {isShown("guidelines") && (
             <div className="mt-1 rounded-xl border border-border bg-muted/30 p-2.5">
-              <SectionLabel>Vorgaben</SectionLabel>
+              <div className="mb-2 flex items-center gap-1.5">
+                <SectionLabel>Vorgaben</SectionLabel>
+                {fieldSources.guidelines && <AttachmentBadge filename={fieldSources.guidelines} />}
+              </div>
               <form.Field name="guidelines">
                 {(field: ExtractedField<"guidelines">) => {
                   const g = field.state.value;
@@ -708,7 +1029,10 @@ export function ExtractedPanel({
 
           {isShown("trackingAssets") && (
             <div className="mt-1 rounded-xl border border-border bg-muted/30 p-2.5">
-              <SectionLabel>Tracking</SectionLabel>
+              <div className="mb-2 flex items-center gap-1.5">
+                <SectionLabel>Tracking</SectionLabel>
+                {fieldSources.trackingAssets && <AttachmentBadge filename={fieldSources.trackingAssets} />}
+              </div>
               <form.Field name="trackingAssets">
                 {(field: ExtractedField<"trackingAssets">) => {
                   const t = field.state.value;
@@ -746,7 +1070,10 @@ export function ExtractedPanel({
 
           {isShown("paymentItems") && (
             <div className="mt-1 rounded-xl border border-border bg-muted/30 p-2.5">
-              <SectionLabel>Zahlungen</SectionLabel>
+              <div className="mb-2 flex items-center gap-1.5">
+                <SectionLabel>Zahlungen</SectionLabel>
+                {fieldSources.paymentItems && <AttachmentBadge filename={fieldSources.paymentItems} />}
+              </div>
               <form.Field name="paymentItems">
                 {(field: ExtractedField<"paymentItems">) => {
                   const items = field.state.value ?? [];

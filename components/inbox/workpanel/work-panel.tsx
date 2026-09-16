@@ -67,6 +67,7 @@ const EMPTY_EXTRACTED: ExtractedEmailData = {
   trackingAssets: { discountCode: "", affiliateLinks: [], utmParams: "" },
   uncertainFields: [],
   detectedFields: [],
+  attachments: [],
 };
 
 async function runAnalyse(
@@ -167,6 +168,14 @@ async function runAnalyse(
       ...(guidelinesDetected ? ["guidelines"] : []),
       ...(trackingDetected ? ["trackingAssets"] : []),
     ],
+    attachments: (data.attachments ?? []).map((a) => ({
+      id: a.id,
+      filename: a.filename,
+      mimeType: a.mimeType,
+      classification: a.classification,
+      classificationConfidence: a.classificationConfidence,
+      assignedCreatorId: a.assignedCreatorId,
+    })),
   };
 
   if (mode === "merge") {

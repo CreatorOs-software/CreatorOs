@@ -3,14 +3,16 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { PROMPT_REGISTRY, getAdapter } from "./registry.ts";
 import { buildEmailAnalysisContext } from "./tasks/incoming-email-analysis/context.ts";
+import { buildAttachmentAnalyzeContext } from "./tasks/attachment-analyze/context.ts";
 import { maybeEmitInboundNotification } from "./notify.ts";
 
 type Payload = {
   email_thread_id: string;
   agency_id: string;
-  mode?: "label" | "analyse" | "proofread";
+  mode?: "label" | "analyse" | "proofread" | "analyze-attachment";
   text?: string;
   current_anfrage?: Record<string, unknown> | null;
+  email_attachment_id?: string;
 };
 
 type ThreadRow = {
@@ -53,6 +55,31 @@ Deno.serve(async (req) => {
           "Cache-Control": "no-store",
         },
       });
+    }
+
+    // ── Attachment mode: classify + (conditionally) extract a file attachment
+    // in one call, no DB writes. Only ever runs on an explicit user click on
+    // a chosen attachment card — the caller enforces that, not this function.
+    if (mode === "analyze-attachment") {
+      if (!agency_id || !payload.email_attachment_id) {
+        return json({ error: "agency_id and email_attachment_id required" }, 400);
+      }
+
+      const db = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      );
+
+      const def = PROMPT_REGISTRY.ATTACHMENT_ANALYZE;
+      const ctx = await buildAttachmentAnalyzeContext({ email_attachment_id: payload.email_attachment_id }, agency_id, db);
+      const adapter = getAdapter(def.provider);
+      const response = await adapter.execute({
+        system: def.system,
+        messages: def.buildMessages(ctx),
+        model: def.model,
+        maxTokens: def.maxTokens,
+      });
+      return json(def.outputSchema.parse(JSON.parse(response.content)));
     }
 
     if (!email_thread_id || !agency_id) {

@@ -118,6 +118,53 @@ function extractBody(payload: Record<string, any>): { text: string; html: string
   return { text, html };
 }
 
+type AttachmentMeta = {
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  gmailAttachmentId: string;
+};
+
+// Only PDF/DOCX are ever relevant for briefing/contract/invoice analysis —
+// images (signature logos, product photos, etc.) are dropped entirely, not
+// just deprioritized, so no metadata row is created for them at all.
+const ANALYZABLE_MIME_TYPES = new Set([
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]);
+const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
+
+function extractAttachments(payload: Record<string, any>): AttachmentMeta[] {
+  const out: AttachmentMeta[] = [];
+  const walk = (p: Record<string, any>) => {
+    if (!p) return;
+    const filename: string = p.filename ?? "";
+    const attachmentId: string | undefined = p.body?.attachmentId;
+    if (filename && attachmentId) {
+      const disposition = getHeader(p.headers ?? [], "Content-Disposition") ?? "";
+      const mimeType = (p.mimeType ?? "application/octet-stream").toLowerCase();
+      const sizeBytes: number = p.body?.size ?? 0;
+      const isInline = /^inline/i.test(disposition);
+      if (!isInline && ANALYZABLE_MIME_TYPES.has(mimeType)) {
+        out.push({ filename, mimeType, sizeBytes, gmailAttachmentId: attachmentId });
+      }
+    }
+    for (const part of p.parts ?? []) walk(part);
+  };
+  walk(payload);
+  return out;
+}
+
+function decodeBase64UrlBytes(s: string): Uint8Array {
+  const pad = s.length % 4 === 2 ? "==" : s.length % 4 === 3 ? "=" : "";
+  const bin = atob(s.replace(/-/g, "+").replace(/_/g, "/") + pad);
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+}
+
+function sanitizeFilename(name: string): string {
+  return name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+}
+
 function stripHtml(s: string): string {
   return s
     .replace(/<style[\s\S]*?<\/style>/gi, "")
@@ -178,6 +225,7 @@ async function pullGmail(integration: IntegrationRow): Promise<{ pulled: number;
       agency_id: integration.agency_id,
       integration_id: integration.id,
       gmail_thread_id: m.threadId,
+      gmail_message_id: m.id,
       message_id: rfcMessageId,
       in_reply_to: inReplyTo,
       references_header: referencesHeader,
@@ -194,6 +242,26 @@ async function pullGmail(integration: IntegrationRow): Promise<{ pulled: number;
     }).select("id").single();
     if (error) { console.error("insert failed", error); continue; }
     pulled++;
+
+    // Metadata-only, zero extra Gmail API calls — bytes are fetched lazily
+    // (see the "fetch_attachment" action below) only once a human actually
+    // opens the WorkPanel and clicks "Analysieren".
+    const attachments = extractAttachments(msg.payload ?? {});
+    if (attachments.length > 0) {
+      await db.from("email_attachments").insert(
+        attachments.map((a) => ({
+          agency_id: integration.agency_id,
+          email_thread_id: inserted.id,
+          filename: a.filename,
+          mime_type: a.mimeType,
+          size_bytes: a.sizeBytes,
+          gmail_attachment_id: a.gmailAttachmentId,
+          // extractAttachments() already filters to PDF/DOCX — is_classifiable
+          // here just means "under the size cap".
+          is_classifiable: a.sizeBytes <= MAX_ATTACHMENT_BYTES,
+        })),
+      );
+    }
 
     // Fire-and-forget: trigger AI labeling in background (best-effort)
     void fetch(`${SUPABASE_URL}/functions/v1/execute-ai-job`, {
@@ -234,6 +302,65 @@ Deno.serve(async (req) => {
   }
 
   const body = await req.json().catch(() => ({})) as Record<string, string>;
+
+  // Lazy attachment-byte fetch: called on-demand (WorkPanel "Analysieren")
+  // rather than during sync, since most synced mail is never opened.
+  if (body.action === "fetch_attachment") {
+    const attachmentId = body.email_attachment_id;
+    if (!attachmentId) return new Response(JSON.stringify({ error: "email_attachment_id required" }), { status: 400 });
+
+    const { data: att, error: attErr } = await db
+      .from("email_attachments")
+      .select("id, agency_id, email_thread_id, filename, mime_type, storage_path, gmail_attachment_id")
+      .eq("id", attachmentId)
+      .single<{ id: string; agency_id: string; email_thread_id: string; filename: string; mime_type: string; storage_path: string | null; gmail_attachment_id: string | null }>();
+    if (attErr || !att) return new Response(JSON.stringify({ error: "attachment not found" }), { status: 404 });
+
+    if (att.storage_path) {
+      return new Response(JSON.stringify({ ok: true, storage_path: att.storage_path }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (!att.gmail_attachment_id) {
+      return new Response(JSON.stringify({ error: "gmail_attachment_id missing" }), { status: 400 });
+    }
+
+    const { data: thread, error: threadErr } = await db
+      .from("email_threads")
+      .select("integration_id, gmail_message_id")
+      .eq("id", att.email_thread_id)
+      .single<{ integration_id: string; gmail_message_id: string | null }>();
+    if (threadErr || !thread?.gmail_message_id) {
+      return new Response(JSON.stringify({ error: "thread or gmail_message_id missing" }), { status: 400 });
+    }
+
+    const { data: integration, error: intErr } = await db
+      .from("email_integrations")
+      .select("id, agency_id, email, access_token, refresh_token, token_expires_at, sync_failure_count")
+      .eq("id", thread.integration_id)
+      .single<IntegrationRow>();
+    if (intErr || !integration) return new Response(JSON.stringify({ error: "integration not found" }), { status: 404 });
+
+    const gmailAttData = await gFetch(
+      integration,
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${thread.gmail_message_id}/attachments/${att.gmail_attachment_id}`,
+    ) as { data: string; size: number };
+
+    const bytes = decodeBase64UrlBytes(gmailAttData.data);
+    const storagePath = `${att.agency_id}/${att.email_thread_id}/${att.id}-${sanitizeFilename(att.filename)}`;
+
+    const { error: uploadErr } = await db.storage
+      .from("email-attachments")
+      .upload(storagePath, bytes, { contentType: att.mime_type, upsert: true });
+    if (uploadErr) return new Response(JSON.stringify({ error: `upload failed: ${uploadErr.message}` }), { status: 500 });
+
+    await db.from("email_attachments").update({ storage_path: storagePath }).eq("id", attachmentId);
+
+    return new Response(JSON.stringify({ ok: true, storage_path: storagePath }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const integrationId = body.integration_id ?? null;
 
   let query = db

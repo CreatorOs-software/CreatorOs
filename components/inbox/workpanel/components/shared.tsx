@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { AttachmentBadge } from "./attachment-badge";
 
 export function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -11,10 +12,13 @@ export function SectionLabel({ children }: { children: React.ReactNode }) {
 export function FormField({
   label,
   uncertain,
+  source,
   children,
 }: {
   label: string;
   uncertain?: boolean;
+  /** Filename of the attachment this field's value was extracted from, if any. */
+  source?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -28,6 +32,7 @@ export function FormField({
             prüfen
           </span>
         )}
+        {source && <AttachmentBadge filename={source} />}
       </p>
       {children}
     </div>
