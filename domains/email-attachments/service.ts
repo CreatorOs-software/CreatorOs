@@ -1,9 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getAuthContext } from "@/domains/auth";
 import { createClient } from "@/lib/supabase/server";
+import { serviceClient } from "@/lib/supabase/service";
 import { EmailAttachmentRepository } from "./repository";
 import { copyAttachmentToCreatorDocuments } from "./creator-file-copy";
 import type { AttachmentAnalyzeResult, EmailAttachment } from "./types";
+
+const ATTACHMENTS_BUCKET = "email-attachments";
+const DOWNLOAD_URL_TTL = 3600;
 
 export class AttachmentError extends Error {}
 
@@ -78,6 +82,15 @@ export const EmailAttachmentService = {
     return attachments.filter((a) => a.is_classifiable);
   },
 
+  // Unlike list(), not gated by thread relevance — a human opening an
+  // attachment they can already see in the email costs nothing and carries
+  // none of the AI-spend risk that list()/analyze() guard against.
+  async listRaw(threadId: string): Promise<EmailAttachment[]> {
+    const supabase = await createClient();
+    const { agencyId } = await getAuthContext(supabase);
+    return EmailAttachmentRepository.findByThread(supabase, threadId, agencyId);
+  },
+
   async ensureFetched(attachment: EmailAttachment, agencyId: string): Promise<string> {
     if (attachment.storage_path) return attachment.storage_path;
     const supabase = await createClient();
@@ -120,5 +133,19 @@ export const EmailAttachmentService = {
 
     const supabase = await createClient();
     await EmailAttachmentRepository.recordCreatorAssignment(supabase, attachment.id, agencyId, creatorId);
+  },
+
+  // Lets the user open the raw file themselves — fetches bytes if this is
+  // the first time (Gmail lazy-fetch), then signs a short-lived URL against
+  // the private bucket.
+  async getDownloadUrl(attachment: EmailAttachment, agencyId: string): Promise<string> {
+    const storagePath = await this.ensureFetched(attachment, agencyId);
+    const { data, error } = await serviceClient.storage
+      .from(ATTACHMENTS_BUCKET)
+      .createSignedUrl(storagePath, DOWNLOAD_URL_TTL);
+    if (error || !data?.signedUrl) {
+      throw new AttachmentError(error?.message ?? "Download-Link konnte nicht erstellt werden");
+    }
+    return data.signedUrl;
   },
 };

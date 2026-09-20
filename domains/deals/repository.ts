@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { DealCreateInput, DealFull, DealPatch } from "./types";
+import type { DealCreateInput, DealDeadline, DealFull, DealPatch } from "./types";
 
 const DEAL_SELECT = `
   id, title, budget, status, priority, platform, deadline,
@@ -12,6 +12,12 @@ const DEAL_SELECT = `
   brands(company_name, short_code, contact_name, contact_email)
 `;
 
+const DEAL_DEADLINE_SELECT = `
+  id, title, deadline, creator_id,
+  creators:creator_id (full_name, initials),
+  brands(company_name, short_code)
+`;
+
 export const DealRepository = {
   async findByCreator(supabase: SupabaseClient, creatorId: string): Promise<DealFull[]> {
     const { data, error } = await supabase
@@ -21,6 +27,26 @@ export const DealRepository = {
       .order("created_at", { ascending: false });
     if (error) throw error;
     return (data ?? []) as unknown as DealFull[];
+  },
+
+  async findDeadlines(
+    supabase: SupabaseClient,
+    agencyId: string,
+    filters: { from?: string; to?: string } = {},
+  ): Promise<DealDeadline[]> {
+    let query = supabase
+      .from("deals")
+      .select(DEAL_DEADLINE_SELECT)
+      .eq("agency_id", agencyId)
+      .not("deadline", "is", null)
+      .order("deadline");
+
+    if (filters.from) query = query.gte("deadline", filters.from);
+    if (filters.to) query = query.lte("deadline", filters.to);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data ?? []) as unknown as DealDeadline[];
   },
 
   async create(

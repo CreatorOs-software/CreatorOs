@@ -19,6 +19,9 @@ export const QueryKeys = {
     all: () => ["brands"] as const,
     list: () => ["brands", "list"] as const,
   },
+  deals: {
+    deadlines: (to: string) => ["deals", "deadlines", to] as const,
+  },
   templates: {
     all: () => ["templates"] as const,
     list: () => ["templates", "list"] as const,

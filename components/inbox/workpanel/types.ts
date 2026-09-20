@@ -27,15 +27,6 @@ export type ExtractedPaymentItem = {
   paymentTerm: 14 | 30 | 45;
 };
 
-export type ExtractedAttachment = {
-  id: string;
-  filename: string;
-  mimeType: string;
-  classification: "RECHNUNG" | "VERTRAG_BRIEFING" | "ANDERES" | null;
-  classificationConfidence: number | null;
-  assignedCreatorId: string | null;
-};
-
 export type ExtractedEmailData = {
   brand: string;
   contact: string;
@@ -57,8 +48,8 @@ export type ExtractedEmailData = {
   uncertainFields: string[];
   /** Field names the AI actually returned a value for; drives which fields show by default. */
   detectedFields: string[];
-  /** PDF/DOCX attachments eligible for KI-analysis (thread relevance + file-type already gated server-side). */
-  attachments: ExtractedAttachment[];
+  /** Field name → attachment filename, when a field came from an analyzed attachment rather than the email body. */
+  fieldSources?: Record<string, string>;
 };
 
 export type LocalVorgang = {

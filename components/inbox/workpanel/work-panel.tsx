@@ -17,6 +17,7 @@ import {
   type ForwardContext,
 } from "./components/whatsapp-forward-dialog";
 import type { ExtractedEmailData, WorkPanelState } from "./types";
+import type { AttachmentExtractedFields } from "./components/attachment-analyzer";
 
 function forwardContextFromState(state: WorkPanelState): {
   creatorId: string | null;
@@ -67,8 +68,111 @@ const EMPTY_EXTRACTED: ExtractedEmailData = {
   trackingAssets: { discountCode: "", affiliateLinks: [], utmParams: "" },
   uncertainFields: [],
   detectedFields: [],
-  attachments: [],
 };
+
+// Alternate on-ramp into the review form: analyzing a VERTRAG_BRIEFING
+// attachment directly from the idle state (before any "Als Kooperationsanfrage
+// lesen" body analysis) seeds the form purely from the document.
+function extractedDataFromAttachment(
+  filename: string,
+  data: AttachmentExtractedFields,
+): ExtractedEmailData {
+  const fieldSources: Record<string, string> = {};
+  const detectedFields: string[] = [];
+  const mark = (field: string) => {
+    fieldSources[field] = filename;
+    detectedFields.push(field);
+  };
+
+  const result: ExtractedEmailData = { ...EMPTY_EXTRACTED };
+
+  if (data.creator_id) {
+    result.creatorId = data.creator_id;
+    result.creatorConfidence = 100;
+    mark("creatorId");
+  }
+  if (data.contact) {
+    result.contact = data.contact;
+    mark("contact");
+  }
+  if (data.title) {
+    result.title = data.title;
+    mark("title");
+  }
+  if (data.product) {
+    result.product = data.product;
+    mark("product");
+  }
+  if (data.budget != null) {
+    result.budget = data.budget;
+    mark("budget");
+  }
+  if (data.budget_offer != null) {
+    result.budgetOffer = data.budget_offer;
+    mark("budgetOffer");
+  }
+  if (data.fee != null) {
+    result.fee = data.fee;
+    mark("fee");
+  }
+  if (data.period) {
+    result.period = data.period;
+    mark("period");
+  }
+  if (data.campaign_start) {
+    result.campaign_start = data.campaign_start;
+    mark("campaign");
+  }
+  if (data.campaign_end) {
+    result.campaign_end = data.campaign_end;
+    mark("campaign");
+  }
+  if (data.notes) {
+    result.notes = data.notes;
+    mark("notes");
+  }
+  if (data.deliverables.length > 0) {
+    result.deliverables = data.deliverables.map((d) => ({
+      count: d.count,
+      content_type: d.content_type,
+      platform: d.platform,
+      draft_deadline: d.draft_deadline ?? "",
+      freigabe_deadline: d.freigabe_deadline ?? "",
+      live_date: d.live_date ?? "",
+    }));
+    mark("deliverables");
+  }
+  if (data.payment_items.length > 0) {
+    result.paymentItems = data.payment_items.map((p) => ({
+      label: p.label,
+      amount: p.amount,
+      invoiceDate: p.invoice_date ?? "",
+      paymentTerm: p.payment_term,
+    }));
+    mark("paymentItems");
+  }
+  if (data.guidelines) {
+    result.guidelines = {
+      labeling: data.guidelines.labeling ?? "",
+      wording: data.guidelines.wording ?? "",
+      nogo: data.guidelines.nogo ?? "",
+      hashtags: data.guidelines.hashtags ?? [],
+    };
+    mark("guidelines");
+  }
+  if (data.tracking_assets) {
+    result.trackingAssets = {
+      discountCode: data.tracking_assets.discount_code ?? "",
+      affiliateLinks: data.tracking_assets.affiliate_links ?? [],
+      utmParams: data.tracking_assets.utm_params ?? "",
+    };
+    mark("trackingAssets");
+  }
+
+  result.detectedFields = detectedFields;
+  result.fieldSources = fieldSources;
+  return result;
+}
 
 async function runAnalyse(
   threadId: string,
@@ -168,14 +272,6 @@ async function runAnalyse(
       ...(guidelinesDetected ? ["guidelines"] : []),
       ...(trackingDetected ? ["trackingAssets"] : []),
     ],
-    attachments: (data.attachments ?? []).map((a) => ({
-      id: a.id,
-      filename: a.filename,
-      mimeType: a.mimeType,
-      classification: a.classification,
-      classificationConfidence: a.classificationConfidence,
-      assignedCreatorId: a.assignedCreatorId,
-    })),
   };
 
   if (mode === "merge") {
@@ -319,6 +415,8 @@ export function WorkPanel({
           )}
           {selected && workState.phase === "idle" && (
             <IdlePanel
+              threadId={selected.id}
+              creators={creators}
               labels={selected.system_labels ?? []}
               anfrageId={selected.anfrage_id}
               dealId={selected.deal_id}
@@ -340,6 +438,12 @@ export function WorkPanel({
                 onSetWorkState({
                   phase: "extracted",
                   data: { ...EMPTY_EXTRACTED },
+                })
+              }
+              onBriefingExtracted={(filename, extracted) =>
+                onSetWorkState({
+                  phase: "extracted",
+                  data: extractedDataFromAttachment(filename, extracted),
                 })
               }
             />

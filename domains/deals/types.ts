@@ -151,6 +151,15 @@ export type DealPatch = {
   whitelisting?: WhitelistingInfo | null;
 };
 
+export type DealDeadline = {
+  id: string;
+  title: string;
+  deadline: string;
+  creator_id: string | null;
+  creators: { full_name: string; initials: string } | null;
+  brands: { company_name: string; short_code: string } | null;
+};
+
 export type DealCreateInput = {
   creator_id: string;
   brand_id?: string | null;

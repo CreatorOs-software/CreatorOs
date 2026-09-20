@@ -37,6 +37,7 @@ import {
   getInitial,
 } from "./utils";
 import { Avatar } from "@/components/ui/avatar-creator";
+import { AttachmentDownloadList } from "./attachment-download-list";
 import { TemplateQuickInsert } from "./templates/template-quick-insert";
 import { AiActionsMenu } from "./ai-actions-menu";
 import { NeueTemplateDialog } from "./templates/neue-template-dialog";
@@ -628,6 +629,8 @@ export function EmailDetailPanel({
               </pre>
             )}
           </div>
+
+          <AttachmentDownloadList threadId={thread.id} />
 
           {/* Conversation history */}
           {conversationMessages.length > 0 && (

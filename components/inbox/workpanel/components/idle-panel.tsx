@@ -1,8 +1,19 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Briefcase, ChevronDown, ChevronUp, HelpCircle, Sparkles } from "lucide-react";
+import {
+  Briefcase,
+  ChevronDown,
+  ChevronUp,
+  HelpCircle,
+  Sparkles,
+} from "lucide-react";
 import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@talentos/ui";
 import type { SystemLabel } from "@/domains/communication";
+import type { Creator } from "../../types";
+import {
+  AttachmentAnalyzer,
+  type AttachmentExtractedFields,
+} from "./attachment-analyzer";
 import {
   ACTION_META,
   resolveActions,
@@ -10,6 +21,8 @@ import {
 } from "../actions";
 
 type Props = {
+  threadId: string;
+  creators: Creator[];
   labels: SystemLabel[];
   anfrageId?: string | null;
   dealId?: string | null;
@@ -17,6 +30,10 @@ type Props = {
   onReanalyse?: () => void;
   onNotCoop: () => void;
   onManualCreate: () => void;
+  onBriefingExtracted: (
+    filename: string,
+    extracted: AttachmentExtractedFields,
+  ) => void;
   onAssignVorgang?: () => void;
   onInvoiceAi?: () => void;
   onSendMediakit?: () => void;
@@ -26,6 +43,8 @@ type Props = {
 };
 
 export function IdlePanel({
+  threadId,
+  creators,
   labels,
   anfrageId,
   dealId,
@@ -33,6 +52,7 @@ export function IdlePanel({
   onReanalyse,
   onNotCoop,
   onManualCreate,
+  onBriefingExtracted,
   onAssignVorgang,
   onInvoiceAi,
   onSendMediakit,
@@ -106,6 +126,14 @@ export function IdlePanel({
         </p>
       </div>
 
+      <div className="w-full text-left">
+        <AttachmentAnalyzer
+          threadId={threadId}
+          creators={creators}
+          onBriefingExtracted={onBriefingExtracted}
+        />
+      </div>
+
       {main.map((id) => (
         <Button
           key={id}
@@ -144,7 +172,7 @@ export function IdlePanel({
                     type="button"
                     variant="ghost"
                     onClick={handlers[id]}
-                    className="h-auto flex flex-col items-center gap-2 rounded-xl border border-border bg-muted/30 px-2 py-4 text-center text-xs font-medium leading-tight text-foreground hover:bg-muted"
+                    className="h-auto flex flex-col items-center gap-2 rounded-sm border border-border bg-muted/30 px-2 py-8 text-center text-xs font-medium leading-tight text-foreground hover:bg-muted"
                   >
                     <Icon className="h-5 w-5 text-muted-foreground" />
                     {ACTION_META[id].label}

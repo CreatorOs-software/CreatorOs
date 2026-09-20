@@ -1,5 +1,5 @@
 import { AccordionSection } from "@/components/dashboard/accordion-section";
-import { CalendarCard } from "@/components/dashboard/calendar-card";
+import { TermineCard } from "@/components/dashboard/termine-card";
 import { CreatorCard } from "@/components/dashboard/creator-card";
 import { IncomeCard } from "@/components/dashboard/income-card";
 import { OnboardingCard } from "@/components/dashboard/onboarding-card";
@@ -78,7 +78,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Row 2, col 4-9 */}
-        <CalendarCard className="col-span-12 lg:col-span-6" />
+        <TermineCard className="col-span-12 lg:col-span-6" />
       </div>
     </div>
   );

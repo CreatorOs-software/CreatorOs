@@ -1,6 +1,7 @@
 export { DealService, DealError } from "./service";
 export type {
   DealFull,
+  DealDeadline,
   DealPatch,
   DealCreateInput,
   Deliverable,

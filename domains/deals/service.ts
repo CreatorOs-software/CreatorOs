@@ -1,7 +1,7 @@
 import { getAuthContext } from "@/domains/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DealRepository } from "./repository";
-import type { DealCreateInput, DealFull, DealPatch } from "./types";
+import type { DealCreateInput, DealDeadline, DealFull, DealPatch } from "./types";
 
 export class DealError extends Error {}
 
@@ -10,6 +10,12 @@ export const DealService = {
     const supabase = await createClient();
     await getAuthContext(supabase);
     return DealRepository.findByCreator(supabase, creatorId);
+  },
+
+  async getDeadlines(filters: { from?: string; to?: string } = {}): Promise<DealDeadline[]> {
+    const supabase = await createClient();
+    const { agencyId } = await getAuthContext(supabase);
+    return DealRepository.findDeadlines(supabase, agencyId, filters);
   },
 
   async createDeal(

@@ -385,6 +385,69 @@ function decodePart(data: string, cte: string, ct: string): string {
   return data;
 }
 
+// ---- Attachment extraction ----------------------------------------
+// The full RFC822 TEXT is already fetched above (BODY.PEEK[TEXT]) — unlike
+// Gmail's API, IMAP has no separate "attachment bytes" endpoint, so the
+// base64 payload is already in hand here. No lazy-fetch round trip needed:
+// PDF/DOCX attachments are uploaded to Storage eagerly during sync.
+const ANALYZABLE_MIME_TYPES = new Set([
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]);
+const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
+
+type ImapAttachmentPart = { filename: string; mimeType: string; base64: string };
+
+function getPartFilename(headers: Record<string, string>): string | null {
+  const cd = headers["content-disposition"] ?? "";
+  const ct = headers["content-type"] ?? "";
+  const m =
+    cd.match(/filename\*?=(?:"([^"]+)"|([^;]+))/i) ?? ct.match(/name\*?=(?:"([^"]+)"|([^;]+))/i);
+  if (!m) return null;
+  const raw = (m[1] ?? m[2] ?? "").trim();
+  return raw ? decodeMime(raw) : null;
+}
+
+// Mirrors extractFromPart()'s recursive boundary-walk but collects
+// PDF/DOCX parts instead of text/html — images and everything else are
+// dropped entirely, not just deprioritized.
+function extractAttachmentParts(ct: string, content: string): ImapAttachmentPart[] {
+  const out: ImapAttachmentPart[] = [];
+  const bm = ct.match(/boundary="?([^";]+)"?/i);
+  if (!bm) return out; // a non-multipart message can't carry an attachment
+
+  const parts = content.split(new RegExp(`--${escapeRegex(bm[1])}(?:--)?\\r?\\n?`));
+  for (const part of parts) {
+    const sep = part.search(/\r?\n\r?\n/);
+    if (sep < 0) continue;
+    const hdrs = parseHeaders(part.slice(0, sep));
+    const inner = part.slice(sep).replace(/^\r?\n\r?\n/, "");
+    const pct = hdrs["content-type"] ?? "text/plain";
+    const pcte = (hdrs["content-transfer-encoding"] ?? "7bit").toLowerCase();
+
+    if (/^multipart\//i.test(pct)) {
+      out.push(...extractAttachmentParts(pct, inner));
+      continue;
+    }
+
+    const mimeType = pct.split(";")[0].trim().toLowerCase();
+    if (!ANALYZABLE_MIME_TYPES.has(mimeType) || pcte !== "base64") continue;
+
+    const filename = getPartFilename(hdrs) ?? `attachment.${mimeType === "application/pdf" ? "pdf" : "docx"}`;
+    out.push({ filename, mimeType, base64: inner.replace(/\s+/g, "") });
+  }
+  return out;
+}
+
+function decodeBase64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+}
+
+function sanitizeFilename(name: string): string {
+  return name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+}
+
 // ---- Core pull logic ----------------------------------------
 
 type IntegrationRow = {
@@ -470,6 +533,47 @@ async function syncFolder(
     }
     if (msg.uid > newHighestUid) newHighestUid = msg.uid;
     pulled++;
+
+    if (info.folder === "INBOX") {
+      const attachmentParts = extractAttachmentParts(msg.headers["content-type"] ?? "text/plain", msg.body);
+      for (const part of attachmentParts) {
+        let bytes: Uint8Array;
+        try {
+          bytes = decodeBase64ToBytes(part.base64);
+        } catch (e) {
+          console.error("[sync-imap] attachment base64 decode failed", e);
+          continue;
+        }
+
+        const isClassifiable = bytes.byteLength <= MAX_ATTACHMENT_BYTES;
+        const attachmentId = crypto.randomUUID();
+        const storagePath = isClassifiable
+          ? `${row.agency_id}/${inserted.id}/${attachmentId}-${sanitizeFilename(part.filename)}`
+          : null;
+
+        if (isClassifiable) {
+          const { error: uploadErr } = await db.storage
+            .from("email-attachments")
+            .upload(storagePath!, bytes, { contentType: part.mimeType, upsert: true });
+          if (uploadErr) {
+            console.error("[sync-imap] attachment upload failed", uploadErr);
+            continue;
+          }
+        }
+
+        const { error: attErr } = await db.from("email_attachments").insert({
+          id: attachmentId,
+          agency_id: row.agency_id,
+          email_thread_id: inserted.id,
+          filename: part.filename,
+          mime_type: part.mimeType,
+          size_bytes: bytes.byteLength,
+          is_classifiable: isClassifiable,
+          storage_path: storagePath,
+        });
+        if (attErr) console.error("[sync-imap] email_attachments insert failed", attErr);
+      }
+    }
 
     // Trigger AI labeling for new INBOX messages.
     // waitUntil ensures the fetch survives after sync-imap returns its response.

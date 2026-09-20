@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Calendar, User } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar-creator";
@@ -10,6 +10,7 @@ import type { DealFull, Invoice } from "./types";
 import { fmtMoney } from "./constants";
 import type { Creator } from "@/domains/creators/types";
 import { QueryKeys } from "@/lib/query-keys";
+import { ReminderDialog } from "@/components/dashboard/reminder-dialog";
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 
@@ -47,42 +48,15 @@ const TYPE_DOT: Record<string, string> = {
   posting:  "bg-green-500",
   brand:    "bg-purple-500",
   internal: "bg-gray-400",
+  todo:     "bg-indigo-500",
 };
 
 const TYPE_LABEL: Record<string, string> = {
   shoot: "Shoot", travel: "Travel", deadline: "Deadline",
-  posting: "Posting", brand: "Brand", internal: "Intern",
+  posting: "Posting", brand: "Brand", internal: "Intern", todo: "To-do",
 };
 
 const MONTH_SHORT = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
-
-// ─── Seed events (relative to current week) ───────────────────────────────────
-
-function getSeedEvents(): (CalendarEvent & { subtitle: string })[] {
-  const monday = (() => {
-    const now = new Date();
-    const dow = now.getDay() === 0 ? 6 : now.getDay() - 1;
-    const d = new Date(now);
-    d.setDate(now.getDate() - dow);
-    d.setHours(9, 0, 0, 0);
-    return d;
-  })();
-
-  function dayOf(offset: number, h: number, m: number) {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + offset);
-    d.setHours(h, m, 0, 0);
-    return d.toISOString();
-  }
-
-  return [
-    { id: "s1", title: "Shooting Sommerkampagne", type: "shoot",    start_at: dayOf(0, 9, 0),  location: "Studio Nord",  subtitle: "L'Oréal Paris · 09:00 · Studio Nord" },
-    { id: "s2", title: "Teaser-Reel geht live",   type: "posting",  start_at: dayOf(1, 17, 0), location: null,           subtitle: "Garnier · 17:00" },
-    { id: "s3", title: "Brand Call Zalando",       type: "brand",    start_at: dayOf(2, 14, 30),location: "Google Meet",  subtitle: "14:30 · Google Meet" },
-    { id: "s4", title: "Anreise München",          type: "travel",   start_at: dayOf(3, 8, 0),  location: null,           subtitle: "Booking · Travel Feature" },
-    { id: "s5", title: "Moodboard-Abgabe",         type: "deadline", start_at: dayOf(4, 12, 0), location: null,           subtitle: "Zalando Herbstkollektion" },
-  ];
-}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -147,21 +121,50 @@ function isThisWeekStr(iso: string | null) {
   return isThisWeekDate(new Date(iso + "T00:00:00"));
 }
 
+function addDays(d: Date, days: number) {
+  const r = new Date(d);
+  r.setDate(r.getDate() + days);
+  return r;
+}
+
+function buildReminderMessage(
+  row: { title: string; type: string; start_at: string },
+  creatorName: string,
+  overdue: boolean,
+): string {
+  const name = creatorName.split(" ")[0] || "hey";
+  const date = new Date(row.start_at).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+  const when = overdue ? `war am ${date} fällig` : `ist am ${date} fällig`;
+  const what = row.type === "todo" ? "dein To-do" : "die Deadline für";
+  return `Hey ${name}, kurze Erinnerung: ${what} „${row.title}“ ${when}. Kannst du kurz Bescheid geben, wie der Stand ist?`;
+}
+
 // ─── Termine Card ─────────────────────────────────────────────────────────────
 
-function TermineCard({ creatorId }: { creatorId: string }) {
-  const now = new Date();
-  const start = startOfWeekMonday();
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  end.setHours(23, 59, 59, 999);
+const EVENTS_WINDOW_DAYS = 7;
+const DEADLINE_WINDOW_DAYS = 3;
 
-  const { data } = useQuery<{ events: CalendarEvent[] }>({
-    queryKey: [...QueryKeys.events.range(start.toISOString(), end.toISOString()), creatorId],
+function TermineCard({
+  creatorId,
+  creatorName,
+  deals,
+}: {
+  creatorId: string;
+  creatorName: string;
+  deals: DealFull[];
+}) {
+  // Frozen for the component's lifetime — a fresh `new Date()` on every render
+  // would change the query keys below on every render and cause a refetch loop.
+  const now = useMemo(() => new Date(), []);
+  const eventsTo = useMemo(() => addDays(now, EVENTS_WINDOW_DAYS), [now]);
+  const deadlineCutoff = useMemo(() => addDays(now, DEADLINE_WINDOW_DAYS), [now]);
+
+  const { data, isPending } = useQuery<{ events: CalendarEvent[] }>({
+    queryKey: [...QueryKeys.events.range(now.toISOString(), eventsTo.toISOString()), creatorId],
     queryFn: () => {
       const params = new URLSearchParams({
-        from: start.toISOString(),
-        to: end.toISOString(),
+        from: now.toISOString(),
+        to: eventsTo.toISOString(),
         creator_id: creatorId,
       });
       return fetch(`/api/events?${params}`).then((r) => r.json());
@@ -169,18 +172,56 @@ function TermineCard({ creatorId }: { creatorId: string }) {
     staleTime: 5 * 60_000,
   });
 
-  const seeds = getSeedEvents();
+  const { data: todosData } = useQuery<{ todos: TodoItem[] }>({
+    queryKey: QueryKeys.todos.all(),
+    queryFn: () => fetch("/api/todos").then((r) => r.json()),
+    staleTime: 60_000,
+  });
+
   const apiEvents: (CalendarEvent & { subtitle?: string })[] = (data?.events ?? [])
-    .filter((e) => isThisWeekDate(new Date(e.start_at)))
-    .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
+    .filter((e) => {
+      const t = new Date(e.start_at).getTime();
+      return t >= now.getTime() && t <= eventsTo.getTime();
+    })
     .map((e) => ({
       ...e,
       subtitle: [formatEventTime(e.start_at), e.location].filter(Boolean).join(" · "),
     }));
 
-  const events = apiEvents.length > 0 ? apiEvents : seeds;
+  const dealDeadlines: (CalendarEvent & { subtitle?: string })[] = deals
+    .filter((d) => d.deadline && new Date(`${d.deadline}T00:00:00`).getTime() <= deadlineCutoff.getTime())
+    .map((d) => ({
+      id: `deal-${d.id}`,
+      title: d.title,
+      type: "deadline",
+      start_at: `${d.deadline}T00:00:00`,
+      location: null,
+      subtitle: d.brands?.company_name,
+    }));
 
-  const monthLabel = now.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  const todoItems: (CalendarEvent & { subtitle?: string })[] = (todosData?.todos ?? [])
+    .filter(
+      (t) =>
+        !t.done &&
+        t.assignee?.id === creatorId &&
+        t.due_date &&
+        new Date(`${t.due_date}T00:00:00`).getTime() <= deadlineCutoff.getTime(),
+    )
+    .map((t) => ({
+      id: `todo-${t.id}`,
+      title: t.title,
+      type: "todo",
+      start_at: `${t.due_date}T00:00:00`,
+      location: null,
+      subtitle: t.priority ? PRIORITY_CFG[t.priority].label : undefined,
+    }));
+
+  // Closer to "now" (overdue or upcoming) ranks higher, regardless of direction.
+  const events = [...apiEvents, ...dealDeadlines, ...todoItems].sort(
+    (a, b) =>
+      Math.abs(new Date(a.start_at).getTime() - now.getTime()) -
+      Math.abs(new Date(b.start_at).getTime() - now.getTime()),
+  );
 
   return (
     <Card className="p-5 flex flex-col gap-4 h-full">
@@ -197,36 +238,71 @@ function TermineCard({ creatorId }: { creatorId: string }) {
         </div>
 
         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-          Anstehende Termine · {monthLabel}
+          Anstehende Termine · nächste 7 Tage
         </p>
       </div>
 
       {/* Event list */}
-      <div className="flex flex-col divide-y divide-border">
-        {events.length === 0 ? (
-          <p className="text-xs text-muted-foreground py-2">Keine Termine diese Woche.</p>
+      <div className="flex flex-col divide-y divide-border overflow-y-auto max-h-80">
+        {isPending ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0">
+              <Skeleton className="w-12 h-12 rounded-xl shrink-0" />
+              <div className="flex-1 flex flex-col gap-1.5">
+                <Skeleton className="h-3.5 w-40" />
+                <Skeleton className="h-3 w-28" />
+              </div>
+            </div>
+          ))
+        ) : events.length === 0 ? (
+          <p className="text-xs text-muted-foreground py-2">Keine anstehenden Termine.</p>
         ) : (
           events.map((ev) => {
             const d = new Date(ev.start_at);
+            const overdue = d.getTime() < now.getTime();
             return (
               <div key={ev.id} className="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0">
                 {/* Date chip */}
-                <div className="w-12 shrink-0 rounded-xl bg-muted px-2 py-2 text-center">
-                  <span className="block text-lg font-bold text-foreground leading-none">
+                <div
+                  className={cn(
+                    "w-12 shrink-0 rounded-xl px-2 py-2 text-center",
+                    overdue ? "bg-red-500/10" : "bg-muted",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "block text-lg font-bold leading-none",
+                      overdue ? "text-red-600" : "text-foreground",
+                    )}
+                  >
                     {d.getDate()}
                   </span>
-                  <span className="block text-[10px] font-medium text-muted-foreground uppercase mt-0.5 leading-none">
+                  <span
+                    className={cn(
+                      "block text-[10px] font-medium uppercase mt-0.5 leading-none",
+                      overdue ? "text-red-600/80" : "text-muted-foreground",
+                    )}
+                  >
                     {MONTH_SHORT[d.getMonth()]}
                   </span>
                 </div>
 
                 {/* Title + subtitle */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground leading-tight">{ev.title}</p>
+                  <p className="text-sm font-semibold text-foreground leading-tight truncate">{ev.title}</p>
                   {ev.subtitle && (
-                    <p className="text-xs text-muted-foreground mt-0.5">{ev.subtitle}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">{ev.subtitle}</p>
                   )}
                 </div>
+
+                {/* Reminder */}
+                {(ev.type === "deadline" || ev.type === "todo") && (
+                  <ReminderDialog
+                    creatorId={creatorId}
+                    creatorName={creatorName}
+                    defaultMessage={buildReminderMessage(ev, creatorName, overdue)}
+                  />
+                )}
 
                 {/* Type dot */}
                 <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", TYPE_DOT[ev.type] ?? "bg-gray-400")} />
@@ -633,7 +709,7 @@ export function UebersichtTab({
     <div className="flex flex-col gap-4 pb-6">
       {/* Row 1: Termine + Todos — grid so both cells are equal height */}
       <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 18rem" }}>
-        <TermineCard creatorId={creatorId} />
+        <TermineCard creatorId={creatorId} creatorName={creator?.full_name ?? "Creator"} deals={deals} />
         <TodosWidget creatorId={creatorId} />
       </div>
 
