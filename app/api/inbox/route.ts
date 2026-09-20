@@ -10,12 +10,14 @@ export async function GET(req: Request) {
     const folder = params.get("folder")?.toUpperCase();
     const category = params.get("category")?.toUpperCase();
     const search = params.get("search")?.trim().slice(0, 200);
+    const offsetParam = Number(params.get("offset"));
     const data = await CommunicationService.getInboxPageData({
       search: search || undefined,
       integrationId: params.get("integration_id") || undefined,
       folder: folder && FOLDERS.has(folder) ? folder : undefined,
       labelId: params.get("label_id") || undefined,
       unread: params.get("unread") === "true",
+      offset: Number.isFinite(offsetParam) && offsetParam > 0 ? offsetParam : undefined,
       category:
         category === "IMPORTANT"
           ? "important"

@@ -41,7 +41,9 @@ export function KiAnfragenCard({ className }: KiAnfragenCardProps) {
   const { data, isPending } = useQuery<InboxPageData>({
     queryKey: QueryKeys.inbox.aiRequests(),
     queryFn: () =>
-      fetch("/api/inbox?folder=INBOX&category=anfrage&unread=true").then((r) => r.json()),
+      fetch("/api/inbox?folder=INBOX&category=anfrage&unread=true").then((r) =>
+        r.json(),
+      ),
     staleTime: 60_000,
     refetchInterval: 2 * 60_000,
   });
@@ -66,8 +68,12 @@ export function KiAnfragenCard({ className }: KiAnfragenCardProps) {
       body: JSON.stringify({ unread: false }),
     });
     if (!res.ok) return;
-    queryClient.setQueryData<InboxPageData>(QueryKeys.inbox.aiRequests(), (old) =>
-      old ? { ...old, threads: old.threads.filter((t) => t.id !== threadId) } : old,
+    queryClient.setQueryData<InboxPageData>(
+      QueryKeys.inbox.aiRequests(),
+      (old) =>
+        old
+          ? { ...old, threads: old.threads.filter((t) => t.id !== threadId) }
+          : old,
     );
   }
 
@@ -75,7 +81,7 @@ export function KiAnfragenCard({ className }: KiAnfragenCardProps) {
     <Card className={cn("p-5 flex flex-col gap-4 h-full", className)}>
       <div className="flex items-center justify-between">
         <p className="text-lg font-semibold">Anfragen</p>
-        <Badge variant="outline">
+        <Badge variant="default">
           KI Extrahiert <Sparkles />
         </Badge>
       </div>
@@ -90,7 +96,9 @@ export function KiAnfragenCard({ className }: KiAnfragenCardProps) {
           ))}
         </div>
       ) : visible.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-2">Keine neuen Anfragen 🎉</p>
+        <p className="text-sm text-muted-foreground py-2">
+          Keine neuen Anfragen 🎉
+        </p>
       ) : (
         <Accordion type="multiple" className="flex flex-col">
           {visible.map((thread) => {
@@ -103,7 +111,9 @@ export function KiAnfragenCard({ className }: KiAnfragenCardProps) {
               <AccordionItem key={thread.id} value={thread.id}>
                 <AccordionTrigger>
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-sm font-medium truncate">{thread.subject}</p>
+                    <p className="text-sm font-medium truncate">
+                      {thread.subject}
+                    </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {formatRelative(thread.received_at)}
                     </p>
@@ -115,7 +125,9 @@ export function KiAnfragenCard({ className }: KiAnfragenCardProps) {
                       <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                         Absender (Brand)
                       </p>
-                      <p className="truncate">{thread.sender_name ?? thread.sender_email}</p>
+                      <p className="truncate">
+                        {thread.sender_name ?? thread.sender_email}
+                      </p>
                     </div>
                     <div>
                       <p className="text-[10px] uppercase tracking-wide text-muted-foreground">

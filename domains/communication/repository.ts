@@ -28,13 +28,16 @@ export const CommunicationRepository = {
     agencyId: string,
     filters: InboxFilters = {},
   ): Promise<InboxPageData> {
+    const offset = Math.max(0, filters.offset ?? 0);
+    // Eine Zeile mehr als THREAD_LIST_LIMIT anfragen, um ohne separaten
+    // Count-Query zu wissen, ob danach noch mehr kommt ("Mehr laden").
     let threadsQuery = supabase
         .from("email_threads")
         .select(THREAD_LIST_COLUMNS)
         .eq("agency_id", agencyId)
         .order("received_at", { ascending: false })
         .order("id", { ascending: false })
-        .limit(THREAD_LIST_LIMIT);
+        .range(offset, offset + THREAD_LIST_LIMIT);
 
     if (filters.integrationId) threadsQuery = threadsQuery.eq("integration_id", filters.integrationId);
     if (filters.folder) threadsQuery = threadsQuery.eq("folder", filters.folder);
@@ -95,8 +98,10 @@ export const CommunicationRepository = {
     if (threadsRes.error) throw new Error(threadsRes.error.message);
     if (unreadRes.error) throw new Error(unreadRes.error.message);
 
+    const hasMore = (threadsRes.data ?? []).length > THREAD_LIST_LIMIT;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const threads = (threadsRes.data ?? []).map((row: any) => ({
+    const threads = (threadsRes.data ?? []).slice(0, THREAD_LIST_LIMIT).map((row: any) => ({
       ...row,
       labels: (row.thread_labels ?? []).map((tl: { label: EmailLabel | null }) => tl.label).filter(Boolean),
       anfrage_id: row.conversation?.anfrage_id ?? null,
@@ -107,6 +112,7 @@ export const CommunicationRepository = {
 
     return {
       threads,
+      hasMore,
       integrations: (integrationsRes.data ?? []) as InboxIntegration[],
       creators: (creatorsRes.data ?? []) as InboxCreator[],
       labels: (labelsRes.data ?? []) as EmailLabel[],

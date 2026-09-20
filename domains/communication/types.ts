@@ -97,6 +97,8 @@ export type InboxPageData = {
   creators: InboxCreator[];
   labels: EmailLabel[];
   unreadCount: number;
+  /** true, wenn hinter `threads` noch weitere Seiten liegen (siehe `offset`). */
+  hasMore: boolean;
 };
 
 export type InboxFilters = {
@@ -106,6 +108,8 @@ export type InboxFilters = {
   labelId?: string;
   unread?: boolean;
   category?: string;
+  /** Für "Mehr laden" — wie viele Threads (in der aktuellen Sortierung/Filterung) übersprungen werden sollen. */
+  offset?: number;
 };
 
 export type SmtpIntegration = {

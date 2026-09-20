@@ -13,7 +13,7 @@ export default function DashboardPage() {
       <div className="shrink-0 flex flex-col xl:flex-row xl:items-start xl:justify-between mb-6 gap-6">
         <div>
           <h1 className="text-4xl font-light tracking-tight mb-6 text-balance">
-            Welcome in, <span className="font-medium">Nixtio</span>
+            Willkommen zurück, <span className="font-medium">Nixtio</span>
           </h1>
 
           <StatusBarGroup>

@@ -9,7 +9,13 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQueryClient,
+  type InfiniteData,
+  type QueryClient,
+} from "@tanstack/react-query";
 import { WorkPanel } from "./workpanel/work-panel";
 import { OrbitInboxSkeleton } from "./orbit-inbox-skeleton";
 import { InboxSidebar } from "./inbox-sidebar";
@@ -48,8 +54,13 @@ function readStoredWorkPanelWidth(): number {
 
 // ─── Data fetching ────────────────────────────────────────────────────────────
 
-async function fetchInboxData(params: URLSearchParams): Promise<InboxData> {
-  const res = await fetch(`/api/inbox?${params}`);
+async function fetchInboxData(
+  params: URLSearchParams,
+  offset = 0,
+): Promise<InboxData> {
+  const pageParams = offset > 0 ? new URLSearchParams(params) : params;
+  if (offset > 0) pageParams.set("offset", String(offset));
+  const res = await fetch(`/api/inbox?${pageParams}`);
   if (!res.ok) throw new Error("Failed to load inbox");
   return res.json() as Promise<InboxData>;
 }
@@ -61,6 +72,48 @@ async function patchThread(id: string, patch: ThreadPatch): Promise<void> {
     body: JSON.stringify(patch),
   });
   if (!res.ok) throw new Error(await res.text());
+}
+
+// Threads liegen bei `useInfiniteQuery` über mehrere Seiten (`pages[]`)
+// verteilt — die beiden Helfer patchen konsistent quer über alle Seiten,
+// egal auf welcher Seite ("Basis"-Ladung oder per "Mehr laden" nachgeladen)
+// der Datensatz gerade liegt.
+function patchThreadsInCache(
+  queryClient: QueryClient,
+  key: readonly unknown[],
+  id: string,
+  updater: (t: Thread) => Thread,
+) {
+  queryClient.setQueryData<InfiniteData<InboxData>>(key, (old) => {
+    if (!old) return old;
+    return {
+      ...old,
+      pages: old.pages.map((page) => ({
+        ...page,
+        threads: page.threads.map((t) => (t.id === id ? updater(t) : t)),
+      })),
+    };
+  });
+}
+
+function patchIntegrationsInCache(
+  queryClient: QueryClient,
+  key: readonly unknown[],
+  integrationId: string,
+  updater: (i: InboxData["integrations"][number]) => InboxData["integrations"][number],
+) {
+  queryClient.setQueryData<InfiniteData<InboxData>>(key, (old) => {
+    if (!old) return old;
+    return {
+      ...old,
+      pages: old.pages.map((page) => ({
+        ...page,
+        integrations: page.integrations.map((i) =>
+          i.id === integrationId ? updater(i) : i,
+        ),
+      })),
+    };
+  });
 }
 
 // ─── OrbitInbox ───────────────────────────────────────────────────────────────
@@ -165,26 +218,58 @@ export function OrbitInbox() {
     [queryString],
   );
 
-  const { data, isLoading, isError } = useQuery<InboxData>({
+  // `useInfiniteQuery` statt `useQuery`: React Query cached selbst alle
+  // bereits per "Mehr laden" nachgeladenen Seiten unter demselben Query-Key
+  // — verlässt man die Seite und kommt zurück (innerhalb der gcTime), sind
+  // die nachgeladenen Threads noch da, ohne dass wir das selbst verwalten
+  // müssten.
+  const {
+    data,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: inboxQueryKey,
-    queryFn: () => fetchInboxData(params),
+    queryFn: ({ pageParam }) => fetchInboxData(params, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.hasMore
+        ? allPages.reduce((sum, p) => sum + p.threads.length, 0)
+        : undefined,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
+    // Bei jedem Tastenanschlag in der Suche ändert sich `debouncedSearch` und
+    // damit der queryKey — ohne `keepPreviousData` würde React Query dafür
+    // `isLoading` kurz auf true setzen und die GANZE Seite (nicht nur die
+    // Thread-Liste) durch das Skeleton ersetzen. Mit `keepPreviousData`
+    // bleiben Sidebar/Liste/Detail stehen, während im Hintergrund neu geladen
+    // wird.
+    placeholderData: keepPreviousData,
     refetchInterval: (query) => {
-      const threads = query.state.data?.threads ?? [];
-      return threads.some((t) => t.label_status === "processing")
-        ? 4000
-        : false;
+      const pages = query.state.data?.pages ?? [];
+      const anyProcessing = pages.some((p) =>
+        p.threads.some((t) => t.label_status === "processing"),
+      );
+      return anyProcessing ? 4000 : false;
     },
   });
 
-  const threads = useMemo(() => data?.threads ?? [], [data?.threads]);
+  const pages = useMemo(() => data?.pages ?? [], [data]);
+  const firstPage = pages[0];
+  const threads = useMemo(() => pages.flatMap((p) => p.threads), [pages]);
   const integrations = useMemo(
-    () => data?.integrations ?? [],
-    [data?.integrations],
+    () => firstPage?.integrations ?? [],
+    [firstPage],
   );
-  const labels = data?.labels ?? [];
-  const creators = data?.creators ?? [];
+  const labels = firstPage?.labels ?? [];
+  const creators = firstPage?.creators ?? [];
+  const hasMore = !!hasNextPage;
+  const loadingMore = isFetchingNextPage;
+  const loadMore = useCallback(() => {
+    void fetchNextPage();
+  }, [fetchNextPage]);
 
   useEffect(() => {
     if (integrations.length === 0) return;
@@ -268,7 +353,7 @@ export function OrbitInbox() {
   // ── Derived ──────────────────────────────────────────────────────────────────
 
   const filtered = threads;
-  const inboxUnread = data?.unreadCount ?? 0;
+  const inboxUnread = firstPage?.unreadCount ?? 0;
 
   const selectedIndex = filtered.findIndex((t) => t.id === selectedId);
   const selected = filtered.find((t) => t.id === selectedId) ?? null;
@@ -277,16 +362,12 @@ export function OrbitInbox() {
 
   const syncPatch = useCallback(
     async (id: string, patch: ThreadPatch) => {
-      const previous = queryClient.getQueryData<InboxData>(inboxQueryKey);
-      queryClient.setQueryData<InboxData>(inboxQueryKey, (old) => {
-        if (!old) return old;
-        return {
-          ...old,
-          threads: old.threads.map((t) =>
-            t.id === id ? { ...t, ...patch } : t,
-          ),
-        };
-      });
+      const previous =
+        queryClient.getQueryData<InfiniteData<InboxData>>(inboxQueryKey);
+      patchThreadsInCache(queryClient, inboxQueryKey, id, (t) => ({
+        ...t,
+        ...patch,
+      }));
       try {
         await patchThread(id, patch);
         // Sidebar-Badge zieht seinen Zähler aus einem eigenen, schlanken Query.
@@ -310,19 +391,25 @@ export function OrbitInbox() {
   // Löst den Deep-Link auf, sobald der Ziel-Thread tatsächlich in der (evtl.
   // gerade erst für ein anderes Postfach nachgeladenen) Liste steckt: öffnet
   // ihn genau wie ein normaler Klick (inkl. "als gelesen markieren") und
-  // scrollt ihn in der Thread-Liste sichtbar in den Viewport.
+  // scrollt ihn in der Thread-Liste sichtbar in den Viewport. Steckt er noch
+  // nicht drin (z.B. weil er älter als die ersten 30 geladenen Threads
+  // dieses Postfachs ist), wird automatisch nachgeladen, bis er auftaucht
+  // oder wirklich nichts mehr nachzuladen ist.
   useEffect(() => {
     const pending = pendingThreadIdRef.current;
     if (!pending) return;
     const match = threads.find((t) => t.id === pending);
-    if (!match) return;
-    pendingThreadIdRef.current = null;
-    setSelectedId(match.id);
-    if (match.unread) void syncPatch(match.id, { unread: false });
-    threadListRef.current
-      ?.querySelector(`[data-thread-id="${pending}"]`)
-      ?.scrollIntoView({ block: "center" });
-  }, [threads, syncPatch]);
+    if (match) {
+      pendingThreadIdRef.current = null;
+      setSelectedId(match.id);
+      if (match.unread) void syncPatch(match.id, { unread: false });
+      threadListRef.current
+        ?.querySelector(`[data-thread-id="${pending}"]`)
+        ?.scrollIntoView({ block: "center" });
+      return;
+    }
+    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+  }, [threads, syncPatch, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   function handleStar(id: string) {
     const t = threads.find((x) => x.id === id);
@@ -356,25 +443,19 @@ export function OrbitInbox() {
     labelId: string,
     assign: boolean,
   ) {
-    const previous = queryClient.getQueryData<InboxData>(inboxQueryKey);
+    const previous =
+      queryClient.getQueryData<InfiniteData<InboxData>>(inboxQueryKey);
 
-    queryClient.setQueryData<InboxData>(inboxQueryKey, (old) => {
-      if (!old) return old;
+    patchThreadsInCache(queryClient, inboxQueryKey, threadId, (t) => {
+      const labelObj = labels.find((l) => l.id === labelId);
+      if (!labelObj) return t;
       return {
-        ...old,
-        threads: old.threads.map((t) => {
-          if (t.id !== threadId) return t;
-          const labelObj = labels.find((l) => l.id === labelId);
-          if (!labelObj) return t;
-          return {
-            ...t,
-            labels: assign
-              ? t.labels.some((l) => l.id === labelId)
-                ? t.labels
-                : [...t.labels, labelObj]
-              : t.labels.filter((l) => l.id !== labelId),
-          };
-        }),
+        ...t,
+        labels: assign
+          ? t.labels.some((l) => l.id === labelId)
+            ? t.labels
+            : [...t.labels, labelObj]
+          : t.labels.filter((l) => l.id !== labelId),
       };
     });
 
@@ -416,32 +497,24 @@ export function OrbitInbox() {
   async function handleToggleAutoLabel() {
     if (!effectiveIntegrationId) return;
     const next = !autoLabel;
-    // Optimistic update in cache
-    queryClient.setQueryData<InboxData>(inboxQueryKey, (old) => {
-      if (!old) return old;
-      return {
-        ...old,
-        integrations: old.integrations.map((i) =>
-          i.id === effectiveIntegrationId ? { ...i, auto_label: next } : i,
-        ),
-      };
-    });
+    patchIntegrationsInCache(
+      queryClient,
+      inboxQueryKey,
+      effectiveIntegrationId,
+      (i) => ({ ...i, auto_label: next }),
+    );
     const res = await fetch(`/api/integrations/${effectiveIntegrationId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ auto_label: next }),
     });
     if (!res.ok) {
-      // Rollback
-      queryClient.setQueryData<InboxData>(inboxQueryKey, (old) => {
-        if (!old) return old;
-        return {
-          ...old,
-          integrations: old.integrations.map((i) =>
-            i.id === effectiveIntegrationId ? { ...i, auto_label: !next } : i,
-          ),
-        };
-      });
+      patchIntegrationsInCache(
+        queryClient,
+        inboxQueryKey,
+        effectiveIntegrationId,
+        (i) => ({ ...i, auto_label: !next }),
+      );
     }
   }
 
@@ -468,15 +541,10 @@ export function OrbitInbox() {
   }
 
   async function handleLabelThread(threadId: string) {
-    queryClient.setQueryData<InboxData>(inboxQueryKey, (old) => {
-      if (!old) return old;
-      return {
-        ...old,
-        threads: old.threads.map((t) =>
-          t.id === threadId ? { ...t, label_status: "processing" as const } : t,
-        ),
-      };
-    });
+    patchThreadsInCache(queryClient, inboxQueryKey, threadId, (t) => ({
+      ...t,
+      label_status: "processing" as const,
+    }));
     try {
       await fetch(`/api/inbox/${threadId}/label`, { method: "POST" });
     } finally {
@@ -659,18 +727,34 @@ export function OrbitInbox() {
                   </p>
                 </div>
               ) : (
-                filtered.map((t) => (
-                  <div key={t.id} data-thread-id={t.id}>
-                    <ThreadItem
-                      thread={t}
-                      isSelected={selectedId === t.id}
-                      onClick={() => handleSelect(t)}
-                      onStar={() => handleStar(t.id)}
-                      onArchive={() => handleArchive(t.id)}
-                      onDelete={() => handleDelete(t.id)}
-                    />
-                  </div>
-                ))
+                <>
+                  {filtered.map((t) => (
+                    <div key={t.id} data-thread-id={t.id}>
+                      <ThreadItem
+                        thread={t}
+                        isSelected={selectedId === t.id}
+                        onClick={() => handleSelect(t)}
+                        onStar={() => handleStar(t.id)}
+                        onArchive={() => handleArchive(t.id)}
+                        onDelete={() => handleDelete(t.id)}
+                      />
+                    </div>
+                  ))}
+                  {hasMore && (
+                    <div className="px-4 py-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void loadMore()}
+                        disabled={loadingMore}
+                        className="w-full"
+                      >
+                        {loadingMore ? "Lädt…" : "Mehr laden"}
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
