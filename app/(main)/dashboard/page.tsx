@@ -1,4 +1,4 @@
-import { AccordionSection } from "@/components/dashboard/accordion-section";
+import { KiAnfragenCard } from "@/components/dashboard/ki-anfragen-card";
 import { TermineCard } from "@/components/dashboard/termine-card";
 import { CreatorCard } from "@/components/dashboard/creator-card";
 import { IncomeCard } from "@/components/dashboard/income-card";
@@ -6,8 +6,6 @@ import { OnboardingCard } from "@/components/dashboard/onboarding-card";
 import { OnboardingTaskCard } from "@/components/dashboard/onboarding-task.card";
 import { StatGroup } from "@/components/dashboard/stat-card";
 import { StatusBar, StatusBarGroup } from "@/components/dashboard/status-bar";
-import { Badge, Label } from "@talentos/ui";
-import { Sparkles } from "lucide-react";
 
 export default function DashboardPage() {
   return (
@@ -59,23 +57,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Row 2, col 1-3 */}
-        <div className="col-span-12 lg:col-span-3 bg-card rounded-2xl  overflow-hidden">
-          <div className="px-4 py-4 flex justify-between">
-            <Label className="text-lg font-semibold">Anfragen </Label>
-            <Badge variant="outline">
-              KI Extrahiert <Sparkles />
-            </Badge>
-          </div>
-
-          <div className="px-4">
-            <AccordionSection title="Adidas Werbeanfrage für Kora" />
-            <AccordionSection title="Ella Matratze Potentieller Werbepartner">
-              <p>PLATZHALTEr</p>
-            </AccordionSection>
-            <AccordionSection title="Compensation Summary" />
-            <AccordionSection title="Employee Benefits" />
-          </div>
-        </div>
+        <KiAnfragenCard className="col-span-12 lg:col-span-3" />
 
         {/* Row 2, col 4-9 */}
         <TermineCard className="col-span-12 lg:col-span-6" />

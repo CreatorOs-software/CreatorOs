@@ -20,7 +20,7 @@ import {
 } from "@talentos/ui";
 import { QueryKeys } from "@/lib/query-keys";
 import { normalizeE164 } from "@/lib/formatters";
-import type { WhatsAppConnectionPublic } from "@/domains/whatsapp/types";
+import type { WhatsAppConnectionPublic, WhatsAppTemplate } from "@/domains/whatsapp/types";
 import type { Thread, Creator } from "../../types";
 import { TemplateQuickInsert } from "../../templates/template-quick-insert";
 import { useVariableSlashMenu } from "../../templates/variable-slash-menu";
@@ -80,6 +80,7 @@ export function WhatsappForwardDialog({
   const [aiUsed, setAiUsed] = useState(false);
   const [unresolved, setUnresolved] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
+  const [templateName, setTemplateName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
 
@@ -89,6 +90,18 @@ export function WhatsappForwardDialog({
     staleTime: 5 * 60_000,
   });
   const connected = connData?.connection?.connected === true;
+  const { data: templateData } = useQuery<{ templates: WhatsAppTemplate[] }>({
+    queryKey: QueryKeys.whatsapp.templates(),
+    queryFn: async () => {
+      const response = await fetch("/api/admin/whatsapp?action=templates");
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Vorlagen konnten nicht geladen werden");
+      return body;
+    },
+    enabled: connected,
+  });
+  const templates = templateData?.templates ?? [];
+  const selectedTemplate = templates.find((template) => template.name === templateName) ?? null;
 
   const creator = creators.find((c) => c.id === creatorId) ?? null;
   const name = creator ? firstName(creator.full_name) : "Creator";
@@ -119,6 +132,9 @@ export function WhatsappForwardDialog({
           creatorId: creator.id,
           threadId: thread.id,
           body: message.trim(),
+          templateName: selectedTemplate?.name,
+          templateParams:
+            selectedTemplate?.bodyParamCount === 1 ? [message.trim()] : undefined,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -126,7 +142,7 @@ export function WhatsappForwardDialog({
         setError(data.error ?? "Senden fehlgeschlagen");
         return;
       }
-      toast.success(`WhatsApp an ${name} gesendet.`);
+      toast.success(`WhatsApp an Meta übergeben. Zustellung wird nachgeführt.`);
       setOpen(false);
       setMessage("");
       setAiUsed(false);
@@ -135,7 +151,9 @@ export function WhatsappForwardDialog({
     }
   }
 
-  const canSend = !!message.trim() && !!creator && phoneValid && connected && !sending;
+  const templateSupported = !selectedTemplate || selectedTemplate.bodyParamCount <= 1;
+  const hasContent = selectedTemplate?.bodyParamCount === 0 || !!message.trim();
+  const canSend = hasContent && templateSupported && !!creator && phoneValid && connected && !sending;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -189,6 +207,25 @@ export function WhatsappForwardDialog({
               setUnresolved(result.unresolved);
             }}
           />
+          {templates.length > 0 && (
+            <div className="space-y-1.5">
+              <span className="text-xs font-medium">Meta-Vorlage für Nachrichten außerhalb des 24-Stunden-Fensters</span>
+              <Select value={templateName || "__freeform"} onValueChange={(value) => setTemplateName(value === "__freeform" || value === null ? "" : value)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__freeform">Freie Antwort im Servicefenster</SelectItem>
+                  {templates.map((template) => (
+                    <SelectItem key={template.id} value={template.name}>
+                      {template.name} · {template.language}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedTemplate && selectedTemplate.bodyParamCount > 1 && (
+                <p className="text-xs text-destructive">Diese Vorlage benötigt {selectedTemplate.bodyParamCount} Parameter und wird in diesem Dialog noch nicht unterstützt.</p>
+              )}
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-1.5">
             <VariablePicker onPick={slashMenu.insertVariable} />
             <Button

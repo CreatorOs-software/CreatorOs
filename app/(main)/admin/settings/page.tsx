@@ -6,7 +6,7 @@ const SECTIONS = [
     href: "/admin/settings/integrations",
     icon: Plug,
     title: "Integrationen",
-    description: "WhatsApp (Twilio) und E-Mail-Postfächer verbinden.",
+    description: "WhatsApp Business und E-Mail-Postfächer verbinden.",
   },
 ] as const;
 

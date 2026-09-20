@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -50,11 +51,15 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border-light">
-          <div className="rounded-lg border border-foreground/20 px-4 py-2">
-            <span className="text-lg font-semibold text-foreground">
-              Crextio
-            </span>
-          </div>
+          <Link href="/dashboard" onClick={onClose}>
+            <Image
+              src="/logos/svg/prodigy-one-logo-primary.svg"
+              alt="Prodigy One"
+              width={289.11}
+              height={64}
+              className="h-8 w-auto"
+            />
+          </Link>
           <Button
             type="button"
             variant="ghost"

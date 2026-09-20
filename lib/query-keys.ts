@@ -4,6 +4,7 @@ export const QueryKeys = {
     list: () => ["inbox", "list"] as const,
     light: () => ["inbox", "light"] as const,
     unreadCount: () => ["inbox", "unread-count"] as const,
+    aiRequests: () => ["inbox", "ai-requests"] as const,
     detail: (id: string) => ["inbox", "detail", id] as const,
     conversation: (id: string) => ["inbox", "conversation", id] as const,
   },
@@ -41,6 +42,7 @@ export const QueryKeys = {
   whatsapp: {
     all: () => ["whatsapp"] as const,
     connection: () => ["whatsapp", "connection"] as const,
+    templates: () => ["whatsapp", "templates"] as const,
   },
   todos: {
     all: () => ["todos"] as const,

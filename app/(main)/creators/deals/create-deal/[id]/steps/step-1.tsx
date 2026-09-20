@@ -200,7 +200,7 @@ export function Step1({
                 {(startField: DealField<"campaign_start">) => (
                   <form.Field name="campaign_end">
                     {(endField: DealField<"campaign_end">) => (
-                      <div classN>
+                      <div className="space-y-2">
                         <Label className="text-sm font-medium">
                           Kampagnenzeitraum
                         </Label>

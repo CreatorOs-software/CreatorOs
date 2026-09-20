@@ -68,17 +68,22 @@ async function patchThread(id: string, patch: ThreadPatch): Promise<void> {
 export function OrbitInbox() {
   const queryClient = useQueryClient();
 
-  // Deeplink aus der Glocke: /inbox?thread=<id> überschreibt den zuletzt
-  // geöffneten Thread einmalig beim Laden.
+  // Deeplink aus der Glocke / vom Dashboard: /inbox?thread=<id> überschreibt
+  // den zuletzt geöffneten Thread.
   const searchParams = useSearchParams();
   const [selectedId, setSelectedId] = useState<string | null>(
     () =>
       searchParams.get("thread") ??
       localStorage.getItem("inbox:selectedThreadId"),
   );
+
   const [selectedIntegrationId, setSelectedIntegrationId] = useState<
     string | null
-  >(() => localStorage.getItem("inbox:selectedIntegrationId"));
+  >(
+    () =>
+      searchParams.get("integration_id") ??
+      localStorage.getItem("inbox:selectedIntegrationId"),
+  );
   const [category, setCategory] = useState("all");
   const [folder, setFolder] = useState<Folder>("inbox");
   const [search, setSearch] = useState("");
@@ -99,6 +104,39 @@ export function OrbitInbox() {
     "sidebar",
   );
   const [syncing, setSyncing] = useState(false);
+
+  // Wird gesetzt, sobald ein `?thread=` in der URL steht, und erst wieder
+  // gelöscht, wenn dieser Thread tatsächlich in der geladenen Liste gefunden
+  // und geöffnet wurde (siehe Effect weiter unten, der auf `threads` lauert).
+  const pendingThreadIdRef = useRef<string | null>(null);
+  const threadListRef = useRef<HTMLDivElement | null>(null);
+
+  // Der Initializer oben greift nur beim allerersten Mount. Navigiert man
+  // erneut mit einem anderen `?thread=` hierher, während OrbitInbox schon
+  // gemountet ist (z.B. Next behält die Seite im Router-Cache), würde der
+  // neue Parameter sonst ignoriert und einfach der zuletzt geöffnete Thread
+  // bleibt sichtbar. Deshalb hier zusätzlich reaktiv nachziehen — inklusive
+  // `integration_id` (Thread-Liste wird immer nur für EIN Postfach
+  // abgefragt) und `mergedView` (im merged Mode zeigt die Inbox standardmäßig
+  // nur das Sidebar-Panel — ohne den Wechsel auf "threads" bleibt das
+  // Thread-/Detail-Panel unsichtbar). `selectedId` selbst wird hier bewusst
+  // NICHT direkt gesetzt: die Thread-Liste für das (evtl. gerade erst
+  // gewechselte) Postfach ist an dieser Stelle noch nicht geladen — das
+  // würde `selected` kurzzeitig ins Leere laufen lassen. Stattdessen merkt
+  // sich `pendingThreadIdRef`, welcher Thread noch geöffnet werden soll.
+  useEffect(() => {
+    const threadParam = searchParams.get("thread");
+    const integrationParam = searchParams.get("integration_id");
+    if (threadParam) {
+      pendingThreadIdRef.current = threadParam;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMergedView("threads");
+    }
+    if (integrationParam) {
+      setSelectedIntegrationId(integrationParam);
+      localStorage.setItem("inbox:selectedIntegrationId", integrationParam);
+    }
+  }, [searchParams]);
   const [composeOpen, setComposeOpen] = useState(false);
   const [activeLabelId, setActiveLabelId] = useState<string | null>(null);
   const [workStates, setWorkStates] = useState<Record<string, WorkPanelState>>(
@@ -140,7 +178,7 @@ export function OrbitInbox() {
     },
   });
 
-  const threads = data?.threads ?? [];
+  const threads = useMemo(() => data?.threads ?? [], [data?.threads]);
   const integrations = useMemo(
     () => data?.integrations ?? [],
     [data?.integrations],
@@ -268,6 +306,23 @@ export function OrbitInbox() {
     setSelectedId(t.id);
     if (t.unread) void syncPatch(t.id, { unread: false });
   }
+
+  // Löst den Deep-Link auf, sobald der Ziel-Thread tatsächlich in der (evtl.
+  // gerade erst für ein anderes Postfach nachgeladenen) Liste steckt: öffnet
+  // ihn genau wie ein normaler Klick (inkl. "als gelesen markieren") und
+  // scrollt ihn in der Thread-Liste sichtbar in den Viewport.
+  useEffect(() => {
+    const pending = pendingThreadIdRef.current;
+    if (!pending) return;
+    const match = threads.find((t) => t.id === pending);
+    if (!match) return;
+    pendingThreadIdRef.current = null;
+    setSelectedId(match.id);
+    if (match.unread) void syncPatch(match.id, { unread: false });
+    threadListRef.current
+      ?.querySelector(`[data-thread-id="${pending}"]`)
+      ?.scrollIntoView({ block: "center" });
+  }, [threads, syncPatch]);
 
   function handleStar(id: string) {
     const t = threads.find((x) => x.id === id);
@@ -591,7 +646,7 @@ export function OrbitInbox() {
               </div>
             )}
 
-            <div className="flex-1 overflow-y-auto py-1">
+            <div ref={threadListRef} className="flex-1 overflow-y-auto py-1">
               {filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 py-12 text-center text-muted-foreground">
                   <Inbox className="h-8 w-8 opacity-20" />
@@ -605,15 +660,16 @@ export function OrbitInbox() {
                 </div>
               ) : (
                 filtered.map((t) => (
-                  <ThreadItem
-                    key={t.id}
-                    thread={t}
-                    isSelected={selectedId === t.id}
-                    onClick={() => handleSelect(t)}
-                    onStar={() => handleStar(t.id)}
-                    onArchive={() => handleArchive(t.id)}
-                    onDelete={() => handleDelete(t.id)}
-                  />
+                  <div key={t.id} data-thread-id={t.id}>
+                    <ThreadItem
+                      thread={t}
+                      isSelected={selectedId === t.id}
+                      onClick={() => handleSelect(t)}
+                      onStar={() => handleStar(t.id)}
+                      onArchive={() => handleArchive(t.id)}
+                      onDelete={() => handleDelete(t.id)}
+                    />
+                  </div>
                 ))
               )}
             </div>

@@ -1,6 +1,7 @@
 export { WhatsAppService, WhatsAppError } from "./service";
 export type {
   WhatsAppConnectionPublic,
-  WhatsAppConnectInput,
+  MetaOnboardingInput,
   SendToCreatorInput,
+  WhatsAppTemplate,
 } from "./types";

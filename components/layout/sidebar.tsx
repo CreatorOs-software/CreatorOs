@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -128,8 +129,13 @@ export function AppSidebar() {
             href="/dashboard"
             className="flex items-center gap-2 px-2 py-1 text-sm font-semibold text-foreground group-data-[collapsible=icon]:hidden"
           >
-            <div className="h-5 w-6 shrink-0 rounded-tl-lg rounded-tr-sm rounded-br-lg rounded-bl-sm bg-sidebar-accent" />
-            <span>Crextio</span>
+            <Image
+              src="/logos/svg/prodigy-one-logo-primary.svg"
+              alt="Prodigy One"
+              width={289.11}
+              height={64}
+              className="h-8 w-auto"
+            />
           </Link>
           <SidebarTrigger />
         </div>

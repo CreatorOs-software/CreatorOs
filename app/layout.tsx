@@ -33,19 +33,22 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
+        url: "/logos/png/prodigy-one-icon-small-16.png",
+        type: "image/png",
+        sizes: "16x16",
       },
       {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
+        url: "/logos/png/prodigy-one-icon-small-32.png",
+        type: "image/png",
+        sizes: "32x32",
       },
       {
-        url: "/icon.svg",
+        url: "/logos/svg/prodigy-one-icon-small.svg",
         type: "image/svg+xml",
+        sizes: "any",
       },
     ],
-    apple: "/apple-icon.png",
+    apple: "/logos/png/prodigy-one-icon-180.png",
   },
 };
 export default function RootLayout({

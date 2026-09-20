@@ -1,289 +1,214 @@
 import { getAuthContext, can } from "@/domains/auth";
+import {
+  exchangeCodeForToken, getPhoneNumberInfo, getWabaInfo, listApprovedTemplates,
+  listWabaPhoneNumbers, MetaApiError, sendTemplateMessage, sendTextMessage,
+  subscribeAppToWaba,
+} from "@/lib/meta-whatsapp-client.server";
+import { decryptSecret, encryptSecret } from "@/lib/secret-box.server";
 import { createClient } from "@/lib/supabase/server";
 import { serviceClient } from "@/lib/supabase/service";
 import { isValidE164, normalizeE164 } from "@/lib/formatters";
 import { WhatsAppRepository } from "./repository";
 import type {
-  ResolvedWhatsAppCredentials,
-  SendToCreatorInput,
-  WhatsAppConnectInput,
-  WhatsAppConnectionPublic,
-  WhatsAppConnectionRow,
-  WhatsAppMessageRecord,
+  MetaOnboardingInput, SendToCreatorInput, WhatsAppConnectionPublic,
+  WhatsAppConnectionRow, WhatsAppMessageRecord, WhatsAppTemplate,
 } from "./types";
 
 export class WhatsAppError extends Error {}
 
-const TEST_BODY = "Test von TalentOS ✅";
+type MetaCredentials = { accessToken: string; phoneNumberId: string; wabaId: string };
 
-// ─── Credential resolution ────────────────────────────────────────────────────
-
-function envCredentials(): ResolvedWhatsAppCredentials | null {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const contentSid = process.env.TWILIO_WHATSAPP_TEMPLATE_SID;
-  const fromNumber = process.env.TWILIO_WHATSAPP_FROM ?? null;
-  const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID ?? null;
-  if (!accountSid || !authToken || !contentSid) return null;
-  if (!fromNumber && !messagingServiceSid) return null;
-  return { accountSid, authToken, contentSid, fromNumber, messagingServiceSid };
+function metaConfig(): { appId: string; appSecret: string } {
+  const appId = process.env.META_APP_ID;
+  const appSecret = process.env.META_APP_SECRET;
+  if (!appId || !appSecret) throw new WhatsAppError("Die Meta-App ist serverseitig noch nicht konfiguriert.");
+  return { appId, appSecret };
 }
 
-function rowCredentials(
-  row: WhatsAppConnectionRow | null,
-): ResolvedWhatsAppCredentials | null {
-  if (!row || row.status !== "connected") return null;
-  if (!row.twilio_account_sid || !row.twilio_auth_token || !row.content_sid) return null;
-  if (!row.from_number && !row.messaging_service_sid) return null;
+function connectionView(row: WhatsAppConnectionRow | null): WhatsAppConnectionPublic {
+  // A present-but-expired token must not read as "connected" — resolveCredentials()
+  // already rejects it for sending, so the status shown here has to agree,
+  // otherwise the settings page keeps showing a green checkmark while every
+  // send silently fails with "please reconnect".
+  const tokenExpired = Boolean(row?.token_expires_at && new Date(row.token_expires_at) <= new Date());
+  const connected = row?.provider === "meta" && row.status === "connected" &&
+    Boolean(row.phone_number_id && row.waba_id && row.access_token_encrypted) && !tokenExpired;
+  const status = tokenExpired && row?.status === "connected" ? "needs_reconnect" : (row?.status ?? "pending");
   return {
-    accountSid: row.twilio_account_sid,
-    authToken: row.twilio_auth_token,
-    contentSid: row.content_sid,
-    fromNumber: row.from_number,
-    messagingServiceSid: row.messaging_service_sid,
+    connected, status, provider: row?.provider ?? "meta",
+    displayPhoneNumber: row?.display_phone_number ?? null,
+    verifiedName: row?.verified_name ?? null, wabaId: row?.waba_id ?? null,
+    connectedAt: row?.connected_at ?? null, lastError: row?.last_error ?? null,
   };
 }
 
-async function resolveCredentials(
-  agencyId: string,
-): Promise<{ creds: ResolvedWhatsAppCredentials; source: "db" | "env" }> {
-  const row = await WhatsAppRepository.findConnection(serviceClient, agencyId);
-  const fromRow = rowCredentials(row);
-  if (fromRow) return { creds: fromRow, source: "db" };
-  const fromEnv = envCredentials();
-  if (fromEnv) return { creds: fromEnv, source: "env" };
-  throw new WhatsAppError("WhatsApp ist für diese Agentur nicht verbunden.");
+function resolveCredentials(row: WhatsAppConnectionRow | null): MetaCredentials {
+  if (!row || row.provider !== "meta" || row.status !== "connected" ||
+      !row.access_token_encrypted || !row.phone_number_id || !row.waba_id) {
+    throw new WhatsAppError("WhatsApp ist für diese Agentur nicht verbunden.");
+  }
+  if (row.token_expires_at && new Date(row.token_expires_at) <= new Date()) {
+    throw new WhatsAppError("Die WhatsApp-Verbindung ist abgelaufen. Bitte erneut verbinden.");
+  }
+  try {
+    return {
+      accessToken: decryptSecret(row.access_token_encrypted),
+      phoneNumberId: row.phone_number_id, wabaId: row.waba_id,
+    };
+  } catch {
+    throw new WhatsAppError("Die WhatsApp-Verbindung muss erneut hergestellt werden.");
+  }
 }
 
-async function connectionView(agencyId: string): Promise<WhatsAppConnectionPublic> {
-  const row = await WhatsAppRepository.findConnection(serviceClient, agencyId);
-  const fromRow = rowCredentials(row);
-  if (fromRow) {
-    return {
-      connected: true,
-      status: "connected",
-      fromNumber: row?.from_number ?? null,
-      templateName: row?.template_name ?? null,
-      accountSidLast4: fromRow.accountSid.slice(-4),
-      source: "db",
-      connectedAt: row?.connected_at ?? null,
-      lastError: row?.last_error ?? null,
-    };
-  }
-  const fromEnv = envCredentials();
-  if (fromEnv) {
-    return {
-      connected: true,
-      status: "connected",
-      fromNumber: fromEnv.fromNumber,
-      templateName: process.env.TWILIO_WHATSAPP_TEMPLATE_NAME ?? null,
-      accountSidLast4: fromEnv.accountSid.slice(-4),
-      source: "env",
-      connectedAt: null,
-      lastError: null,
-    };
-  }
-  return {
-    connected: false,
-    status: row?.status ?? "pending",
-    fromNumber: row?.from_number ?? null,
-    templateName: row?.template_name ?? null,
-    accountSidLast4: null,
-    source: "env",
-    connectedAt: null,
-    lastError: row?.last_error ?? null,
-  };
-}
-
-async function assertCanEdit(): Promise<{ agencyId: string; userId: string }> {
+async function authFor(permission: "edit_integrations" | "edit_communication") {
   const supabase = await createClient();
-  const { agencyId, userId, role, permissions } = await getAuthContext(supabase);
-  if (!can(role, permissions, "edit_integrations")) {
-    throw new WhatsAppError("Keine Berechtigung für WhatsApp-Einstellungen.");
+  const auth = await getAuthContext(supabase);
+  if (!can(auth.role, auth.permissions, permission)) {
+    throw new WhatsAppError("Keine Berechtigung für diese WhatsApp-Aktion.");
   }
-  return { agencyId, userId };
+  return { ...auth, supabase };
 }
 
 async function auditSafe(row: WhatsAppMessageRecord): Promise<void> {
-  try {
-    await WhatsAppRepository.insertMessage(serviceClient, row);
-  } catch {
-    // best-effort — the message is already sent; a log failure must not surface
-  }
+  try { await WhatsAppRepository.insertMessage(serviceClient, row); } catch {}
 }
 
-// ─── Service ─────────────────────────────────────────────────────────────────
+function providerError(error: unknown, fallback: string): WhatsAppError {
+  if (error instanceof MetaApiError) {
+    return new WhatsAppError(error.status === 401
+      ? "WhatsApp-Verbindung ungültig. Bitte erneut verbinden."
+      : error.message);
+  }
+  if (error instanceof WhatsAppError) return error;
+  return new WhatsAppError(fallback);
+}
+
+async function syncTemplatesForAgency(agencyId: string, credentials: MetaCredentials): Promise<WhatsAppTemplate[]> {
+  const templates = await listApprovedTemplates(credentials.accessToken, credentials.wabaId);
+  await WhatsAppRepository.replaceTemplates(serviceClient, agencyId, templates.map((template) => ({
+    meta_template_id: template.id, name: template.name, language: template.language,
+    category: template.category, status: template.status, components: template.components,
+  })));
+  return WhatsAppRepository.listTemplates(serviceClient, agencyId);
+}
 
 export const WhatsAppService = {
   async getConnection(): Promise<WhatsAppConnectionPublic> {
-    const supabase = await createClient();
-    const { agencyId } = await getAuthContext(supabase);
-    return connectionView(agencyId);
+    const { agencyId } = await authFor("edit_communication");
+    return connectionView(await WhatsAppRepository.findConnection(serviceClient, agencyId));
   },
 
-  async connect(input: WhatsAppConnectInput): Promise<WhatsAppConnectionPublic> {
-    const { agencyId, userId } = await assertCanEdit();
-
-    if (!isValidE164(input.fromNumber)) {
-      throw new WhatsAppError("Absendernummer muss im Format +49… (E.164) sein.");
-    }
-    if (!input.contentSid.startsWith("HX")) {
-      throw new WhatsAppError("Template-SID muss mit „HX“ beginnen.");
-    }
-
-    const { twilioClient, TwilioError } = await import("@/lib/twilio-client.server");
+  async connect(input: MetaOnboardingInput): Promise<WhatsAppConnectionPublic> {
+    const { agencyId, userId } = await authFor("edit_integrations");
+    const { appId, appSecret } = metaConfig();
     try {
-      await twilioClient.checkAuth(input.accountSid, input.authToken);
-    } catch (e) {
-      if (e instanceof TwilioError) {
-        throw new WhatsAppError("Twilio-Zugangsdaten ungültig.");
+      const token = await exchangeCodeForToken({ appId, appSecret, code: input.code });
+      const [waba, phone, wabaPhones] = await Promise.all([
+        getWabaInfo(token.accessToken, input.wabaId),
+        getPhoneNumberInfo(token.accessToken, input.phoneNumberId),
+        listWabaPhoneNumbers(token.accessToken, input.wabaId),
+      ]);
+      if (!wabaPhones.some(({ id }) => id === input.phoneNumberId)) {
+        throw new WhatsAppError("Die gewählte Telefonnummer gehört nicht zum gewählten WhatsApp-Konto.");
       }
-      throw e;
+      if (input.businessId && waba.ownerBusinessId && input.businessId !== waba.ownerBusinessId) {
+        throw new WhatsAppError("Das WhatsApp-Konto gehört nicht zum übermittelten Unternehmen.");
+      }
+      await subscribeAppToWaba(token.accessToken, input.wabaId);
+      const row = await WhatsAppRepository.upsertConnection(serviceClient, agencyId, {
+        provider: "meta", status: "connected", waba_id: input.wabaId,
+        phone_number_id: input.phoneNumberId,
+        business_id: waba.ownerBusinessId ?? input.businessId ?? null,
+        display_phone_number: phone.displayPhoneNumber, verified_name: phone.verifiedName,
+        from_number: phone.displayPhoneNumber, access_token_encrypted: encryptSecret(token.accessToken),
+        token_expires_at: token.expiresIn ? new Date(Date.now() + token.expiresIn * 1000).toISOString() : null,
+        webhook_subscribed_at: new Date().toISOString(), last_error: null,
+        connected_at: new Date().toISOString(), twilio_auth_token: null, created_by: userId,
+      });
+      await syncTemplatesForAgency(agencyId, resolveCredentials(row));
+      return connectionView(row);
+    } catch (error) {
+      throw providerError(error, "WhatsApp-Verbindung fehlgeschlagen.");
     }
-
-    await WhatsAppRepository.upsertConnection(serviceClient, agencyId, {
-      status: "connected",
-      from_number: input.fromNumber,
-      twilio_account_sid: input.accountSid,
-      twilio_auth_token: input.authToken,
-      messaging_service_sid: input.messagingServiceSid ?? null,
-      content_sid: input.contentSid,
-      template_name: input.templateName ?? null,
-      last_error: null,
-      connected_at: new Date().toISOString(),
-      created_by: userId,
-    });
-
-    return connectionView(agencyId);
   },
 
   async disconnect(): Promise<void> {
-    const { agencyId } = await assertCanEdit();
+    const { agencyId } = await authFor("edit_integrations");
     await WhatsAppRepository.disconnectConnection(serviceClient, agencyId);
   },
 
-  async sendTest(toNumber: string): Promise<{ sid: string }> {
-    const { agencyId, userId } = await assertCanEdit();
-    if (!isValidE164(toNumber)) {
-      throw new WhatsAppError("Testnummer muss im Format +49… (E.164) sein.");
-    }
-    const { creds } = await resolveCredentials(agencyId);
-    const { twilioClient, TwilioError } = await import("@/lib/twilio-client.server");
+  async listTemplates(): Promise<WhatsAppTemplate[]> {
+    const { agencyId } = await authFor("edit_communication");
+    return WhatsAppRepository.listTemplates(serviceClient, agencyId);
+  },
 
+  async syncTemplates(): Promise<WhatsAppTemplate[]> {
+    const { agencyId } = await authFor("edit_integrations");
+    const credentials = resolveCredentials(await WhatsAppRepository.findConnection(serviceClient, agencyId));
     try {
-      const { sid } = await twilioClient.sendTemplate({
-        accountSid: creds.accountSid,
-        authToken: creds.authToken,
-        from: creds.fromNumber ?? undefined,
-        messagingServiceSid: creds.messagingServiceSid ?? undefined,
-        to: toNumber,
-        contentSid: creds.contentSid,
-        contentVariables: { "1": TEST_BODY },
-      });
-      await auditSafe({
-        agency_id: agencyId,
-        creator_id: null,
-        thread_id: null,
-        to_number: toNumber,
-        body: TEST_BODY,
-        content_sid: creds.contentSid,
-        twilio_sid: sid,
-        status: "sent",
-        error: null,
-        created_by: userId,
-      });
-      return { sid };
-    } catch (e) {
-      const message =
-        e instanceof TwilioError ? e.message : "WhatsApp-Test fehlgeschlagen.";
-      await auditSafe({
-        agency_id: agencyId,
-        creator_id: null,
-        thread_id: null,
-        to_number: toNumber,
-        body: TEST_BODY,
-        content_sid: creds.contentSid,
-        twilio_sid: null,
-        status: "failed",
-        error: message,
-        created_by: userId,
-      });
-      throw new WhatsAppError(message);
+      return await syncTemplatesForAgency(agencyId, credentials);
+    } catch (error) {
+      throw providerError(error, "WhatsApp-Vorlagen konnten nicht synchronisiert werden.");
     }
   },
 
-  async sendToCreator(input: SendToCreatorInput): Promise<{ sid: string }> {
-    const body = input.body?.trim();
-    if (!body) throw new WhatsAppError("Nachricht fehlt.");
-
-    const supabase = await createClient();
-    const { agencyId, userId } = await getAuthContext(supabase);
-
-    const { creds } = await resolveCredentials(agencyId);
-
-    const contact = await WhatsAppRepository.findCreatorContact(
-      supabase,
-      agencyId,
-      input.creatorId,
-    );
+  async sendToCreator(input: SendToCreatorInput): Promise<{ messageId: string }> {
+    const { agencyId, userId, supabase } = await authFor("edit_communication");
+    const credentials = resolveCredentials(await WhatsAppRepository.findConnection(serviceClient, agencyId));
+    const contact = await WhatsAppRepository.findCreatorContact(supabase, agencyId, input.creatorId);
     if (!contact) throw new WhatsAppError("Creator nicht gefunden.");
-
+    if (input.threadId && !(await WhatsAppRepository.threadBelongsToAgency(supabase, agencyId, input.threadId))) {
+      throw new WhatsAppError("Der Vorgang gehört nicht zu dieser Agentur.");
+    }
     const phone = normalizeE164(contact.phone);
-    if (!phone) {
-      throw new WhatsAppError(
-        `Für ${contact.full_name} ist keine gültige WhatsApp-Nummer hinterlegt.`,
-      );
-    }
-    if (!contact.whatsapp_opt_in) {
-      throw new WhatsAppError(
-        `${contact.full_name} hat WhatsApp-Nachrichten nicht zugestimmt.`,
-      );
+    if (!phone || !isValidE164(phone)) throw new WhatsAppError(`Für ${contact.full_name} ist keine gültige WhatsApp-Nummer hinterlegt.`);
+    if (!contact.whatsapp_opt_in) throw new WhatsAppError(`${contact.full_name} hat WhatsApp-Nachrichten nicht zugestimmt.`);
+
+    const waContact = await WhatsAppRepository.findContact(serviceClient, agencyId, phone.replace(/^\+/, ""));
+    const windowOpen = Boolean(waContact?.last_inbound_at) &&
+      Date.now() - new Date(waContact!.last_inbound_at!).getTime() < 24 * 60 * 60 * 1000;
+    const body = input.body?.trim() ?? "";
+    let template: WhatsAppTemplate | null = null;
+    if (!windowOpen) {
+      if (!input.templateName) throw new WhatsAppError("Das 24-Stunden-Servicefenster ist geschlossen. Bitte eine freigegebene Meta-Vorlage wählen.");
+      template = await WhatsAppRepository.findTemplate(serviceClient, agencyId, input.templateName);
+      if (!template || template.status !== "APPROVED") throw new WhatsAppError("Die gewählte WhatsApp-Vorlage ist nicht freigegeben.");
+      if ((input.templateParams?.length ?? 0) !== template.bodyParamCount) {
+        throw new WhatsAppError(`Die Vorlage erwartet ${template.bodyParamCount} Parameter.`);
+      }
+    } else if (!body) {
+      throw new WhatsAppError("Nachricht fehlt.");
     }
 
-    const { twilioClient, TwilioError } = await import("@/lib/twilio-client.server");
-
-    let sid: string;
     try {
-      ({ sid } = await twilioClient.sendTemplate({
-        accountSid: creds.accountSid,
-        authToken: creds.authToken,
-        from: creds.fromNumber ?? undefined,
-        messagingServiceSid: creds.messagingServiceSid ?? undefined,
-        to: phone,
-        contentSid: creds.contentSid,
-        contentVariables: { "1": body },
-      }));
-    } catch (e) {
-      const message =
-        e instanceof TwilioError ? e.message : "WhatsApp-Versand fehlgeschlagen.";
+      const result = template
+        ? await sendTemplateMessage({
+            accessToken: credentials.accessToken, phoneNumberId: credentials.phoneNumberId,
+            to: phone, templateName: template.name, languageCode: template.language,
+            components: template.bodyParamCount ? [{
+              type: "body", parameters: (input.templateParams ?? []).map((text) => ({ type: "text", text })),
+            }] : undefined,
+          })
+        : await sendTextMessage({
+            accessToken: credentials.accessToken, phoneNumberId: credentials.phoneNumberId,
+            to: phone, body,
+          });
       await auditSafe({
-        agency_id: agencyId,
-        creator_id: input.creatorId,
-        thread_id: input.threadId ?? null,
-        to_number: phone,
-        body,
-        content_sid: creds.contentSid,
-        twilio_sid: null,
-        status: "failed",
-        error: message,
-        created_by: userId,
+        agency_id: agencyId, creator_id: input.creatorId, thread_id: input.threadId ?? null,
+        to_number: phone, body: template ? `Template: ${template.name}` : body,
+        provider: "meta", direction: "outbound", wa_message_id: result.messageId,
+        status: "accepted", error: null, created_by: userId,
+      });
+      return result;
+    } catch (error) {
+      const message = providerError(error, "WhatsApp-Versand fehlgeschlagen.").message;
+      await auditSafe({
+        agency_id: agencyId, creator_id: input.creatorId, thread_id: input.threadId ?? null,
+        to_number: phone, body: template ? `Template: ${template.name}` : body,
+        provider: "meta", direction: "outbound", wa_message_id: null,
+        status: "failed", error: message, created_by: userId,
       });
       throw new WhatsAppError(message);
     }
-
-    await auditSafe({
-      agency_id: agencyId,
-      creator_id: input.creatorId,
-      thread_id: input.threadId ?? null,
-      to_number: phone,
-      body,
-      content_sid: creds.contentSid,
-      twilio_sid: sid,
-      status: "sent",
-      error: null,
-      created_by: userId,
-    });
-
-    return { sid };
   },
 };
