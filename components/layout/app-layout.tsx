@@ -12,7 +12,7 @@ import {
 import { AppSidebar } from "./sidebar";
 import { PageHeaderProvider } from "./page-header-context";
 import { PermissionProvider } from "@/components/context/permission-provider";
-import { DockProvider, useDock } from "./dock-context";
+import { DockProvider } from "./dock-context";
 import { AppDock } from "./app-dock";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -38,8 +38,6 @@ function DockAwareContent({
   children: React.ReactNode;
   fullHeight: boolean;
 }) {
-  const { dockVisible } = useDock();
-
   return (
     <div className="flex-1 overflow-hidden p-2 pl-0">
       <div
@@ -50,9 +48,8 @@ function DockAwareContent({
       >
         <main
           className={cn(
-            "px-6 pt-6",
+            "px-6 pt-6 pb-4",
             fullHeight ? "flex-1 min-h-0 overflow-hidden" : "",
-            dockVisible ? "pb-16" : "pb-4",
           )}
         >
           {children}

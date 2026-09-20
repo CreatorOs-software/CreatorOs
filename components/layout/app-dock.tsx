@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -15,7 +16,6 @@ import {
 import { Button } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { QueryKeys } from "@/lib/query-keys";
-import { GlassEffect, GlassFilter } from "@/components/ui/liquid-glass";
 import { FloatingWindow } from "@/components/ui/floating-window";
 import { TodoPanel } from "@/components/ui/todo-panel";
 import { NotesPanel } from "@/components/ui/notes-panel";
@@ -61,9 +61,9 @@ const springTransition = {
 } as const;
 
 const PANEL_SIZES: Record<PanelId, { width: number; height: number }> = {
-  notizen:          { width: 640, height: 480 },
-  todos:            { width: 440, height: 520 },
-  inbox:            { width: 440, height: 520 },
+  notizen: { width: 640, height: 480 },
+  todos: { width: 440, height: 520 },
+  inbox: { width: 440, height: 520 },
   benachrichtigungen: { width: 440, height: 520 },
 };
 
@@ -71,7 +71,7 @@ function getPanelDefaults(panel: PanelId) {
   const size = PANEL_SIZES[panel];
   const position =
     typeof window === "undefined"
-      ? { x: 24, y: 80 }
+      ? { x: 24, y: 40 }
       : {
           x: window.innerWidth - size.width - 24,
           y: window.innerHeight - size.height - 30,
@@ -82,6 +82,7 @@ function getPanelDefaults(panel: PanelId) {
 export function AppDock() {
   const { dockVisible, activePanel, setActivePanel } = useDock();
   const pathname = usePathname();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const { data: notifData } = useQuery<{ unreadCount: number }>({
     queryKey: QueryKeys.notifications.all(),
@@ -97,8 +98,6 @@ export function AppDock() {
 
   return (
     <>
-      <GlassFilter />
-
       {/* Floating panel – keyed by panel so position resets on switch */}
       {activePanel && (
         <FloatingWindow.Root
@@ -145,64 +144,90 @@ export function AppDock() {
               transition: { duration: 0.55, ease: [0.4, 0, 0.2, 1] },
             }}
             transition={{ type: "spring", stiffness: 340, damping: 32 }}
-            className="fixed bottom-6 left-1/2 z-50 pointer-events-auto"
+            className="fixed bottom-0 left-1/2 z-50 pointer-events-auto"
             style={{ originX: 0.5, originY: 1 }}
+            onMouseEnter={() => setIsExpanded(true)}
+            onMouseLeave={() => setIsExpanded(false)}
           >
-            <GlassEffect className="rounded-2xl">
-              <div className="flex items-end gap-1 px-2.5 py-2">
-                {dockItems.map((item) => {
-                  const { label, icon: Icon } = item;
-                  const isActive =
-                    item.href !== undefined
-                      ? pathname === item.href ||
-                        pathname.startsWith(item.href + "/")
-                      : item.panel === activePanel;
+            <div className="flex flex-col items-center px-6 pb-1.5 pt-8">
+              <AnimatePresence mode="wait" initial={false}>
+                {isExpanded ? (
+                  <motion.div
+                    key="dock-panel"
+                    initial={{ opacity: 0, y: 16, scale: 0.92 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 16, scale: 0.92 }}
+                    transition={springTransition}
+                  >
+                    <div className="rounded-2xl bg-white shadow-[0_6px_6px_rgba(0,0,0,0.2),0_0_20px_rgba(0,0,0,0.1)]">
+                      <div className="flex items-end gap-1 px-2.5 py-2">
+                        {dockItems.map((item) => {
+                          const { label, icon: Icon } = item;
+                          const isActive =
+                            item.href !== undefined
+                              ? pathname === item.href ||
+                                pathname.startsWith(item.href + "/")
+                              : item.panel === activePanel;
 
-                  const showUnreadDot =
-                    item.panel === "benachrichtigungen" && unreadCount > 0;
+                          const showUnreadDot =
+                            item.panel === "benachrichtigungen" &&
+                            unreadCount > 0;
 
-                  const iconNode = (
-                    <motion.div
-                      whileHover={{ scale: 1.2, y: -5 }}
-                      whileTap={{ scale: 0.95 }}
-                      transition={springTransition}
-                      className={cn(
-                        "relative w-10 h-10 flex items-center justify-center rounded-xl transition-colors duration-200",
-                        isActive ? "bg-black" : "hover:bg-white/20",
-                      )}
-                    >
-                      <Icon
-                        className={cn(
-                          "w-5 h-5 transition-colors",
-                          isActive ? "text-white" : "text-black/65",
-                        )}
-                      />
-                      {showUnreadDot && (
-                        <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-red-500 ring-2 ring-white" />
-                      )}
-                    </motion.div>
-                  );
+                          const iconNode = (
+                            <motion.div
+                              whileHover={{ scale: 1.2, y: -5 }}
+                              whileTap={{ scale: 0.95 }}
+                              transition={springTransition}
+                              className={cn(
+                                "relative w-10 h-10 flex items-center justify-center rounded-xl transition-colors duration-200",
+                                isActive ? "bg-black" : "hover:bg-white/20",
+                              )}
+                            >
+                              <Icon
+                                className={cn(
+                                  "w-5 h-5 transition-colors",
+                                  isActive ? "text-white" : "text-black/65",
+                                )}
+                              />
+                              {showUnreadDot && (
+                                <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-red-500 ring-2 ring-white" />
+                              )}
+                            </motion.div>
+                          );
 
-                  return item.href !== undefined ? (
-                    <Link key={label} href={item.href} title={label}>
-                      {iconNode}
-                    </Link>
-                  ) : (
-                    <Button
-                      key={label}
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      title={label}
-                      onClick={() => handlePanelToggle(item.panel)}
-                      className="size-auto rounded-none p-0 hover:bg-transparent"
-                    >
-                      {iconNode}
-                    </Button>
-                  );
-                })}
-              </div>
-            </GlassEffect>
+                          return item.href !== undefined ? (
+                            <Link key={label} href={item.href} title={label}>
+                              {iconNode}
+                            </Link>
+                          ) : (
+                            <Button
+                              key={label}
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              title={label}
+                              onClick={() => handlePanelToggle(item.panel)}
+                              className="size-auto rounded-none p-0 hover:bg-transparent"
+                            >
+                              {iconNode}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="dock-hint"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="h-2 w-50 rounded-full bg-[#4894A5] shadow-[0_0_10px_rgba(74,222,128,0.65)]"
+                  />
+                )}
+              </AnimatePresence>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
