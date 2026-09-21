@@ -12,12 +12,12 @@ import {
   Inbox,
   Users,
   Settings2,
-  LogOut,
   PanelBottom,
   PanelBottomClose,
   FolderOpen,
 } from "lucide-react";
 import {
+  Button,
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -31,13 +31,9 @@ import {
   SidebarMenuItem,
   SidebarRail,
   SidebarTrigger,
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
 } from "@talentos/ui";
 import { QueryKeys } from "@/lib/query-keys";
 import { usePermissions } from "@/components/context/permission-provider";
-import { useAuth } from "@/components/auth/use-auth";
 import { useDock } from "@/components/layout/dock-context";
 
 const navItems = [
@@ -55,6 +51,35 @@ const adminItems = [
   { label: "Settings", href: "/admin/settings", icon: Settings2 },
 ];
 
+function MobileAppCard() {
+  return (
+    <div className="mx-2 group-data-[collapsible=icon]:hidden overflow-hidden rounded-lg bg-gradient-to-br from-(--tui-green-700) via-(--tui-green-800) to-(--tui-green-900) p-4 text-white">
+      <div className="mb-3 w-28">
+        <Image
+          src="/logos/png/prodigy-one-logo-on-petrol.png"
+          alt="Prodigy One"
+          width={2000}
+          height={443}
+          className="h-auto w-full object-contain"
+        />
+      </div>
+      <p className="text-sm font-semibold leading-snug">
+        Download our
+        <br />
+        Mobile App
+      </p>
+      <p className="mt-1 text-xs text-white/60">Get easy in another way</p>
+      <Button
+        type="button"
+        disabled
+        className="mt-4 h-auto w-full rounded-full bg-white/15 py-2 text-xs font-medium text-white opacity-100 hover:bg-white/15"
+      >
+        Coming Soon
+      </Button>
+    </div>
+  );
+}
+
 function DockToggleMenuItem() {
   const { dockVisible, toggleDock } = useDock();
   const label = dockVisible ? "Dock schließen" : "Dock öffnen";
@@ -66,44 +91,6 @@ function DockToggleMenuItem() {
         <span className="group-data-[collapsible=icon]:hidden">{label}</span>
       </SidebarMenuButton>
     </SidebarMenuItem>
-  );
-}
-
-function ProfileMenuItems() {
-  const { user, signOut } = useAuth();
-
-  const name =
-    (user?.user_metadata?.full_name as string | undefined) ?? user?.email ?? "";
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
-
-  return (
-    <>
-      <SidebarMenuItem>
-        <SidebarMenuButton onClick={signOut} tooltip="Abmelden">
-          <LogOut />
-          <span className="group-data-[collapsible=icon]:hidden">Abmelden</span>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-      <SidebarMenuItem>
-        <SidebarMenuButton size="lg" asChild tooltip={name}>
-          <div>
-            <Avatar className="size-7">
-              <AvatarImage
-                src={user?.user_metadata?.avatar_url as string | undefined}
-                alt={name}
-              />
-              <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
-            <span className="flex-1 truncate">{name}</span>
-          </div>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-    </>
   );
 }
 
@@ -206,8 +193,8 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <DockToggleMenuItem />
-          <ProfileMenuItems />
         </SidebarMenu>
+        <MobileAppCard />
       </SidebarFooter>
 
       <SidebarRail />

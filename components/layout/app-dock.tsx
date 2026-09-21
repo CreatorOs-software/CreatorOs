@@ -4,9 +4,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import {
-  Bell,
   CheckSquare,
   Inbox,
   LayoutDashboard,
@@ -15,7 +13,6 @@ import {
 } from "lucide-react";
 import { Button } from "@talentos/ui";
 import { cn } from "@/lib/utils";
-import { QueryKeys } from "@/lib/query-keys";
 import { FloatingWindow } from "@/components/ui/floating-window";
 import { TodoPanel } from "@/components/ui/todo-panel";
 import { NotesPanel } from "@/components/ui/notes-panel";
@@ -29,7 +26,6 @@ type DockItem =
 const dockItems: DockItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Inbox", panel: "inbox", icon: Inbox },
-  { label: "Benachrichtigungen", panel: "benachrichtigungen", icon: Bell },
   { label: "Notizen", panel: "notizen", icon: NotebookPen },
   { label: "Todos", panel: "todos", icon: CheckSquare },
   { label: "Settings", href: "/settings", icon: Settings2 },
@@ -84,14 +80,6 @@ export function AppDock() {
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const { data: notifData } = useQuery<{ unreadCount: number }>({
-    queryKey: QueryKeys.notifications.all(),
-    queryFn: () => fetch("/api/notifications").then((r) => r.json()),
-    staleTime: 30_000,
-    refetchInterval: 60_000,
-  });
-  const unreadCount = notifData?.unreadCount ?? 0;
-
   function handlePanelToggle(panel: PanelId) {
     setActivePanel(activePanel === panel ? null : panel);
   }
@@ -144,7 +132,7 @@ export function AppDock() {
               transition: { duration: 0.55, ease: [0.4, 0, 0.2, 1] },
             }}
             transition={{ type: "spring", stiffness: 340, damping: 32 }}
-            className="fixed bottom-0 left-1/2 z-50 pointer-events-auto"
+            className="absolute bottom-0 left-1/2 z-50 pointer-events-auto"
             style={{ originX: 0.5, originY: 1 }}
             onMouseEnter={() => setIsExpanded(true)}
             onMouseLeave={() => setIsExpanded(false)}
@@ -169,10 +157,6 @@ export function AppDock() {
                                 pathname.startsWith(item.href + "/")
                               : item.panel === activePanel;
 
-                          const showUnreadDot =
-                            item.panel === "benachrichtigungen" &&
-                            unreadCount > 0;
-
                           const iconNode = (
                             <motion.div
                               whileHover={{ scale: 1.2, y: -5 }}
@@ -180,18 +164,16 @@ export function AppDock() {
                               transition={springTransition}
                               className={cn(
                                 "relative w-10 h-10 flex items-center justify-center rounded-xl transition-colors duration-200",
-                                isActive ? "bg-black" : "hover:bg-white/20",
+                                !isActive && "hover:bg-white/20",
                               )}
                             >
                               <Icon
+                                strokeWidth={isActive ? 2.5 : 2}
                                 className={cn(
                                   "w-5 h-5 transition-colors",
-                                  isActive ? "text-white" : "text-black/65",
+                                  isActive ? "text-primary" : "text-black/65",
                                 )}
                               />
-                              {showUnreadDot && (
-                                <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-red-500 ring-2 ring-white" />
-                              )}
                             </motion.div>
                           );
 

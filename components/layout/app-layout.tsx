@@ -10,6 +10,7 @@ import {
   ToastViewport,
 } from "@talentos/ui";
 import { AppSidebar } from "./sidebar";
+import { Header } from "./header";
 import { PageHeaderProvider } from "./page-header-context";
 import { PermissionProvider } from "@/components/context/permission-provider";
 import { DockProvider } from "./dock-context";
@@ -42,13 +43,13 @@ function DockAwareContent({
     <div className="flex-1 overflow-hidden p-2 pl-0">
       <div
         className={cn(
-          "h-full rounded-2xl bg-surface overflow-hidden",
+          "h-full rounded-2xl bg-surface overflow-hidden p-2  ",
           fullHeight && "flex flex-col",
         )}
       >
         <main
           className={cn(
-            "px-6 pt-6 pb-4",
+            "p-4",
             fullHeight ? "flex-1 min-h-0 overflow-hidden" : "",
           )}
         >
@@ -62,6 +63,7 @@ function DockAwareContent({
 export function AppLayout({
   children,
   fullHeight = false,
+  user,
   role = "member",
   permissions,
 }: AppLayoutProps) {
@@ -87,13 +89,14 @@ export function AppLayout({
             className="h-svh overflow-hidden bg-background"
           >
             <AppSidebar />
-            <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+            <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+              <Header user={user} />
               <DockAwareContent fullHeight={fullHeight}>
                 {children}
               </DockAwareContent>
+              <AppDock />
             </div>
           </SidebarProvider>
-          <AppDock />
         </DockProvider>
       </PageHeaderProvider>
 

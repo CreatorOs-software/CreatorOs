@@ -152,7 +152,6 @@ export function OrbitInbox() {
     startWidth: number;
     max: number;
   } | null>(null);
-  const [mergedMode, setMergedMode] = useState(true);
   const [mergedView, setMergedView] = useState<"sidebar" | "threads">(
     "sidebar",
   );
@@ -599,15 +598,9 @@ export function OrbitInbox() {
     >
       {/* Main inbox card: sidebar + thread list + email detail */}
       <div className="flex flex-1 min-w-0 overflow-hidden rounded-2xl bg-white ">
-        {/* Sidebar — hidden in merged+threads mode */}
-        {(!mergedMode || mergedView === "sidebar") && (
-          <div
-            className={
-              mergedMode
-                ? "flex w-72 shrink-0 flex-col overflow-hidden border-r border-[#E7E7E7]"
-                : "contents"
-            }
-          >
+        {/* Sidebar — hidden while the thread list is shown */}
+        {mergedView === "sidebar" && (
+          <div className="flex w-72 shrink-0 flex-col overflow-hidden border-r border-[#E7E7E7]">
             <InboxSidebar
               folder={folder}
               unreadCount={inboxUnread}
@@ -617,7 +610,7 @@ export function OrbitInbox() {
               activeLabelId={activeLabelId}
               onFolderChange={(f) => {
                 handleFolderChange(f);
-                if (mergedMode) setMergedView("threads");
+                setMergedView("threads");
               }}
               onIntegrationChange={(id) => {
                 setSelectedIntegrationId(id);
@@ -631,38 +624,24 @@ export function OrbitInbox() {
               onCreateLabel={handleCreateLabel}
               onDeleteLabel={handleDeleteLabel}
               creators={creators}
-              merged={mergedMode}
-              onMergedChange={(v) => {
-                setMergedMode(v);
-                if (!v) setMergedView("sidebar");
-              }}
             />
           </div>
         )}
 
-        {/* Thread list — hidden in merged+sidebar mode */}
-        {(!mergedMode || mergedView === "threads") && (
-          <div
-            className={cn(
-              "flex shrink-0 flex-col overflow-hidden",
-              mergedMode
-                ? "w-72 border-r border-[#E7E7E7]"
-                : "w-80 border-x border-[#E7E7E7]",
-            )}
-          >
+        {/* Thread list — hidden while the sidebar is shown */}
+        {mergedView === "threads" && (
+          <div className="flex w-72 shrink-0 flex-col overflow-hidden border-r border-[#E7E7E7]">
             <div className="flex items-center justify-between border-b border-[#E7E7E7] px-4 py-3">
               <div className="flex items-center gap-1.5">
-                {mergedMode && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setMergedView("sidebar")}
-                    className="h-6 w-6 rounded hover:bg-muted"
-                  >
-                    <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setMergedView("sidebar")}
+                  className="h-6 w-6 rounded hover:bg-muted"
+                >
+                  <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+                </Button>
                 <span className="text-sm font-semibold capitalize">
                   {folder}
                 </span>

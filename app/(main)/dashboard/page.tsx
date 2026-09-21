@@ -1,3 +1,5 @@
+import { createClient } from "@/lib/supabase/server";
+import { getAuthContext } from "@/domains/auth";
 import { KiAnfragenCard } from "@/components/dashboard/ki-anfragen-card";
 import { TermineCard } from "@/components/dashboard/termine-card";
 import { CreatorCard } from "@/components/dashboard/creator-card";
@@ -7,13 +9,17 @@ import { OnboardingTaskCard } from "@/components/dashboard/onboarding-task.card"
 import { StatGroup } from "@/components/dashboard/stat-card";
 import { StatusBar, StatusBarGroup } from "@/components/dashboard/status-bar";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const auth = await getAuthContext(supabase);
+  const displayName = auth.displayName ?? auth.fullName ?? auth.email ?? "";
+
   return (
     <div className="h-full flex flex-col">
       <div className="shrink-0 flex flex-col xl:flex-row xl:items-start xl:justify-between mb-6 gap-6">
-        <div>
-          <h1 className="text-4xl font-light tracking-tight mb-6 text-balance">
-            Willkommen zurück, <span className="font-medium">Nixtio</span>
+        <div className="flex justify-between w-full">
+          <h1 className="text-3xl font-light tracking-tight mb-6 text-balance">
+            Willkommen zurück, <span className="font-bold">{displayName}</span>
           </h1>
 
           <StatusBarGroup>

@@ -23,7 +23,7 @@ export default async function MainLayout({
 
   const displayUser = {
     id: auth.userId,
-    name: auth.fullName ?? auth.email ?? undefined,
+    name: auth.displayName ?? auth.fullName ?? auth.email ?? undefined,
     email: auth.email ?? undefined,
   };
 

@@ -4,11 +4,9 @@ import {
   Archive,
   Check,
   ChevronDown,
-  Columns2,
   Inbox,
   Mail,
   MessageSquare,
-  PanelLeft,
   Pencil,
   Plus,
   Send,
@@ -17,7 +15,17 @@ import {
   X,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, Popover, PopoverContent, PopoverTrigger } from "@talentos/ui";
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import type { Creator, Folder, Integration } from "./types";
 import type { EmailLabel } from "@/domains/communication";
@@ -26,13 +34,25 @@ import { AddMailboxDialog } from "./add-mailbox-dialog";
 // ─── Label colors ─────────────────────────────────────────────────────────────
 
 const LABEL_COLORS = [
-  "#006FFE", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6",
-  "#EC4899", "#14B8A6", "#F97316", "#6366F1", "#84CC16",
+  "#006FFE",
+  "#10B981",
+  "#F59E0B",
+  "#EF4444",
+  "#8B5CF6",
+  "#EC4899",
+  "#14B8A6",
+  "#F97316",
+  "#6366F1",
+  "#84CC16",
 ];
 
 // ─── CreateLabelDialog ────────────────────────────────────────────────────────
 
-function CreateLabelDialog({ onAdd }: { onAdd: (name: string, color: string) => Promise<void> }) {
+function CreateLabelDialog({
+  onAdd,
+}: {
+  onAdd: (name: string, color: string) => Promise<void>;
+}) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [color, setColor] = useState(LABEL_COLORS[0]!);
@@ -87,7 +107,9 @@ function CreateLabelDialog({ onAdd }: { onAdd: (name: string, color: string) => 
                     onClick={() => setColor(c)}
                     className={cn(
                       "h-6 w-6 rounded-full border-2 transition-transform hover:bg-transparent",
-                      color === c ? "scale-110 border-foreground" : "border-transparent",
+                      color === c
+                        ? "scale-110 border-foreground"
+                        : "border-transparent",
                     )}
                     style={{ backgroundColor: c }}
                   />
@@ -143,7 +165,9 @@ function LabelsSection({
         <CreateLabelDialog onAdd={onCreateLabel} />
       </div>
       {labels.length === 0 ? (
-        <p className="px-2 text-[11px] text-muted-foreground/50">Noch keine Labels</p>
+        <p className="px-2 text-[11px] text-muted-foreground/50">
+          Noch keine Labels
+        </p>
       ) : (
         <div className="flex flex-col gap-0.5">
           {labels.map((label) => {
@@ -163,14 +187,24 @@ function LabelsSection({
                   className="h-2.5 w-2.5 shrink-0 rounded-full"
                   style={{ backgroundColor: label.color }}
                 />
-                <span className={cn("flex-1 truncate text-[13px]", isActive ? "font-medium text-foreground" : "text-muted-foreground")}>
+                <span
+                  className={cn(
+                    "flex-1 truncate text-[13px]",
+                    isActive
+                      ? "font-medium text-foreground"
+                      : "text-muted-foreground",
+                  )}
+                >
                   {label.name}
                 </span>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  onClick={(e) => { e.stopPropagation(); void onDeleteLabel(label.id); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void onDeleteLabel(label.id);
+                  }}
                   className="size-auto hidden rounded text-muted-foreground hover:text-foreground hover:bg-transparent group-hover:block"
                 >
                   <X className="h-3 w-3" />
@@ -190,12 +224,20 @@ type NavEntry = { id: Folder; label: string; icon: ReactNode };
 
 const FOLDER_NAV: NavEntry[] = [
   { id: "inbox", label: "Inbox", icon: <Inbox className="h-4 w-4 shrink-0" /> },
-  { id: "drafts", label: "Drafts", icon: <Pencil className="h-4 w-4 shrink-0" /> },
+  {
+    id: "drafts",
+    label: "Drafts",
+    icon: <Pencil className="h-4 w-4 shrink-0" />,
+  },
   { id: "sent", label: "Sent", icon: <Send className="h-4 w-4 shrink-0" /> },
 ];
 
 const MANAGEMENT_NAV: NavEntry[] = [
-  { id: "archive", label: "Archive", icon: <Archive className="h-4 w-4 shrink-0" /> },
+  {
+    id: "archive",
+    label: "Archive",
+    icon: <Archive className="h-4 w-4 shrink-0" />,
+  },
   { id: "spam", label: "Spam", icon: <Mail className="h-4 w-4 shrink-0" /> },
   { id: "bin", label: "Bin", icon: <Trash2 className="h-4 w-4 shrink-0" /> },
 ];
@@ -208,7 +250,14 @@ type NavItemProps = NavEntry & {
   onFolderChange: (f: Folder) => void;
 };
 
-function NavItem({ id, label, icon, badge, activeFolder, onFolderChange }: NavItemProps) {
+function NavItem({
+  id,
+  label,
+  icon,
+  badge,
+  activeFolder,
+  onFolderChange,
+}: NavItemProps) {
   const isActive = activeFolder === id;
   return (
     <Button
@@ -225,7 +274,9 @@ function NavItem({ id, label, icon, badge, activeFolder, onFolderChange }: NavIt
       {icon}
       <span className="flex-1 truncate">{label}</span>
       {badge != null && badge > 0 && (
-        <span className="px-1 text-xs font-medium text-brand">{badge}</span>
+        <span className="flex h-4 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-medium text-primary-foreground">
+          {badge}
+        </span>
       )}
     </Button>
   );
@@ -240,7 +291,9 @@ function IntegrationAvatar({
   integration: Integration;
   size?: "sm" | "md";
 }) {
-  const label = (integration.display_name ?? integration.email).slice(0, 1).toUpperCase();
+  const label = (integration.display_name ?? integration.email)
+    .slice(0, 1)
+    .toUpperCase();
   return (
     <div
       className={cn(
@@ -262,10 +315,18 @@ type AccountSwitcherProps = {
   onSelect: (id: string) => void;
 };
 
-function AccountSwitcher({ integrations, selectedId, creators, onSelect }: AccountSwitcherProps) {
-  const selected = integrations.find((i) => i.id === selectedId) ?? integrations[0];
+function AccountSwitcher({
+  integrations,
+  selectedId,
+  creators,
+  onSelect,
+}: AccountSwitcherProps) {
+  const selected =
+    integrations.find((i) => i.id === selectedId) ?? integrations[0];
   const creatorName = (integ: Integration) =>
-    integ.creator_id ? (creators.find((c) => c.id === integ.creator_id)?.full_name ?? null) : null;
+    integ.creator_id
+      ? (creators.find((c) => c.id === integ.creator_id)?.full_name ?? null)
+      : null;
 
   return (
     <Popover>
@@ -280,7 +341,9 @@ function AccountSwitcher({ integrations, selectedId, creators, onSelect }: Accou
             <IntegrationAvatar integration={selected} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-medium leading-none text-foreground">
-                {creatorName(selected) ?? selected.display_name ?? selected.email}
+                {creatorName(selected) ??
+                  selected.display_name ??
+                  selected.email}
               </p>
               <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                 {selected.email}
@@ -292,7 +355,9 @@ function AccountSwitcher({ integrations, selectedId, creators, onSelect }: Accou
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted text-[10px] font-bold text-muted-foreground">
               ?
             </div>
-            <p className="truncate text-[13px] text-muted-foreground">Kein Postfach</p>
+            <p className="truncate text-[13px] text-muted-foreground">
+              Kein Postfach
+            </p>
           </>
         )}
         {integrations.length > 0 && (
@@ -351,8 +416,6 @@ type InboxSidebarProps = {
   onLabelClick: (id: string) => void;
   onCreateLabel: (name: string, color: string) => Promise<void>;
   onDeleteLabel: (id: string) => Promise<void>;
-  merged?: boolean;
-  onMergedChange?: (v: boolean) => void;
 };
 
 export function InboxSidebar({
@@ -369,11 +432,9 @@ export function InboxSidebar({
   onLabelClick,
   onCreateLabel,
   onDeleteLabel,
-  merged = false,
-  onMergedChange,
 }: InboxSidebarProps) {
   return (
-    <div className={cn("flex h-full select-none flex-col overflow-hidden bg-white py-3", merged ? "w-full" : "w-52 shrink-0 border-r border-[#E7E7E7]")}>
+    <div className="flex h-full w-full select-none flex-col overflow-hidden bg-white py-3">
       {/* Account row */}
       <div className="flex items-center gap-1 px-2 pb-3">
         <AccountSwitcher
@@ -440,38 +501,6 @@ export function InboxSidebar({
           onCreateLabel={onCreateLabel}
           onDeleteLabel={onDeleteLabel}
         />
-      </div>
-
-      {/* Footer */}
-      <div className="space-y-0.5 border-t border-[#E7E7E7] px-3 pt-3">
-        <Button type="button" variant="ghost" className="h-auto justify-start flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] font-normal text-muted-foreground hover:bg-muted/50 hover:text-foreground">
-          <MessageSquare className="h-4 w-4 shrink-0" />
-          Feedback
-        </Button>
-        <Button type="button" variant="ghost" className="h-auto justify-start flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] font-normal text-muted-foreground hover:bg-muted/50 hover:text-foreground">
-          <Settings2 className="h-4 w-4 shrink-0" />
-          Settings
-        </Button>
-        {onMergedChange && (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => onMergedChange(!merged)}
-            className={cn(
-              "h-auto justify-start flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] font-normal",
-              merged
-                ? "bg-muted font-medium text-foreground"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-            )}
-          >
-            {merged ? (
-              <Columns2 className="h-4 w-4 shrink-0" />
-            ) : (
-              <PanelLeft className="h-4 w-4 shrink-0" />
-            )}
-            {merged ? "Panels trennen" : "Panels zusammenführen"}
-          </Button>
-        )}
       </div>
     </div>
   );
