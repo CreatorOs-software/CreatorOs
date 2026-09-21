@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import type { Creator, Integration, Thread } from "../types";
 import { ExtractedPanel } from "./components/extracted-panel";
 import { IdlePanel } from "./components/idle-panel";
+import { MatchingPanel } from "./components/matching-panel";
 import { NewBrandPanel } from "./components/new-brand-panel";
 import { NotCoopPanel } from "./components/not-coop-panel";
 import { ScanningPanel } from "./components/scanning-panel";
@@ -327,18 +328,25 @@ export function WorkPanel({
   open,
   width = DEFAULT_WIDTH,
   resizing = false,
+  integrations,
   creators,
   workState,
-  analyseCount,
-  vorgangCount,
   onToggle,
   onSetWorkState,
 }: Props) {
   const [analyseError, setAnalyseError] = useState<string | null>(null);
+  const mailboxCreatorId = selected
+    ? integrations.find((integration) => integration.id === selected.integration_id)
+        ?.creator_id ?? null
+    : null;
+
+  function startAnalyse(mode: "create" | "merge", anfrageId?: string) {
+    setAnalyseError(null);
+    onSetWorkState({ phase: "scanning", mode, anfrageId });
+  }
 
   useEffect(() => {
     if (workState.phase !== "scanning" || !selected) return;
-    setAnalyseError(null);
     let cancelled = false;
     runAnalyse(selected.id, workState.mode, workState.anfrageId)
       .then((state) => {
@@ -420,23 +428,22 @@ export function WorkPanel({
               labels={selected.system_labels ?? []}
               anfrageId={selected.anfrage_id}
               dealId={selected.deal_id}
-              onAnalyse={() =>
-                onSetWorkState({ phase: "scanning", mode: "create" })
-              }
+              onAnalyse={() => startAnalyse("create")}
               onReanalyse={
                 selected.anfrage_id
-                  ? () =>
-                      onSetWorkState({
-                        phase: "scanning",
-                        mode: "merge",
-                        anfrageId: selected.anfrage_id ?? undefined,
-                      })
+                  ? () => startAnalyse("merge", selected.anfrage_id ?? undefined)
                   : undefined
               }
               onManualCreate={() =>
                 onSetWorkState({
                   phase: "extracted",
                   data: { ...EMPTY_EXTRACTED },
+                })
+              }
+              onMatching={() =>
+                onSetWorkState({
+                  phase: "matching",
+                  creatorId: mailboxCreatorId,
                 })
               }
               onBriefingExtracted={(filename, extracted) =>
@@ -449,6 +456,15 @@ export function WorkPanel({
           )}
           {selected && workState.phase === "scanning" && <ScanningPanel />}
           {selected && workState.phase === "not-coop" && <NotCoopPanel />}
+          {selected && workState.phase === "matching" && (
+            <MatchingPanel
+              thread={selected}
+              creators={creators}
+              creatorId={workState.creatorId}
+              onSetWorkState={onSetWorkState}
+              onAnalyse={() => startAnalyse("create")}
+            />
+          )}
           {selected && workState.phase === "new-brand" && (
             <NewBrandPanel
               newBrand={workState.newBrand}

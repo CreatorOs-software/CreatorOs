@@ -1,10 +1,9 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  BadgeEuro,
   FilePlus2,
   FolderInput,
-  Gauge,
   Handshake,
+  ScanSearch,
   ReceiptText,
   RefreshCw,
   Sparkles,
@@ -16,8 +15,7 @@ export type WorkPanelActionId =
   | "analyse"
   | "invoice-ai"
   | "manual"
-  | "price-check"
-  | "capacity"
+  | "matching"
   | "assign"
   | "anfrage-edit"
   | "deal-open"
@@ -31,8 +29,7 @@ const ACTION_ORDER: WorkPanelActionId[] = [
   "analyse",
   "invoice-ai",
   "manual",
-  "price-check",
-  "capacity",
+  "matching",
   "assign",
 ];
 
@@ -59,13 +56,11 @@ export const ACTION_META: Record<
     ai: true,
   },
   manual: { label: "Anfrage anlegen", variant: "secondary", icon: FilePlus2 },
-  "price-check": {
-    label: "Preis Check",
+  matching: {
+    label: "Matching prüfen",
     variant: "outline",
-    icon: BadgeEuro,
-    ai: true,
+    icon: ScanSearch,
   },
-  capacity: { label: "Auslastung", variant: "outline", icon: Gauge, ai: true },
   assign: {
     label: "Zu bestehendem Vorgang zuordnen",
     variant: "outline",
@@ -90,7 +85,7 @@ const ALWAYS_MAIN: WorkPanelActionId[] = ["assign"];
 
 const MAIN_BY_LABEL: Partial<Record<SystemLabel, WorkPanelActionId[]>> = {
   ANFRAGE: ["analyse", "manual"],
-  LAUFEND: ["capacity"],
+  LAUFEND: [],
   RECHNUNG: ["invoice-ai"],
 };
 

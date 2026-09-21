@@ -35,8 +35,7 @@ type Props = {
     extracted: AttachmentExtractedFields,
   ) => void;
   onInvoiceAi?: () => void;
-  onPriceCheck?: () => void;
-  onCapacity?: () => void;
+  onMatching?: () => void;
 };
 
 export function IdlePanel({
@@ -50,8 +49,7 @@ export function IdlePanel({
   onManualCreate,
   onBriefingExtracted,
   onInvoiceAi,
-  onPriceCheck,
-  onCapacity,
+  onMatching,
 }: Props) {
   const router = useRouter();
   const [showAll, setShowAll] = useState(false);
@@ -63,8 +61,7 @@ export function IdlePanel({
     analyse: onAnalyse,
     "invoice-ai": onInvoiceAi,
     manual: onManualCreate,
-    "price-check": onPriceCheck,
-    capacity: onCapacity,
+    matching: onMatching,
     assign: () => setAssignOpen(true),
     "anfrage-edit": anfrageId
       ? () => router.push(`/creators/anfragen/edit/${anfrageId}`)

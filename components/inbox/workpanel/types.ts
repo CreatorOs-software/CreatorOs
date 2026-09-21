@@ -78,6 +78,7 @@ export type WorkPanelState =
   | { phase: "idle" }
   | { phase: "scanning"; mode: "create" | "merge"; anfrageId?: string }
   | { phase: "not-coop" }
+  | { phase: "matching"; creatorId: string | null }
   | { phase: "new-brand"; newBrand: NewBrandData }
   | { phase: "extracted"; data: ExtractedEmailData; merge?: { anfrageId: string } }
   | { phase: "vorgang"; vorgang: LocalVorgang };

@@ -85,7 +85,9 @@ export const CommunicationRepository = {
         .in("status", ["connected", "error"]),
       supabase
         .from("creators")
-        .select("id, full_name, initials, phone")
+        .select(
+          "id, full_name, initials, phone, niche, goals, weitere_ziele, min_kooperation_betrag, wunsche_anforderungen",
+        )
         .eq("agency_id", agencyId),
       supabase
         .from("email_labels")
@@ -96,6 +98,7 @@ export const CommunicationRepository = {
     ]);
 
     if (threadsRes.error) throw new Error(threadsRes.error.message);
+    if (creatorsRes.error) throw new Error(creatorsRes.error.message);
     if (unreadRes.error) throw new Error(unreadRes.error.message);
 
     const hasMore = (threadsRes.data ?? []).length > THREAD_LIST_LIMIT;

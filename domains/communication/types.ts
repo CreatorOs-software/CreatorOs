@@ -79,6 +79,15 @@ export type InboxCreator = {
   full_name: string;
   initials: string;
   phone: string | null;
+  niche: string[];
+  goals: Array<{
+    value: number;
+    type: "umsatz" | "kooperationen" | "post";
+    period: "30_tage" | "3_monate" | "1_jahr";
+  }>;
+  weitere_ziele: string | null;
+  min_kooperation_betrag: number | null;
+  wunsche_anforderungen: string | null;
 };
 
 export type InboxIntegration = {
