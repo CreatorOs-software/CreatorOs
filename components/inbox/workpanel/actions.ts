@@ -1,15 +1,12 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  Ban,
   BadgeEuro,
-  Building2,
   FilePlus2,
   FolderInput,
   Gauge,
   Handshake,
   ReceiptText,
   RefreshCw,
-  Send,
   Sparkles,
   SquarePen,
 } from "lucide-react";
@@ -19,12 +16,9 @@ export type WorkPanelActionId =
   | "analyse"
   | "invoice-ai"
   | "manual"
-  | "mediakit"
   | "price-check"
-  | "brand-check"
   | "capacity"
   | "assign"
-  | "not-coop"
   | "anfrage-edit"
   | "deal-open"
   | "reanalyse";
@@ -38,7 +32,6 @@ const ACTION_ORDER: WorkPanelActionId[] = [
   "invoice-ai",
   "manual",
   "price-check",
-  "brand-check",
   "capacity",
   "assign",
 ];
@@ -72,12 +65,6 @@ export const ACTION_META: Record<
     icon: BadgeEuro,
     ai: true,
   },
-  "brand-check": {
-    label: "Brand prüfen",
-    variant: "outline",
-    icon: Building2,
-    ai: true,
-  },
   capacity: { label: "Auslastung", variant: "outline", icon: Gauge, ai: true },
   assign: {
     label: "Zu bestehendem Vorgang zuordnen",
@@ -102,11 +89,9 @@ export const ACTION_META: Record<
 const ALWAYS_MAIN: WorkPanelActionId[] = ["assign"];
 
 const MAIN_BY_LABEL: Partial<Record<SystemLabel, WorkPanelActionId[]>> = {
-  ANFRAGE: ["analyse", "manual", "mediakit"],
+  ANFRAGE: ["analyse", "manual"],
   LAUFEND: ["capacity"],
   RECHNUNG: ["invoice-ai"],
-  PROMOTIONS: ["not-coop"],
-  ANDERES: ["not-coop"],
 };
 
 const DEFAULT_MAIN: WorkPanelActionId[] = ["analyse", "manual"];

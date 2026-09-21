@@ -28,7 +28,6 @@ type Props = {
   dealId?: string | null;
   onAnalyse: () => void;
   onReanalyse?: () => void;
-  onNotCoop: () => void;
   onManualCreate: () => void;
   onBriefingExtracted: (
     filename: string,
@@ -36,9 +35,7 @@ type Props = {
   ) => void;
   onAssignVorgang?: () => void;
   onInvoiceAi?: () => void;
-  onSendMediakit?: () => void;
   onPriceCheck?: () => void;
-  onBrandCheck?: () => void;
   onCapacity?: () => void;
 };
 
@@ -50,14 +47,11 @@ export function IdlePanel({
   dealId,
   onAnalyse,
   onReanalyse,
-  onNotCoop,
   onManualCreate,
   onBriefingExtracted,
   onAssignVorgang,
   onInvoiceAi,
-  onSendMediakit,
   onPriceCheck,
-  onBrandCheck,
   onCapacity,
 }: Props) {
   const router = useRouter();
@@ -69,12 +63,9 @@ export function IdlePanel({
     analyse: onAnalyse,
     "invoice-ai": onInvoiceAi,
     manual: onManualCreate,
-    mediakit: onSendMediakit,
     "price-check": onPriceCheck,
-    "brand-check": onBrandCheck,
     capacity: onCapacity,
     assign: onAssignVorgang,
-    "not-coop": onNotCoop,
     "anfrage-edit": anfrageId
       ? () => router.push(`/creators/anfragen/edit/${anfrageId}`)
       : undefined,

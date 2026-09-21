@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button, Input } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { useVariableSlashMenu } from "./templates/variable-slash-menu";
+import type { Creator } from "./types";
 
 // ─── Email tag input helpers ──────────────────────────────────────────────────
 
@@ -87,11 +88,13 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   integrationId?: string | null;
+  mailboxCreatorId?: string | null;
+  creators: Creator[];
   initialTo?: string;
   initialSubject?: string;
 };
 
-export function ComposeEmailDialog({ open, onOpenChange, integrationId, initialTo = "", initialSubject = "" }: Props) {
+export function ComposeEmailDialog({ open, onOpenChange, integrationId, mailboxCreatorId, creators, initialTo = "", initialSubject = "" }: Props) {
   const [to, setTo] = useState<string[]>(initialTo ? [initialTo] : []);
   const [cc, setCc] = useState<string[]>([]);
   const [bcc, setBcc] = useState<string[]>([]);
@@ -105,7 +108,8 @@ export function ComposeEmailDialog({ open, onOpenChange, integrationId, initialT
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const slashMenu = useVariableSlashMenu({
     mode: "resolve",
-    resolveContext: { integrationId: integrationId ?? undefined },
+    resolveContext: { integrationId: integrationId ?? undefined, creatorId: mailboxCreatorId ?? undefined },
+    creators,
     textareaRef: bodyRef,
     onReplace: setBody,
     onUnresolved: (paths) => setUnresolved((prev) => [...new Set([...prev, ...paths])]),

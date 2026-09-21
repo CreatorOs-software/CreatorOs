@@ -746,6 +746,7 @@ export function OrbitInbox() {
               thread={selected}
               threads={filtered}
               integrations={integrations}
+              creators={creators}
               allLabels={labels}
               selectedIndex={selectedIndex}
               onClose={() => setSelectedId(null)}
@@ -783,6 +784,10 @@ export function OrbitInbox() {
         open={composeOpen}
         onOpenChange={setComposeOpen}
         integrationId={effectiveIntegrationId}
+        mailboxCreatorId={
+          integrations.find((i) => i.id === effectiveIntegrationId)?.creator_id ?? null
+        }
+        creators={creators}
       />
 
       {/* Drag handle — resize inbox vs. work panel */}

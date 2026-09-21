@@ -433,7 +433,6 @@ export function WorkPanel({
                       })
                   : undefined
               }
-              onNotCoop={() => onSetWorkState({ phase: "not-coop" })}
               onManualCreate={() =>
                 onSetWorkState({
                   phase: "extracted",

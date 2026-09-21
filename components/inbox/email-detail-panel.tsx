@@ -27,7 +27,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Popover, PopoverContent, PopoverTrigger } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { QueryKeys } from "@/lib/query-keys";
-import type { Thread } from "./types";
+import type { Creator, Integration, Thread } from "./types";
 import type { ConversationMessage, EmailLabel, EmailThreadBody } from "@/domains/communication";
 import { SYSTEM_LABELS } from "./constants";
 import {
@@ -49,6 +49,8 @@ import { VariablePicker } from "./templates/variable-picker";
 type ReplyComposerProps = {
   thread: Thread;
   cc?: string[];
+  creators: Creator[];
+  mailboxCreatorId: string | null;
   onClose: () => void;
   onAfterSend: () => void;
 };
@@ -56,6 +58,8 @@ type ReplyComposerProps = {
 function ReplyComposer({
   thread,
   cc,
+  creators,
+  mailboxCreatorId,
   onClose,
   onAfterSend,
 }: ReplyComposerProps) {
@@ -68,7 +72,8 @@ function ReplyComposer({
   const replyRef = useRef<HTMLTextAreaElement>(null);
   const slashMenu = useVariableSlashMenu({
     mode: "resolve",
-    resolveContext: { threadId: thread.id },
+    resolveContext: { threadId: thread.id, creatorId: mailboxCreatorId ?? undefined },
+    creators,
     textareaRef: replyRef,
     onReplace: setReply,
     onUnresolved: (paths) => setUnresolved((prev) => [...new Set([...prev, ...paths])]),
@@ -268,7 +273,8 @@ function ReplyComposer({
 type EmailDetailPanelProps = {
   thread: Thread;
   threads: Thread[];
-  integrations: import("./types").Integration[];
+  integrations: Integration[];
+  creators: Creator[];
   allLabels: EmailLabel[];
   selectedIndex: number;
   onClose: () => void;
@@ -292,6 +298,7 @@ export function EmailDetailPanel({
   thread,
   threads,
   integrations,
+  creators,
   allLabels,
   selectedIndex,
   onClose,
@@ -720,6 +727,10 @@ export function EmailDetailPanel({
               replyMode === "replyAll" && thread.recipient_email
                 ? [thread.recipient_email]
                 : undefined
+            }
+            creators={creators}
+            mailboxCreatorId={
+              integrations.find((i) => i.id === thread.integration_id)?.creator_id ?? null
             }
             onClose={() => setReplyMode(null)}
             onAfterSend={handleAfterSend}

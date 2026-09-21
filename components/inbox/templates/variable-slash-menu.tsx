@@ -10,6 +10,7 @@ import {
   VARIABLE_REGISTRY,
   type VariableEntry,
 } from "@/lib/templates/variable-registry";
+import type { Creator } from "../types";
 
 // Only opens at a word boundary ("/" preceded by whitespace, newline, or the
 // start of the text) so normal prose ("20/30", "und/oder") never triggers it.
@@ -29,31 +30,41 @@ type Options = {
    * real value against resolveContext and falls back to the placeholder. */
   mode: "literal" | "resolve";
   resolveContext?: ResolveContext;
+  /** Offered when a "creator.*" variable is picked but resolveContext has no
+   * creatorId (e.g. mailbox not tied to a creator) — the menu then asks the
+   * user to pick one, per-variable, before resolving and inserting it. */
+  creators?: Creator[];
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   onReplace: (next: string) => void;
   onUnresolved?: (paths: string[]) => void;
 };
 
-export function useVariableSlashMenu({ mode, resolveContext, textareaRef, onReplace, onUnresolved }: Options) {
+type PendingCreatorPick = { entry: VariableEntry; start: number; end: number };
+
+export function useVariableSlashMenu({ mode, resolveContext, creators, textareaRef, onReplace, onUnresolved }: Options) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [pendingCreatorPick, setPendingCreatorPick] = useState<PendingCreatorPick | null>(null);
   const triggerStart = useRef(0);
 
-  const items = open
-    ? VARIABLE_REGISTRY.filter(
-        (v) =>
-          v.path.toLowerCase().includes(query.toLowerCase()) ||
-          v.label.toLowerCase().includes(query.toLowerCase()),
-      ).slice(0, 8)
-    : [];
+  const items =
+    open && !pendingCreatorPick
+      ? VARIABLE_REGISTRY.filter(
+          (v) =>
+            v.path.toLowerCase().includes(query.toLowerCase()) ||
+            v.label.toLowerCase().includes(query.toLowerCase()),
+        ).slice(0, 8)
+      : [];
+  const creatorItems = pendingCreatorPick ? (creators ?? []) : [];
 
   function closeMenu() {
     setOpen(false);
     setQuery("");
     setActiveIndex(0);
+    setPendingCreatorPick(null);
   }
 
   function openMenuAt(index: number) {
@@ -66,6 +77,18 @@ export function useVariableSlashMenu({ mode, resolveContext, textareaRef, onRepl
     setQuery("");
     setActiveIndex(0);
     setOpen(true);
+  }
+
+  // Positions the menu at the current caret — used when a creator-pick step
+  // is triggered from the "Variable einfügen" button, which has no "/"
+  // trigger position of its own.
+  function openMenuAtCaret() {
+    const el = textareaRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const index = el.selectionStart ?? el.value.length;
+    const caret = getCaretCoordinates(el, index);
+    setPosition({ top: rect.top + caret.top + caret.height, left: rect.left + caret.left });
   }
 
   function placeCaretAfterReplace(el: HTMLTextAreaElement, pos: number) {
@@ -82,6 +105,7 @@ export function useVariableSlashMenu({ mode, resolveContext, textareaRef, onRepl
     start: number,
     end: number,
     onDone?: () => void,
+    contextOverride?: Partial<ResolveContext>,
   ) {
     const el = textareaRef.current;
     if (!el) return;
@@ -99,7 +123,7 @@ export function useVariableSlashMenu({ mode, resolveContext, textareaRef, onRepl
     fetch("/api/templates/resolve-variable", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: entry.path, ...resolveContext }),
+      body: JSON.stringify({ path: entry.path, ...resolveContext, ...contextOverride }),
     })
       .then(async (r) => {
         if (!r.ok) {
@@ -129,9 +153,27 @@ export function useVariableSlashMenu({ mode, resolveContext, textareaRef, onRepl
       });
   }
 
+  // If `entry` needs a creator we don't have, opens an inline creator-pick
+  // step in the same menu instead of resolving right away. Returns true when
+  // it took over — the caller must not insert yet.
+  function maybeRequestCreator(entry: VariableEntry, start: number, end: number): boolean {
+    if (mode !== "resolve") return false;
+    if (entry.group !== "creator") return false;
+    if (resolveContext?.creatorId) return false;
+    if (!creators || creators.length === 0) return false;
+
+    openMenuAtCaret();
+    setQuery("");
+    setActiveIndex(0);
+    setPendingCreatorPick({ entry, start, end });
+    setOpen(true);
+    return true;
+  }
+
   function select(entry: VariableEntry) {
     const start = triggerStart.current;
     const end = start + 1 + query.length; // "/" + query
+    if (maybeRequestCreator(entry, start, end)) return;
     applyInsertion(entry, start, end, closeMenu);
   }
 
@@ -143,7 +185,18 @@ export function useVariableSlashMenu({ mode, resolveContext, textareaRef, onRepl
     if (!el || !entry) return;
     const start = el.selectionStart ?? el.value.length;
     const end = el.selectionEnd ?? el.value.length;
+    if (maybeRequestCreator(entry, start, end)) return;
     applyInsertion(entry, start, end);
+  }
+
+  // Resolves the variable that triggered the creator-pick step, using the
+  // just-picked creator for this insertion only (per the product decision:
+  // ask again for every creator variable, no session-wide memory).
+  function pickCreatorForPending(creatorId: string) {
+    if (!pendingCreatorPick) return;
+    const { entry, start, end } = pendingCreatorPick;
+    setPendingCreatorPick(null);
+    applyInsertion(entry, start, end, closeMenu, { creatorId });
   }
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -173,22 +226,29 @@ export function useVariableSlashMenu({ mode, resolveContext, textareaRef, onRepl
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>): boolean {
     if (!open) return false;
+    const activeLength = pendingCreatorPick ? creatorItems.length : items.length;
     if (e.key === "Escape") {
       closeMenu();
       return true;
     }
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActiveIndex((i) => (items.length ? (i + 1) % items.length : 0));
+      setActiveIndex((i) => (activeLength ? (i + 1) % activeLength : 0));
       return true;
     }
     if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActiveIndex((i) => (items.length ? (i - 1 + items.length) % items.length : 0));
+      setActiveIndex((i) => (activeLength ? (i - 1 + activeLength) % activeLength : 0));
       return true;
     }
     if (e.key === "Enter" || e.key === "Tab") {
       e.preventDefault();
+      if (pendingCreatorPick) {
+        const creator = creatorItems[activeIndex];
+        if (creator) pickCreatorForPending(creator.id);
+        else closeMenu();
+        return true;
+      }
       const entry = items[activeIndex];
       if (entry) select(entry);
       else closeMenu();
@@ -203,8 +263,36 @@ export function useVariableSlashMenu({ mode, resolveContext, textareaRef, onRepl
           style={{ position: "fixed", top: position.top, left: position.left }}
           className="z-50 w-64 overflow-hidden rounded-lg bg-popover text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10"
         >
+          {pendingCreatorPick && (
+            <p className="border-b border-border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Für welchen Creator? · {pendingCreatorPick.entry.label}
+            </p>
+          )}
           <div className="max-h-64 overflow-y-auto py-1">
-            {loading ? (
+            {pendingCreatorPick ? (
+              creatorItems.length === 0 ? (
+                <p className="px-3 py-2 text-xs text-muted-foreground">Keine Creator gefunden.</p>
+              ) : (
+                creatorItems.map((creator, i) => (
+                  <Button
+                    key={creator.id}
+                    type="button"
+                    variant="ghost"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      pickCreatorForPending(creator.id);
+                    }}
+                    onMouseEnter={() => setActiveIndex(i)}
+                    className={
+                      "h-auto rounded-none flex w-full flex-col items-start px-3 py-1.5 text-left hover:bg-muted " +
+                      (i === activeIndex ? "bg-muted" : "")
+                    }
+                  >
+                    <span className="text-xs font-medium">{creator.full_name}</span>
+                  </Button>
+                ))
+              )
+            ) : loading ? (
               <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
                 <Loader2 className="h-3 w-3 animate-spin" />
                 Löse Variable auf…
