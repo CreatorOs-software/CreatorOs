@@ -8,8 +8,15 @@
  * imports. Imported as-is, never hand-copied/redefined, so bg-primary,
  * text-foreground, rounded-md, etc. resolve identically in this app and
  * in every @talentos/ui component.
+ *
+ * Primitives + light theme only — NOT the package's full index.css/
+ * fonts.css. Those @font-face rules point at relative font files through
+ * the `file:` symlink, which Turbopack's asset pipeline can't resolve
+ * (webpack could). We don't need them anyway: Proxima Nova is already
+ * self-hosted via next/font/local below.
  */
-@import "@talentos/ui-tokens";
+@import "@talentos/ui-tokens/primitives";
+@import "@talentos/ui-tokens/themes/light";
 @import "@talentos/ui-tokens/tailwind";
 
 @custom-variant dark (&:is(.dark *));

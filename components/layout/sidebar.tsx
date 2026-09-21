@@ -35,6 +35,7 @@ import {
 import { QueryKeys } from "@/lib/query-keys";
 import { usePermissions } from "@/components/context/permission-provider";
 import { useDock } from "@/components/layout/dock-context";
+import { RibbonGradient } from "@/components/ui/ribbon-gradient";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -53,7 +54,8 @@ const adminItems = [
 
 function MobileAppCard() {
   return (
-    <div className="mx-2 group-data-[collapsible=icon]:hidden overflow-hidden rounded-lg bg-gradient-to-br from-(--tui-green-700) via-(--tui-green-800) to-(--tui-green-900) p-4 text-white">
+    <div className="relative isolate mx-2 group-data-[collapsible=icon]:hidden overflow-hidden rounded-lg p-4 text-white">
+      <RibbonGradient className="absolute inset-0 -z-10" />
       <div className="mb-3 w-28">
         <Image
           src="/logos/png/prodigy-one-logo-on-petrol.png"

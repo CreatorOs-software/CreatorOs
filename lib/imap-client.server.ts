@@ -29,13 +29,16 @@ function isMissingCloudflareSocketsError(error: unknown): boolean {
 }
 
 async function createNodeConnect(): Promise<ConnectFn> {
-  const netModuleName = `node:${"net"}`;
-  const tlsModuleName = `node:${"tls"}`;
-  const streamModuleName = `node:${"stream"}`;
+  // Literal specifiers (unlike the `cloudflare:sockets` lookup above) —
+  // this is the path Next.js's webpack server bundle actually runs on, and
+  // it only externalizes `node:*` builtins instead of trying to bundle
+  // them when it can see the import specifier statically. A computed
+  // string here (`` `node:${"net"}` ``) makes webpack treat it as an
+  // opaque runtime lookup, which then fails with "Cannot find module".
   const [netModule, tlsModule, streamModule] = await Promise.all([
-    import(/* @vite-ignore */ netModuleName),
-    import(/* @vite-ignore */ tlsModuleName),
-    import(/* @vite-ignore */ streamModuleName),
+    import("node:net"),
+    import("node:tls"),
+    import("node:stream"),
   ]);
 
   type NodeSocket = {
