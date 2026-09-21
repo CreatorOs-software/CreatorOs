@@ -14,6 +14,7 @@ import {
   AttachmentAnalyzer,
   type AttachmentExtractedFields,
 } from "./attachment-analyzer";
+import { AssignVorgangDialog } from "./assign-vorgang-dialog";
 import {
   ACTION_META,
   resolveActions,
@@ -33,7 +34,6 @@ type Props = {
     filename: string,
     extracted: AttachmentExtractedFields,
   ) => void;
-  onAssignVorgang?: () => void;
   onInvoiceAi?: () => void;
   onPriceCheck?: () => void;
   onCapacity?: () => void;
@@ -49,13 +49,13 @@ export function IdlePanel({
   onReanalyse,
   onManualCreate,
   onBriefingExtracted,
-  onAssignVorgang,
   onInvoiceAi,
   onPriceCheck,
   onCapacity,
 }: Props) {
   const router = useRouter();
   const [showAll, setShowAll] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
   const { main, more } = resolveActions(labels, { anfrageId, dealId });
   const isLinked = !!(anfrageId || dealId);
 
@@ -65,7 +65,7 @@ export function IdlePanel({
     manual: onManualCreate,
     "price-check": onPriceCheck,
     capacity: onCapacity,
-    assign: onAssignVorgang,
+    assign: () => setAssignOpen(true),
     "anfrage-edit": anfrageId
       ? () => router.push(`/creators/anfragen/edit/${anfrageId}`)
       : undefined,
@@ -174,6 +174,13 @@ export function IdlePanel({
           )}
         </div>
       )}
+
+      <AssignVorgangDialog
+        open={assignOpen}
+        onOpenChange={setAssignOpen}
+        threadId={threadId}
+        creators={creators}
+      />
     </div>
   );
 }

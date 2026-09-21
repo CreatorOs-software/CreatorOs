@@ -51,38 +51,12 @@ export function Header({ user }: HeaderProps) {
   return (
     <div className="px-2 pt-2 pl-0 shrink-0">
       <header className="flex items-center justify-between gap-4 rounded-2xl bg-surface px-4 py-3">
-        {config ? (
-          <div className="flex items-center gap-2 min-w-0">
-            {config.onBack && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={config.onBack}
-                className="size-auto shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-            )}
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap leading-tight">
-                {config.title}
-              </div>
-              {config.subtitle && (
-                <p className="text-xs text-muted-foreground truncate mt-0.5">
-                  {config.subtitle}
-                </p>
-              )}
-            </div>
-          </div>
-        ) : (
-          <Input
-            type="search"
-            placeholder="Suchen..."
-            startAdornment={<Search className="w-4 h-4" />}
-            wrapperClassName="w-full max-w-xs bg-white"
-          />
-        )}
+        <Input
+          type="search"
+          placeholder="Suchen..."
+          startAdornment={<Search className="w-4 h-4" />}
+          wrapperClassName="w-full max-w-xs bg-white"
+        />
 
         {/* Actions */}
         <div className="flex items-center gap-3 shrink-0">

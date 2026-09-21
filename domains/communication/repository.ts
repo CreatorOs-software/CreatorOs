@@ -17,7 +17,7 @@ import type {
 // Supabase-Egress hoch. Eingebettete Relationen (Labels, verknüpfte Anfrage)
 // liefern nur schmale Spalten.
 const THREAD_LIST_COLUMNS =
-  "id, integration_id, folder, sender_email, sender_name, recipient_email, subject, preview, received_at, unread, starred, priority, system_labels, label_status, conversation_id, conversation:conversations(anfrage_id, anfrage:anfragen(linked_deal_id)), thread_labels:email_thread_labels(label:email_labels(id, name, color))";
+  "id, integration_id, folder, sender_email, sender_name, recipient_email, subject, preview, received_at, unread, starred, priority, system_labels, label_status, conversation_id, conversation:conversations(anfrage_id, deal_id, anfrage:anfragen(linked_deal_id)), thread_labels:email_thread_labels(label:email_labels(id, name, color))";
 
 const THREAD_LIST_LIMIT = 30;
 const CONVERSATION_MESSAGE_LIMIT = 30;
@@ -105,7 +105,8 @@ export const CommunicationRepository = {
       ...row,
       labels: (row.thread_labels ?? []).map((tl: { label: EmailLabel | null }) => tl.label).filter(Boolean),
       anfrage_id: row.conversation?.anfrage_id ?? null,
-      deal_id: row.conversation?.anfrage?.linked_deal_id ?? null,
+      // Direct link takes precedence over the one inherited from a linked Anfrage.
+      deal_id: row.conversation?.deal_id ?? row.conversation?.anfrage?.linked_deal_id ?? null,
       thread_labels: undefined,
       conversation: undefined,
     })) as EmailThread[];
@@ -210,6 +211,20 @@ export const CommunicationRepository = {
     const { error } = await supabase
       .from("conversations")
       .update({ anfrage_id: anfrageId })
+      .eq("id", conversationId)
+      .eq("agency_id", agencyId);
+    if (error) throw new Error(error.message);
+  },
+
+  async setConversationDeal(
+    supabase: SupabaseClient,
+    conversationId: string,
+    dealId: string,
+    agencyId: string,
+  ): Promise<void> {
+    const { error } = await supabase
+      .from("conversations")
+      .update({ deal_id: dealId })
       .eq("id", conversationId)
       .eq("agency_id", agencyId);
     if (error) throw new Error(error.message);

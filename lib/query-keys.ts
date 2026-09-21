@@ -13,6 +13,7 @@ export const QueryKeys = {
     list: () => ["creators", "list"] as const,
     light: () => ["creators", "light"] as const,
     detail: (id: string) => ["creators", "detail", id] as const,
+    anfragen: (id: string) => ["creator-anfragen", id] as const,
     deals: (id: string) => ["creator-deals", id] as const,
     documents: (id: string) => ["creator-documents", id] as const,
   },

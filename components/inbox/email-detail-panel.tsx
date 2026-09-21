@@ -28,7 +28,11 @@ import { Button, Popover, PopoverContent, PopoverTrigger } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { QueryKeys } from "@/lib/query-keys";
 import type { Creator, Integration, Thread } from "./types";
-import type { ConversationMessage, EmailLabel, EmailThreadBody } from "@/domains/communication";
+import type {
+  ConversationMessage,
+  EmailLabel,
+  EmailThreadBody,
+} from "@/domains/communication";
 import { SYSTEM_LABELS } from "./constants";
 import {
   formatDate,
@@ -72,11 +76,15 @@ function ReplyComposer({
   const replyRef = useRef<HTMLTextAreaElement>(null);
   const slashMenu = useVariableSlashMenu({
     mode: "resolve",
-    resolveContext: { threadId: thread.id, creatorId: mailboxCreatorId ?? undefined },
+    resolveContext: {
+      threadId: thread.id,
+      creatorId: mailboxCreatorId ?? undefined,
+    },
     creators,
     textareaRef: replyRef,
     onReplace: setReply,
-    onUnresolved: (paths) => setUnresolved((prev) => [...new Set([...prev, ...paths])]),
+    onUnresolved: (paths) =>
+      setUnresolved((prev) => [...new Set([...prev, ...paths])]),
   });
 
   async function handleCorrectSpelling() {
@@ -183,7 +191,8 @@ function ReplyComposer({
           <AlertTriangle className="h-3 w-3" />
           {unresolved.length}{" "}
           {unresolved.length === 1 ? "Variable konnte" : "Variablen konnten"}{" "}
-          nicht aufgelöst werden ({unresolved.map((v) => `\${${v}}`).join(", ")})
+          nicht aufgelöst werden ({unresolved.map((v) => `\${${v}}`).join(", ")}
+          )
         </div>
       )}
 
@@ -232,7 +241,11 @@ function ReplyComposer({
       {/* Footer */}
       <div className="flex items-center justify-between border-t border-[#E7E7E7] px-4 py-2.5">
         <div className="flex items-center gap-3">
-          <Button type="button" variant="ghost" className="h-auto p-0 gap-1.5 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground">
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-auto p-0 gap-1.5 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground"
+          >
             <Paperclip className="h-3.5 w-3.5" />
             Mediakit anhängen
           </Button>
@@ -347,7 +360,9 @@ export function EmailDetailPanel({
   const conversationMessages = conversationData?.messages ?? [];
 
   function handleAfterSend() {
-    void queryClient.invalidateQueries({ queryKey: QueryKeys.inbox.conversation(thread.id) });
+    void queryClient.invalidateQueries({
+      queryKey: QueryKeys.inbox.conversation(thread.id),
+    });
     onAfterSend();
   }
 
@@ -362,7 +377,7 @@ export function EmailDetailPanel({
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center justify-between border-b border-[#E7E7E7] px-4 py-2">
+      <div className="flex items-center justify-between border-b border-border px-4 py-2">
         <div className="flex items-center gap-1">
           <Button
             type="button"
@@ -396,7 +411,12 @@ export function EmailDetailPanel({
           </Button>
         </div>
         <div className="flex items-center gap-1">
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-muted">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 rounded hover:bg-muted"
+          >
             <Copy className="h-4 w-4 text-muted-foreground" />
           </Button>
           <Button
@@ -428,7 +448,12 @@ export function EmailDetailPanel({
             title="Diese E-Mail labeln"
             className="h-7 w-7 rounded hover:bg-muted"
           >
-            <Sparkles className={cn("h-4 w-4 text-muted-foreground", labeling && "animate-pulse")} />
+            <Sparkles
+              className={cn(
+                "h-4 w-4 text-muted-foreground",
+                labeling && "animate-pulse",
+              )}
+            />
           </Button>
           {/* Label picker */}
           <Popover>
@@ -537,7 +562,12 @@ export function EmailDetailPanel({
           >
             <Trash2 className="h-4 w-4 text-[#F43F5E]" />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-muted">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 rounded hover:bg-muted"
+          >
             <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
           </Button>
         </div>
@@ -643,16 +673,30 @@ export function EmailDetailPanel({
           {conversationMessages.length > 0 && (
             <div className="pb-6">
               {conversationMessages.map((msg) => {
-                const msgName = getDisplayName(msg.sender_name, msg.sender_email);
-                const msgInitial = getInitial(msg.sender_name, msg.sender_email);
+                const msgName = getDisplayName(
+                  msg.sender_name,
+                  msg.sender_email,
+                );
+                const msgInitial = getInitial(
+                  msg.sender_name,
+                  msg.sender_email,
+                );
                 return (
-                  <div key={msg.id} className="mt-6 border-t border-[#E7E7E7] pt-6">
+                  <div
+                    key={msg.id}
+                    className="mt-6 border-t border-[#E7E7E7] pt-6"
+                  >
                     <div className="flex items-start gap-3">
-                      <Avatar initials={msgInitial} className="h-9 w-9 text-sm" />
+                      <Avatar
+                        initials={msgInitial}
+                        className="h-9 w-9 text-sm"
+                      />
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline justify-between gap-4">
-                          <span className="text-sm font-semibold">{msgName}</span>
+                          <span className="text-sm font-semibold">
+                            {msgName}
+                          </span>
                           <span className="shrink-0 text-xs text-muted-foreground">
                             {formatDate(msg.received_at)}
                           </span>
@@ -661,7 +705,9 @@ export function EmailDetailPanel({
                           {msg.body_html ? (
                             <div
                               className="prose prose-sm max-w-none overflow-hidden text-foreground [&_a]:text-[#006FFE] [&_a]:underline [&_img]:max-w-full"
-                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(msg.body_html) }}
+                              dangerouslySetInnerHTML={{
+                                __html: DOMPurify.sanitize(msg.body_html),
+                              }}
                             />
                           ) : (
                             <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">
@@ -730,7 +776,8 @@ export function EmailDetailPanel({
             }
             creators={creators}
             mailboxCreatorId={
-              integrations.find((i) => i.id === thread.integration_id)?.creator_id ?? null
+              integrations.find((i) => i.id === thread.integration_id)
+                ?.creator_id ?? null
             }
             onClose={() => setReplyMode(null)}
             onAfterSend={handleAfterSend}

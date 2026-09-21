@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  ChevronLeft,
-  Inbox,
-  RefreshCcw,
-  Search,
-  Sparkles,
-} from "lucide-react";
+import { ChevronLeft, Inbox, RefreshCcw, Search, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
@@ -100,7 +94,9 @@ function patchIntegrationsInCache(
   queryClient: QueryClient,
   key: readonly unknown[],
   integrationId: string,
-  updater: (i: InboxData["integrations"][number]) => InboxData["integrations"][number],
+  updater: (
+    i: InboxData["integrations"][number],
+  ) => InboxData["integrations"][number],
 ) {
   queryClient.setQueryData<InfiniteData<InboxData>>(key, (old) => {
     if (!old) return old;
@@ -600,7 +596,7 @@ export function OrbitInbox() {
       <div className="flex flex-1 min-w-0 overflow-hidden rounded-2xl bg-white ">
         {/* Sidebar — hidden while the thread list is shown */}
         {mergedView === "sidebar" && (
-          <div className="flex w-72 shrink-0 flex-col overflow-hidden border-r border-[#E7E7E7]">
+          <div className="flex w-72 shrink-0 flex-col overflow-hidden border-r border-border">
             <InboxSidebar
               folder={folder}
               unreadCount={inboxUnread}
@@ -785,7 +781,8 @@ export function OrbitInbox() {
         onOpenChange={setComposeOpen}
         integrationId={effectiveIntegrationId}
         mailboxCreatorId={
-          integrations.find((i) => i.id === effectiveIntegrationId)?.creator_id ?? null
+          integrations.find((i) => i.id === effectiveIntegrationId)
+            ?.creator_id ?? null
         }
         creators={creators}
       />
