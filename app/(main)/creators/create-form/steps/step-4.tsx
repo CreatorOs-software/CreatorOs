@@ -34,11 +34,13 @@ export function Step4({ form, saving, error, onPrev, onSubmit, submitLabel }: St
   const v = form.state.values;
   const name = fullName(v.vorname, v.nachname);
 
-  const goalParts = [
-    v.goal_value,
-    v.goal_type ? GOAL_TYPE_LABEL[v.goal_type] : "",
-    v.goal_period ? GOAL_PERIOD_LABEL[v.goal_period] : "",
-  ].filter(Boolean);
+  const goals = v.goals
+    .filter((goal) => goal.value || goal.type || goal.period)
+    .map((goal) => [
+      goal.value,
+      goal.type ? GOAL_TYPE_LABEL[goal.type] : "",
+      goal.period ? GOAL_PERIOD_LABEL[goal.period] : "",
+    ].filter(Boolean).join(" · "));
 
   const rows: [string, string][] = [
     ["Name", name || "–"],
@@ -46,7 +48,7 @@ export function Step4({ form, saving, error, onPrev, onSubmit, submitLabel }: St
     ["E-Mail", v.email || "–"],
     ["Nische", v.niche.join(", ") || "–"],
     ["Status", STATUS_LABEL[v.status as keyof typeof STATUS_LABEL] ?? v.status],
-    ["Ziel", goalParts.length ? goalParts.join(" · ") : "–"],
+    ["Ziele", goals.length ? goals.join("; ") : "–"],
     ["Mindestbetrag", v.min_kooperation_betrag ? `€ ${v.min_kooperation_betrag}` : "–"],
     ["Weitere Ziele", v.weitere_ziele || "–"],
     ["Wünsche & Anforderungen", v.wunsche_anforderungen || "–"],

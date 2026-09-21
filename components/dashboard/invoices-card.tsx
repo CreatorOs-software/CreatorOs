@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, CheckCircle2, Clock3 } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, Clock3, Mail } from "lucide-react";
 import { Button, Card, CardAction, CardContent, CardHeader, CardTitle } from "@talentos/ui";
 import { BrandAvatar } from "@/components/creators/dashboard/shared";
 import { cn } from "@/lib/utils";
@@ -11,7 +11,12 @@ export type OpenInvoice = {
   label: string;
   amount: number;
   dueDate: string;
-  brand: { company_name: string; short_code: string } | null;
+  brand: {
+    company_name: string;
+    short_code: string;
+    contact_name: string | null;
+    contact_email: string | null;
+  } | null;
 };
 
 interface InvoicesCardProps {
@@ -40,6 +45,18 @@ function isOverdue(dueDate: string) {
     today.getDate(),
   );
   return new Date(`${dueDate}T00:00:00Z`).getTime() < todayUtc;
+}
+
+function getReminderBody(invoice: OpenInvoice) {
+  const greeting = invoice.brand?.contact_name
+    ? `Guten Tag ${invoice.brand.contact_name},`
+    : "Guten Tag,";
+  const dueDate = dateFormatter.format(new Date(`${invoice.dueDate}T00:00:00Z`));
+  const dueSentence = isOverdue(invoice.dueDate)
+    ? `Die Zahlung war zum ${dueDate} fällig.`
+    : `Die Zahlung ist zum ${dueDate} fällig.`;
+
+  return `${greeting}\n\nwir möchten freundlich an die noch offene Rechnung „${invoice.label}“ über ${moneyFormatter.format(invoice.amount)} zum Deal „${invoice.dealTitle}“ erinnern. ${dueSentence}\n\nBitte prüfen Sie den Zahlungseingang und geben Sie uns kurz Bescheid, wann wir mit der Überweisung rechnen können.\n\nVielen Dank und freundliche Grüße`;
 }
 
 export function InvoicesCard({ invoices, className }: InvoicesCardProps) {
@@ -87,41 +104,77 @@ export function InvoicesCard({ invoices, className }: InvoicesCardProps) {
                 const overdue = isOverdue(invoice.dueDate);
 
                 return (
-                  <Link
+                  <div
                     key={invoice.id}
-                    href={`/creators/deals/edit/${invoice.dealId}`}
-                    className="group flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+                    className="flex items-center gap-2 py-2.5 first:pt-0 last:pb-0"
                   >
-                    {invoice.brand ? (
-                      <BrandAvatar brand={invoice.brand} />
+                    <Link
+                      href={`/creators/deals/edit/${invoice.dealId}`}
+                      className="group flex min-w-0 flex-1 items-center gap-3"
+                    >
+                      {invoice.brand ? (
+                        <BrandAvatar brand={invoice.brand} />
+                      ) : (
+                        <span className="size-6 shrink-0 rounded-md bg-muted" />
+                      )}
+
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-medium leading-tight group-hover:underline">
+                          {invoice.label || invoice.dealTitle}
+                        </p>
+                        <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
+                          {invoice.dealTitle}
+                        </p>
+                      </div>
+
+                      <div className="shrink-0 text-right">
+                        <p className="text-xs font-medium tabular-nums">
+                          {moneyFormatter.format(invoice.amount)}
+                        </p>
+                        <p
+                          className={cn(
+                            "mt-0.5 flex items-center justify-end gap-1 text-[10px] tabular-nums",
+                            overdue ? "font-medium text-destructive" : "text-muted-foreground",
+                          )}
+                        >
+                          <Clock3 className="size-2.5" />
+                          {overdue ? "Überfällig" : "Fällig"} {dateFormatter.format(new Date(`${invoice.dueDate}T00:00:00Z`))}
+                        </p>
+                      </div>
+                    </Link>
+
+                    {invoice.brand?.contact_email ? (
+                      <Button asChild variant="ghost" size="icon" className="size-7 shrink-0">
+                        <Link
+                          href={{
+                            pathname: "/inbox",
+                            query: {
+                              compose: "new",
+                              to: invoice.brand.contact_email,
+                              subject: `Zahlungserinnerung: ${invoice.label || invoice.dealTitle}`,
+                              body: getReminderBody(invoice),
+                            },
+                          }}
+                          aria-label={`E-Mail an ${invoice.brand.company_name} schreiben`}
+                          title={`E-Mail an ${invoice.brand.contact_email}`}
+                        >
+                          <Mail className="size-3.5" />
+                        </Link>
+                      </Button>
                     ) : (
-                      <span className="size-6 shrink-0 rounded-md bg-muted" />
-                    )}
-
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-medium leading-tight group-hover:underline">
-                        {invoice.label || invoice.dealTitle}
-                      </p>
-                      <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
-                        {invoice.dealTitle}
-                      </p>
-                    </div>
-
-                    <div className="shrink-0 text-right">
-                      <p className="text-xs font-medium tabular-nums">
-                        {moneyFormatter.format(invoice.amount)}
-                      </p>
-                      <p
-                        className={cn(
-                          "mt-0.5 flex items-center justify-end gap-1 text-[10px] tabular-nums",
-                          overdue ? "font-medium text-destructive" : "text-muted-foreground",
-                        )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled
+                        className="size-7 shrink-0"
+                        aria-label="Keine Kontakt-E-Mail hinterlegt"
+                        title="Keine Kontakt-E-Mail hinterlegt"
                       >
-                        <Clock3 className="size-2.5" />
-                        {overdue ? "Überfällig" : "Fällig"} {dateFormatter.format(new Date(`${invoice.dueDate}T00:00:00Z`))}
-                      </p>
-                    </div>
-                  </Link>
+                        <Mail className="size-3.5" />
+                      </Button>
+                    )}
+                  </div>
                 );
               })}
             </div>

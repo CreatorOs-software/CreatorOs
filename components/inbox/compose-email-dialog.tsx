@@ -92,16 +92,17 @@ type Props = {
   creators: Creator[];
   initialTo?: string;
   initialSubject?: string;
+  initialBody?: string;
 };
 
-export function ComposeEmailDialog({ open, onOpenChange, integrationId, mailboxCreatorId, creators, initialTo = "", initialSubject = "" }: Props) {
+export function ComposeEmailDialog({ open, onOpenChange, integrationId, mailboxCreatorId, creators, initialTo = "", initialSubject = "", initialBody = "" }: Props) {
   const [to, setTo] = useState<string[]>(initialTo ? [initialTo] : []);
   const [cc, setCc] = useState<string[]>([]);
   const [bcc, setBcc] = useState<string[]>([]);
   const [showCc, setShowCc] = useState(false);
   const [showBcc, setShowBcc] = useState(false);
   const [subject, setSubject] = useState(initialSubject);
-  const [body, setBody] = useState("");
+  const [body, setBody] = useState(initialBody);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [unresolved, setUnresolved] = useState<string[]>([]);
@@ -123,7 +124,7 @@ export function ComposeEmailDialog({ open, onOpenChange, integrationId, mailboxC
     setShowCc(false);
     setShowBcc(false);
     setSubject(initialSubject);
-    setBody("");
+    setBody(initialBody);
     setSendError(null);
   }
 

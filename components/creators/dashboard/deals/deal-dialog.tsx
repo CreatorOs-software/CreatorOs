@@ -17,7 +17,22 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button, Checkbox, DatePicker, Dialog, DialogContent, DialogTitle, Input, Stepper, Switch, Tabs, TabsContent, TabsList, TabsTrigger, type Step as StepperStep } from "@talentos/ui";
+import {
+  Button,
+  Checkbox,
+  DatePicker,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Input,
+  Stepper,
+  Switch,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  type Step as StepperStep,
+} from "@talentos/ui";
 import { BrandAvatar } from "../shared";
 import type {
   ApprovalInfo,
@@ -1635,7 +1650,7 @@ function DealDialogContent({
   const isAbgeschlossen = ALT.has(local.status);
 
   return (
-    <div className="flex flex-col max-h-[90vh]">
+    <div className="flex min-h-0 min-w-0 flex-col max-h-[94vh]">
       {/* Header */}
       <div className="px-6 pt-5 pb-4  shrink-0">
         <div className="flex items-start justify-between gap-4 mb-4">
@@ -1670,9 +1685,12 @@ function DealDialogContent({
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="uebersicht" className="flex-1 min-h-0 flex flex-col">
-        <div className="px-6  shrink-0">
-          <TabsList>
+      <Tabs
+        defaultValue="uebersicht"
+        className="flex min-h-0 min-w-0 flex-1 flex-col"
+      >
+        <div className="min-w-0 shrink-0 px-6">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="uebersicht">Überblick</TabsTrigger>
             <TabsTrigger value="deliverables">Deliverables</TabsTrigger>
             <TabsTrigger value="rechte">Rechte & Konditionen</TabsTrigger>
@@ -1680,7 +1698,7 @@ function DealDialogContent({
           </TabsList>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5">
+        <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-6 py-5">
           <TabsContent value="uebersicht" className="mt-0">
             <UeberblickTab local={local} patchLocal={patchLocal} />
           </TabsContent>
@@ -1751,7 +1769,7 @@ export function DealDialog({
       }}
     >
       <DialogContent
-        className="max-w-5xl sm:max-w-5xl p-0 gap-0 overflow-hidden"
+        className="gap-0 overflow-hidden p-0"
         aria-describedby={undefined}
       >
         {deal && (

@@ -2,7 +2,7 @@
 
 import { ChevronLeft, Inbox, RefreshCcw, Search, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   keepPreviousData,
   useInfiniteQuery,
@@ -116,6 +116,7 @@ function patchIntegrationsInCache(
 
 export function OrbitInbox() {
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   // Deeplink aus der Glocke / vom Dashboard: /inbox?thread=<id> überschreibt
   // den zuletzt geöffneten Thread.
@@ -185,11 +186,33 @@ export function OrbitInbox() {
       localStorage.setItem("inbox:selectedIntegrationId", integrationParam);
     }
   }, [searchParams]);
-  const [composeOpen, setComposeOpen] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(
+    () => searchParams.get("compose") === "new",
+  );
+  const [composeDraft, setComposeDraft] = useState(() => ({
+    to: searchParams.get("to") ?? "",
+    subject: searchParams.get("subject") ?? "",
+    body: searchParams.get("body") ?? "",
+  }));
   const [activeLabelId, setActiveLabelId] = useState<string | null>(null);
   const [workStates, setWorkStates] = useState<Record<string, WorkPanelState>>(
     {},
   );
+
+  useEffect(() => {
+    if (searchParams.get("compose") !== "new") return;
+
+    // Deeplink-Daten einmalig in einen lokalen Entwurf übernehmen, bevor
+    // die Query-Parameter aus der URL entfernt werden.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setComposeDraft({
+      to: searchParams.get("to") ?? "",
+      subject: searchParams.get("subject") ?? "",
+      body: searchParams.get("body") ?? "",
+    });
+    setComposeOpen(true);
+    router.replace("/inbox", { scroll: false });
+  }, [router, searchParams]);
 
   useEffect(() => {
     const timer = window.setTimeout(
@@ -777,6 +800,7 @@ export function OrbitInbox() {
       </div>
 
       <ComposeEmailDialog
+        key={`${composeDraft.to}-${composeDraft.subject}-${composeDraft.body}`}
         open={composeOpen}
         onOpenChange={setComposeOpen}
         integrationId={effectiveIntegrationId}
@@ -785,6 +809,9 @@ export function OrbitInbox() {
             ?.creator_id ?? null
         }
         creators={creators}
+        initialTo={composeDraft.to}
+        initialSubject={composeDraft.subject}
+        initialBody={composeDraft.body}
       />
 
       {/* Drag handle — resize inbox vs. work panel */}

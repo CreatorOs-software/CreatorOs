@@ -20,7 +20,7 @@ export default async function DashboardPage() {
 
   const { data: deals } = await supabase
     .from("deals")
-    .select("id, title, payment_items, brands(company_name, short_code)")
+    .select("id, title, payment_items, brands(company_name, short_code, contact_name, contact_email)")
     .eq("agency_id", auth.agencyId);
 
   const openInvoices = (deals ?? [])
@@ -52,7 +52,14 @@ export default async function DashboardPage() {
           label: item.label ?? "Rechnung",
           amount: Number(item.amount ?? 0),
           dueDate: dueDate.toISOString().slice(0, 10),
-          brand,
+          brand: brand
+            ? {
+                company_name: brand.company_name,
+                short_code: brand.short_code,
+                contact_name: brand.contact_name,
+                contact_email: brand.contact_email,
+              }
+            : null,
         }];
       });
     })

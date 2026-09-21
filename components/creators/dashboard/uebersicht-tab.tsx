@@ -616,44 +616,48 @@ function RevenueSection({
 
 function ZieleSection({ creator, deals }: { creator: Creator | null; deals: DealFull[] }) {
   if (!creator) return null;
-  const { goal_value, goal_type, weitere_ziele } = creator;
+  const { weitere_ziele } = creator;
+  const goals = creator.goals?.length
+    ? creator.goals
+    : creator.goal_value && creator.goal_type && creator.goal_period
+      ? [{ value: creator.goal_value, type: creator.goal_type, period: creator.goal_period }]
+      : [];
 
-  const hasKoopGoal = goal_type === "kooperationen" && goal_value;
-  const hasPostGoal = goal_type === "post" && goal_value;
-
-  if (!hasKoopGoal && !hasPostGoal && !weitere_ziele) return null;
+  if (!goals.length && !weitere_ziele) return null;
 
   const doneDeals = deals.filter((d) => ["paid", "posted", "invoiced"].includes(d.status)).length;
+  const typeLabels = { umsatz: "Umsatz", kooperationen: "Kooperationen", post: "Posts" } as const;
+  const periodLabels = { "30_tage": "30 Tage", "3_monate": "3 Monate", "1_jahr": "1 Jahr" } as const;
 
   return (
     <div className="flex flex-col gap-3">
       <h3 className="text-sm font-semibold">Interne Ziele</h3>
       <div className="grid grid-cols-2 gap-4">
-        {hasKoopGoal && (
-          <Card className="p-4 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Kooperationen</span>
-              <span className="text-xs text-muted-foreground tabular-nums">{doneDeals} von {goal_value} Deals</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-              <div
-                className="h-full rounded-full bg-amber-500"
-                style={{ width: `${Math.min(100, (doneDeals / goal_value!) * 100)}%` }}
-              />
-            </div>
-          </Card>
-        )}
-        {hasPostGoal && (
-          <Card className="p-4 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Posts</span>
-              <span className="text-xs text-muted-foreground">Ziel: {goal_value} Posts</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-              <div className="h-full rounded-full bg-blue-500" style={{ width: "0%" }} />
-            </div>
-          </Card>
-        )}
+        {goals.map((goal, index) => {
+          const isCooperation = goal.type === "kooperationen";
+          const progress = isCooperation ? Math.min(100, (doneDeals / goal.value) * 100) : 0;
+          const value = goal.type === "umsatz" ? fmtMoney(goal.value) : goal.value;
+
+          return (
+            <Card key={`${goal.type}-${goal.period}-${index}`} className="p-4 flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <span className="text-sm font-medium">{typeLabels[goal.type]}</span>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">{periodLabels[goal.period]}</p>
+                </div>
+                <span className="text-xs text-muted-foreground tabular-nums text-right">
+                  {isCooperation ? `${doneDeals} von ${goal.value} Deals` : `Ziel: ${value}`}
+                </span>
+              </div>
+              <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                <div
+                  className={cn("h-full rounded-full", isCooperation ? "bg-amber-500" : goal.type === "post" ? "bg-blue-500" : "bg-emerald-500")}
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </Card>
+          );
+        })}
         {weitere_ziele && (
           <Card className="p-4">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Weitere Ziele</p>
