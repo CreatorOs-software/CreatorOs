@@ -16,7 +16,6 @@ import { cn } from "@/lib/utils";
 import { FloatingWindow } from "@/components/ui/floating-window";
 import { TodoPanel } from "@/components/ui/todo-panel";
 import { NotesPanel } from "@/components/ui/notes-panel";
-import { NotificationsPanel } from "@/components/notifications/notifications-panel";
 import { useDock, type PanelId } from "./dock-context";
 
 type DockItem =
@@ -35,10 +34,6 @@ const panelConfig: Record<PanelId, { title: string; placeholder: string }> = {
   inbox: {
     title: "Inbox",
     placeholder: "Deine Nachrichten erscheinen hier.",
-  },
-  benachrichtigungen: {
-    title: "Benachrichtigungen",
-    placeholder: "Keine neuen Benachrichtigungen.",
   },
   notizen: {
     title: "Notizen",
@@ -60,7 +55,6 @@ const PANEL_SIZES: Record<PanelId, { width: number; height: number }> = {
   notizen: { width: 640, height: 480 },
   todos: { width: 440, height: 520 },
   inbox: { width: 440, height: 520 },
-  benachrichtigungen: { width: 440, height: 520 },
 };
 
 function getPanelDefaults(panel: PanelId) {
@@ -102,8 +96,6 @@ export function AppDock() {
               <TodoPanel />
             ) : activePanel === "notizen" ? (
               <NotesPanel />
-            ) : activePanel === "benachrichtigungen" ? (
-              <NotificationsPanel />
             ) : (
               <>
                 <FloatingWindow.Header title={panelConfig[activePanel].title} />

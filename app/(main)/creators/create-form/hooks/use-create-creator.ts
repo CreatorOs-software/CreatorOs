@@ -17,6 +17,7 @@ export function useCreateCreator() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          avatar_config: values.avatar_config,
           full_name: name,
           handle: values.handle.trim() || null,
           email: values.email.trim() || null,

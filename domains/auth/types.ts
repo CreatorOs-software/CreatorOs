@@ -23,6 +23,7 @@ export type AuthContext = {
   fullName: string | null;
   agencyId: string;
   displayName: string | null;
+  avatarConfig: import("@/lib/avatar").AvatarConfig | null;
   role: Role;
   permissions: PermissionMap;
 };

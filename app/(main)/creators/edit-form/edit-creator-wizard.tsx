@@ -12,6 +12,7 @@ import type { CreatorFormValues } from "../create-form/creator-form.schema";
 import type { StepErrors } from "../create-form/creator-form.types";
 import { useEditCreator } from "../create-form/hooks/use-edit-creator";
 import type { Creator } from "@/domains/creators/types";
+import { AvatarDisplay } from "@/components/ui/avatar-display";
 
 import { Step1 } from "../create-form/steps/step-1";
 import { Step2 } from "../create-form/steps/step-2";
@@ -29,6 +30,7 @@ function toFormValues(creator: Creator): CreatorFormValues {
   const nachname = parts.slice(1).join(" ");
 
   return {
+    avatar_config: creator.avatar_config,
     vorname,
     nachname,
     handle: creator.handle ?? "",
@@ -68,7 +70,6 @@ export function EditCreatorWizard({ creator }: EditCreatorWizardProps) {
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [done, setDone] = useState(false);
   const [contractFile, setContractFile] = useState<File | null>(null);
-  const [profileImage, setProfileImage] = useState<File | null>(null);
   const [stepErrors, setStepErrors] = useState<StepErrors>({});
 
   const form = useForm({
@@ -144,9 +145,7 @@ export function EditCreatorWizard({ creator }: EditCreatorWizardProps) {
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div className="flex items-center gap-2.5">
-              <span className="w-7 h-7 rounded-lg inline-flex items-center justify-center text-xs font-bold text-zinc-500 shrink-0 bg-zinc-100">
-                {creator.initials}
-              </span>
+              <AvatarDisplay config={creator.avatar_config} seed={creator.id} name={creator.full_name} size="sm" />
               <div>
                 <h1 className="text-base font-semibold">{creator.full_name}</h1>
                 <p className="text-xs text-muted-foreground">Creator bearbeiten</p>
@@ -175,8 +174,6 @@ export function EditCreatorWizard({ creator }: EditCreatorWizardProps) {
                 errors={stepErrors}
                 contractFile={contractFile}
                 onContractFileChange={setContractFile}
-                profileImage={profileImage}
-                onProfileImageChange={setProfileImage}
                 onNext={handleNext}
               />
             ) : step === 2 ? (

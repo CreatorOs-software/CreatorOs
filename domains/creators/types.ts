@@ -30,6 +30,7 @@ export type Creator = {
   status: "active" | "on-break" | "inactive";
   platforms: string[];
   initials: string;
+  avatar_config: AvatarConfig | null;
   rates: CreatorRate[];
   dream_brands: string[];
   wish_themes: string[];
@@ -86,3 +87,4 @@ export type CreatorsPageData = {
   deals: Deal[];
   mailboxes: CreatorMailbox[];
 };
+import type { AvatarConfig } from "@/lib/avatar";

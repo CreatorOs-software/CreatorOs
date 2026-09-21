@@ -1,6 +1,6 @@
-import { UserRound } from "lucide-react";
+import { AvatarDisplay } from "@/components/ui/avatar-display";
 import type { CreatorForm } from "../creator-form.types";
-import { fullName, getInitials } from "../creator-form.helpers";
+import { fullName } from "../creator-form.helpers";
 import { StepNav } from "./step-nav";
 
 const STATUS_LABEL = {
@@ -72,9 +72,7 @@ export function Step4({ form, saving, error, onPrev, onSubmit, submitLabel }: St
         <div className="sm:col-span-2 flex flex-col gap-4">
           {/* Avatar preview */}
           <div className="flex items-center gap-3 p-4 bg-muted/40 rounded-xl border border-border-light">
-            <span className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-zinc-500 shrink-0 bg-zinc-100">
-              {name ? getInitials(name) : <UserRound className="w-5 h-5" />}
-            </span>
+            <AvatarDisplay config={v.avatar_config} seed={name || "creator"} name={name} size="md" />
             <div>
               <p className="text-sm font-semibold">{name || "–"}</p>
               <p className="text-xs text-muted-foreground">

@@ -28,7 +28,6 @@ export function CreateCreatorWizard() {
   const [done, setDone] = useState(false);
   const [createdCreatorId, setCreatedCreatorId] = useState<string | null>(null);
   const [contractFile, setContractFile] = useState<File | null>(null);
-  const [profileImage, setProfileImage] = useState<File | null>(null);
   const [stepErrors, setStepErrors] = useState<StepErrors>({});
 
   const form = useForm({
@@ -132,8 +131,6 @@ export function CreateCreatorWizard() {
                 errors={stepErrors}
                 contractFile={contractFile}
                 onContractFileChange={setContractFile}
-                profileImage={profileImage}
-                onProfileImageChange={setProfileImage}
                 onNext={handleNext}
               />
             ) : step === 2 ? (

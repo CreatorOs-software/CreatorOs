@@ -1,6 +1,7 @@
 import { getAuthContext } from "@/domains/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DealRepository } from "./repository";
+import { emitDealEvents } from "@/domains/notifications/events";
 import type { DealCreateInput, DealDeadline, DealFull, DealPatch } from "./types";
 
 export class DealError extends Error {}
@@ -29,8 +30,17 @@ export const DealService = {
 
   async updateDeal(id: string, patch: DealPatch): Promise<{ id: string; status: string }> {
     const supabase = await createClient();
-    const { agencyId } = await getAuthContext(supabase);
-    return DealRepository.update(supabase, id, agencyId, patch);
+    const { agencyId, userId } = await getAuthContext(supabase);
+    const before = await DealRepository.findById(supabase, id, agencyId);
+    const result = await DealRepository.update(supabase, id, agencyId, patch);
+    if (before) {
+      try {
+        await emitDealEvents(supabase, { agencyId, actingUserId: userId }, before, patch);
+      } catch (error) {
+        console.error("[deals] notification emit failed", error);
+      }
+    }
+    return result;
   },
 
   async deleteDeal(id: string): Promise<void> {

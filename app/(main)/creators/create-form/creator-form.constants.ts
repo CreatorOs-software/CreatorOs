@@ -36,6 +36,7 @@ export const NICHE_OPTIONS = [
 
 
 export const INITIAL_VALUES: CreatorFormValues = {
+  avatar_config: null,
   vorname: "",
   nachname: "",
   handle: "",

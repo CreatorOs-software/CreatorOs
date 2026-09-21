@@ -1,5 +1,6 @@
 import { CreatorService } from "@/domains/creators";
 import { toErrorResponse } from "@/lib/auth-context";
+import { avatarConfigSchema } from "@/lib/avatar";
 
 export async function GET(
   _req: Request,
@@ -22,6 +23,9 @@ export async function PATCH(
   try {
     const { id } = await params;
     const patch = await req.json();
+    if ("avatar_config" in patch) {
+      patch.avatar_config = avatarConfigSchema.nullable().parse(patch.avatar_config);
+    }
     await CreatorService.patch(id, patch);
     return Response.json({ ok: true });
   } catch (e) {

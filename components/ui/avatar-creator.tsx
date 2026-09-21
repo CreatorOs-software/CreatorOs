@@ -1,46 +1,26 @@
-import { Avatar as UIAvatar, AvatarFallback } from "@talentos/ui";
-import { cn } from "@/lib/utils";
-
-type AvatarSize = "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
-type AvatarVariant = "default" | "team";
+import { AvatarDisplay, type AvatarSize } from "./avatar-display";
+import type { AvatarConfig } from "@/lib/avatar";
 
 interface AvatarProps {
   initials: string;
+  avatarConfig?: AvatarConfig | null;
+  seed?: string;
+  name?: string | null;
   size?: AvatarSize;
   /** `default` = neutral grey · `team` = light tint of the brand colour (team members only) */
-  variant?: AvatarVariant;
+  variant?: "default" | "team";
   className?: string;
 }
 
-const SIZE_CLASS: Record<AvatarSize, string> = {
-  xs: "size-6 text-[10px]",
-  sm: "size-8 text-xs",
-  md: "size-10 text-sm",
-  lg: "size-11 text-sm",
-  xl: "size-14 text-base",
-  "2xl": "size-20 text-2xl",
-};
-
-const VARIANT_CLASS: Record<AvatarVariant, string> = {
-  default: "bg-zinc-100 text-zinc-500",
-  team: "bg-brand/10 text-brand",
-};
-
 export function Avatar({
   initials,
+  avatarConfig,
+  seed,
+  name,
   size = "md",
-  variant = "default",
   className,
 }: AvatarProps) {
-  return (
-    <UIAvatar className={cn(SIZE_CLASS[size], className)}>
-      <AvatarFallback
-        className={cn("font-bold uppercase text-inherit", VARIANT_CLASS[variant])}
-      >
-        {initials}
-      </AvatarFallback>
-    </UIAvatar>
-  );
+  return <AvatarDisplay config={avatarConfig} seed={seed ?? name ?? initials} name={name} size={size} className={className} />;
 }
 
 // Back-compat alias — historically this component was creator-only.

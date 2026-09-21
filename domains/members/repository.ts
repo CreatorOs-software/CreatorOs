@@ -7,7 +7,7 @@ export const MemberRepository = {
   async findMembers(supabase: SupabaseClient, agencyId: string): Promise<AgencyMember[]> {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, display_name, initials, role, permissions, created_at")
+      .select("id, display_name, initials, avatar_config, role, permissions, created_at")
       .eq("agency_id", agencyId)
       .order("created_at");
     if (error) throw new Error(error.message);
@@ -21,7 +21,7 @@ export const MemberRepository = {
   async findUsers(supabase: SupabaseClient, agencyId: string): Promise<AgencyUser[]> {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, display_name, initials, role")
+      .select("id, display_name, initials, avatar_config, role")
       .eq("agency_id", agencyId)
       .order("display_name");
     if (error) throw new Error(error.message);

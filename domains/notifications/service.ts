@@ -3,6 +3,7 @@ import { getAuthContext } from "@/domains/auth";
 import { createClient } from "@/lib/supabase/server";
 import { TodoService } from "@/domains/todos";
 import { NotificationRepository } from "./repository";
+import { evaluateNotificationConditions } from "./condition-engine";
 import type {
   EmitInput,
   MuteInput,
@@ -13,7 +14,12 @@ import type {
 export const NotificationService = {
   async list(): Promise<Notification[]> {
     const supabase = await createClient();
-    const { agencyId, userId } = await getAuthContext(supabase);
+    const { agencyId, userId, role } = await getAuthContext(supabase);
+    try {
+      await evaluateNotificationConditions(supabase, { agencyId, userId, role });
+    } catch (error) {
+      console.error("[notifications] condition evaluation failed", error);
+    }
     return NotificationRepository.findForUser(supabase, agencyId, userId);
   },
 
@@ -34,6 +40,33 @@ export const NotificationService = {
     const supabase = await createClient();
     const { agencyId, userId } = await getAuthContext(supabase);
     return NotificationRepository.setStatus(supabase, id, agencyId, userId, "DISMISSED");
+  },
+
+  async updateInteraction(
+    id: string,
+    action:
+      | { type: "read"; unread: boolean }
+      | { type: "acknowledge" }
+      | { type: "snooze"; until: string }
+      | { type: "restore" },
+  ): Promise<Notification> {
+    const supabase = await createClient();
+    const { agencyId, userId } = await getAuthContext(supabase);
+    const now = new Date().toISOString();
+    const patch = action.type === "read"
+      ? { read_at: action.unread ? null : now }
+      : action.type === "acknowledge"
+        ? { acknowledged_at: now, read_at: now }
+        : action.type === "snooze"
+          ? { snoozed_until: action.until, read_at: now }
+          : { status: "OPEN" as const, acknowledged_at: null, snoozed_until: null };
+    return NotificationRepository.updateInteraction(
+      supabase,
+      id,
+      agencyId,
+      userId,
+      patch,
+    );
   },
 
   async markAllRead(): Promise<void> {

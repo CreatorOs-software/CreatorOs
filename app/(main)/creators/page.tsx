@@ -46,7 +46,7 @@ function buildColumns(
       size: 220,
       cell: ({ row }) => (
         <span className="flex items-center gap-2.5">
-          <AvatarCreator initials={row.original.initials} size="sm" />
+          <AvatarCreator initials={row.original.initials} avatarConfig={row.original.avatar_config} seed={row.original.id} name={row.original.full_name} size="sm" />
           <span className="font-medium">{row.original.full_name}</span>
         </span>
       ),

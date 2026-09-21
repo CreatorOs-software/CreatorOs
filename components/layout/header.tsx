@@ -1,26 +1,27 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useAuth } from "@/components/auth/use-auth";
-import { usePageHeader } from "./page-header-context";
-import { useDock } from "./dock-context";
 import { QueryKeys } from "@/lib/query-keys";
-import { ArrowLeft, Bell, LogOut, Mail, Search } from "lucide-react";
+import { Bell, LogOut, Mail, Search } from "lucide-react";
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  Button,
   Input,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
 } from "@talentos/ui";
+import { NotificationsPanel } from "@/components/notifications/notifications-panel";
+import { AvatarDisplay } from "@/components/ui/avatar-display";
+import type { AvatarConfig } from "@/lib/avatar";
 
 interface User {
   id: string;
   name?: string;
   email?: string;
   role?: string;
-  avatar?: string;
+  avatarConfig?: AvatarConfig | null;
 }
 
 interface HeaderProps {
@@ -29,8 +30,7 @@ interface HeaderProps {
 
 export function Header({ user }: HeaderProps) {
   const { signOut } = useAuth();
-  const { config } = usePageHeader();
-  const { activePanel, setActivePanel } = useDock();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const { data: notifData } = useQuery<{ unreadCount: number }>({
     queryKey: QueryKeys.notifications.all(),
@@ -39,14 +39,6 @@ export function Header({ user }: HeaderProps) {
     refetchInterval: 60_000,
   });
   const unreadCount = notifData?.unreadCount ?? 0;
-
-  const initials =
-    user?.name
-      ?.trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((w) => w[0]?.toUpperCase() ?? "")
-      .join("") ?? "";
 
   return (
     <div className="px-2 pt-2 pl-0 shrink-0">
@@ -68,32 +60,32 @@ export function Header({ user }: HeaderProps) {
             <Mail className="w-5 h-5" />
           </Link>
 
-          <button
-            type="button"
-            onClick={() =>
-              setActivePanel(
-                activePanel === "benachrichtigungen"
-                  ? null
-                  : "benachrichtigungen",
-              )
-            }
-            className="relative p-2.5 rounded-full bg-white hover:bg-muted transition-colors"
-          >
-            <Bell className="w-5 h-5" />
-            {unreadCount > 0 && (
-              <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-red-500 ring-2 ring-white" />
-            )}
-          </button>
+          <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-label="Benachrichtigungen öffnen"
+                className="relative rounded-full bg-white p-2.5 transition-colors hover:bg-muted"
+              >
+                <Bell className="size-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-red-500 ring-2 ring-white" />
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              sideOffset={8}
+              className="w-auto! overflow-hidden rounded-2xl! border-border/70! p-0! shadow-xl!"
+            >
+              <NotificationsPanel onNavigate={() => setNotificationsOpen(false)} />
+            </PopoverContent>
+          </Popover>
 
           {/* User Info */}
           {user && (
             <div className="flex items-center gap-2 bg-white rounded-full pl-1 pr-3 py-1 ">
-              <Avatar className="size-8">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="bg-brand/10 text-xs font-bold text-brand">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
+              <AvatarDisplay config={user.avatarConfig} seed={user.id} name={user.name} size="sm" />
               <span className="text-left leading-tight">
                 <span className="block text-sm font-medium">{user.name}</span>
                 {user.email && (

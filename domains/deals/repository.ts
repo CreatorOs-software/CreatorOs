@@ -29,6 +29,21 @@ export const DealRepository = {
     return (data ?? []) as unknown as DealFull[];
   },
 
+  async findById(
+    supabase: SupabaseClient,
+    id: string,
+    agencyId: string,
+  ): Promise<DealFull | null> {
+    const { data, error } = await supabase
+      .from("deals")
+      .select(DEAL_SELECT)
+      .eq("id", id)
+      .eq("agency_id", agencyId)
+      .maybeSingle();
+    if (error) throw error;
+    return (data ?? null) as unknown as DealFull | null;
+  },
+
   async findDeadlines(
     supabase: SupabaseClient,
     agencyId: string,

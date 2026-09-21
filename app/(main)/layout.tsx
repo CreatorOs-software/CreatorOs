@@ -25,6 +25,7 @@ export default async function MainLayout({
     id: auth.userId,
     name: auth.displayName ?? auth.fullName ?? auth.email ?? undefined,
     email: auth.email ?? undefined,
+    avatarConfig: auth.avatarConfig,
   };
 
   return (

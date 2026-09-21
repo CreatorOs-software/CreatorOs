@@ -39,6 +39,7 @@ export const whitelistingSchema = z.object({
 
 // ── Deliverables ────────────────────────────────────────────
 export const deliverableSchema = z.object({
+  id: z.string().optional(),
   count: z.number().min(1, "Mindestens 1"),
   content_type: z.string().min(1, "Content-Typ auswählen"),
   platform: z.string().min(1, "Plattform auswählen"),
@@ -65,6 +66,7 @@ export const paymentTermSchema = z.union([
 export type PaymentTerm = z.infer<typeof paymentTermSchema>;
 
 export const paymentItemSchema = z.object({
+  id: z.string().optional(),
   label: z.string(),
   amount: z.number().min(0),
   invoice_date: z.string(), // "" = noch nicht gestellt

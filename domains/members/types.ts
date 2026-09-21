@@ -1,9 +1,11 @@
 import type { PermissionMap, Role } from "@/domains/auth/types";
+import type { AvatarConfig } from "@/lib/avatar";
 
 export type AgencyUser = {
   id: string;
   display_name: string | null;
   initials: string | null;
+  avatar_config: AvatarConfig | null;
   role: string;
 };
 
@@ -11,6 +13,7 @@ export type AgencyMember = {
   id: string;
   display_name: string | null;
   initials: string;
+  avatar_config: AvatarConfig | null;
   role: Role;
   permissions: PermissionMap;
   created_at: string;

@@ -1,5 +1,6 @@
 import { CreatorService } from "@/domains/creators";
 import { toErrorResponse } from "@/lib/auth-context";
+import { avatarConfigSchema } from "@/lib/avatar";
 
 export async function GET() {
   try {
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
       status,
       platforms,
       initials,
+      avatar_config,
     } = body;
 
     const creator = await CreatorService.create({
@@ -65,6 +67,7 @@ export async function POST(req: Request) {
       status: status || "active",
       platforms: platforms || [],
       initials,
+      avatar_config: avatarConfigSchema.nullable().parse(avatar_config ?? null),
       rates: [],
       dream_brands: [],
       wish_themes: [],

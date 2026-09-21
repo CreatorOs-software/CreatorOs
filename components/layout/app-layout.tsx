@@ -27,7 +27,7 @@ const SIDEBAR_COLLAPSE_BREAKPOINT = "(max-width: 1399px)";
 interface AppLayoutProps {
   children: React.ReactNode;
   fullHeight?: boolean;
-  user?: { id: string; name?: string; email?: string } | null;
+  user?: { id: string; name?: string; email?: string; avatarConfig?: import("@/lib/avatar").AvatarConfig | null } | null;
   role?: Role;
   permissions?: PermissionMap;
 }

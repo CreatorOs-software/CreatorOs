@@ -1,4 +1,5 @@
 export type Deliverable = {
+  id?: string;
   count: number;
   content_type: string;
   platform: string;
@@ -72,6 +73,7 @@ export type WhitelistingInfo = {
 };
 
 export type PaymentItem = {
+  id?: string;
   label: string;
   amount: number;
   invoice_date: string;

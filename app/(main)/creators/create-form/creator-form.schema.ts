@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { avatarConfigSchema } from "@/lib/avatar";
 
 export const creatorGoalSchema = z.object({
   value: z.string(),
@@ -9,6 +10,7 @@ export const creatorGoalSchema = z.object({
 export type CreatorGoalFormValue = z.infer<typeof creatorGoalSchema>;
 
 export const creatorFormSchema = z.object({
+  avatar_config: avatarConfigSchema.nullable(),
   vorname: z.string().min(1, "Vorname ist erforderlich"),
   nachname: z.string(),
   handle: z.string(),
@@ -61,6 +63,7 @@ export const STEP_FIELDS = {
 
 export const STEP_SCHEMAS = {
   1: z.object({
+    avatar_config: avatarConfigSchema.nullable(),
     vorname: z.string().min(1, "Vorname ist erforderlich"),
     nachname: z.string(),
     handle: z.string(),

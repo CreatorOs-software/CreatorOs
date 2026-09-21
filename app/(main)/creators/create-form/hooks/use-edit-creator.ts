@@ -17,6 +17,7 @@ export function useEditCreator(creatorId: string) {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          avatar_config: values.avatar_config,
           full_name: name,
           handle: values.handle.trim() || null,
           email: values.email.trim() || null,
@@ -65,6 +66,7 @@ export function useEditCreator(creatorId: string) {
         return {
           creator: {
             ...prev.creator,
+            avatar_config: values.avatar_config,
             full_name: name,
             handle: values.handle.trim() || null,
             email: values.email.trim() || null,

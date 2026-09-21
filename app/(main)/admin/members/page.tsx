@@ -153,7 +153,7 @@ function InviteLinkBanner({ token, onDismiss }: { token: string; onDismiss: () =
 function MemberRow({ member }: { member: AgencyMember }) {
   return (
     <div className="flex items-center gap-3 py-3">
-      <Avatar initials={member.initials} size="sm" variant="team" />
+      <Avatar initials={member.initials} avatarConfig={member.avatar_config} seed={member.id} name={member.display_name} size="sm" variant="team" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{member.display_name ?? "—"}</p>
         <p className="text-xs text-muted-foreground">

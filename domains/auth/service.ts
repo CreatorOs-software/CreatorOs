@@ -15,17 +15,34 @@ type ProfileRow = {
   display_name: string | null;
   role: string | null;
   permissions: Record<string, unknown> | null;
+  avatar_config: import("@/lib/avatar").AvatarConfig | null;
 };
 
 export async function getAuthContext(supabase: SupabaseClient): Promise<AuthContext> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new AuthError();
 
-  const { data } = await supabase
+  const profileResult = await supabase
     .from("profiles")
-    .select("agency_id, display_name, role, permissions")
+    .select("agency_id, display_name, role, permissions, avatar_config")
     .eq("id", user.id)
     .maybeSingle();
+
+  let data = profileResult.data;
+  if (profileResult.error) {
+    const avatarColumnMissing =
+      profileResult.error.code === "42703" ||
+      profileResult.error.message.includes("avatar_config");
+    if (!avatarColumnMissing) throw profileResult.error;
+
+    const fallback = await supabase
+      .from("profiles")
+      .select("agency_id, display_name, role, permissions")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (fallback.error) throw fallback.error;
+    data = fallback.data ? { ...fallback.data, avatar_config: null } : null;
+  }
 
   const profile = data as ProfileRow | null;
   if (!profile || !profile.agency_id) throw new NoAgencyError();
@@ -39,6 +56,7 @@ export async function getAuthContext(supabase: SupabaseClient): Promise<AuthCont
     fullName: (user.user_metadata?.full_name as string | undefined) ?? null,
     agencyId: profile.agency_id as string,
     displayName: (profile.display_name as string | null) ?? null,
+    avatarConfig: profile.avatar_config ?? null,
     role,
     permissions,
   };

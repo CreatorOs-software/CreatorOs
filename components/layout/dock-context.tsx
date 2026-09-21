@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState } from "react";
 
-export type PanelId = "inbox" | "benachrichtigungen" | "notizen" | "todos";
+export type PanelId = "inbox" | "notizen" | "todos";
 
 interface DockContextType {
   dockVisible: boolean;

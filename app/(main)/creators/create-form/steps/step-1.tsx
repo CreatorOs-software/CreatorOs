@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Upload, FileText, X, Plus } from "lucide-react";
+import { Upload, FileText, Sparkles, X } from "lucide-react";
 import type {
   CreatorForm,
   CreatorField,
@@ -9,14 +9,14 @@ import type {
 } from "../creator-form.types";
 import { StepNav } from "./step-nav";
 import { Button, Checkbox, Input, Label } from "@talentos/ui";
+import { AvatarDisplay } from "@/components/ui/avatar-display";
+import { AvatarEditorDialog } from "@/components/ui/avatar-editor-dialog";
 
 interface Step1Props {
   form: CreatorForm;
   errors: StepErrors;
   contractFile: File | null;
   onContractFileChange: (file: File | null) => void;
-  profileImage: File | null;
-  onProfileImageChange: (file: File | null) => void;
   onNext: () => void;
 }
 
@@ -25,21 +25,10 @@ export function Step1({
   errors,
   contractFile,
   onContractFileChange,
-  onProfileImageChange,
   onNext,
 }: Step1Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-
-  function handleImageChange(file: File | null) {
-    onProfileImageChange(file);
-    if (file) {
-      setImagePreview(URL.createObjectURL(file));
-    } else {
-      setImagePreview(null);
-    }
-  }
+  const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
 
   function handleFileDrop(e: React.DragEvent) {
     e.preventDefault();
@@ -209,68 +198,31 @@ export function Step1({
               </div>
             </div>
 
-            {/* Profile image upload */}
-            <div className="flex flex-col items-center gap-3 w-52 shrink-0 border border-dashed rounded-sm p-3">
-              <div className="relative">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => imageInputRef.current?.click()}
-                  className="w-20 h-20 rounded-full border-2 border-dashed border-border bg-muted/30 hover:bg-muted/50 overflow-hidden p-0"
-                >
-                  {imagePreview ? (
-                    <img
-                      src={imagePreview}
-                      alt="Profilbild"
-                      className="w-full h-full object-cover"
+            <form.Subscribe selector={(state) => ({ avatar: state.values.avatar_config, first: state.values.vorname, last: state.values.nachname })}>
+              {({ avatar, first, last }) => {
+                const name = `${first} ${last}`.trim() || "Neuer Creator";
+                return (
+                  <div className="flex w-52 shrink-0 flex-col items-center gap-3 rounded-sm border border-dashed p-3">
+                    <AvatarDisplay config={avatar} seed={name} name={name} size="2xl" />
+                    <div className="text-center">
+                      <p className="text-xs font-semibold leading-snug">Avatar</p>
+                      <p className="text-[10px] text-muted-foreground">Individuell konfigurierbar</p>
+                    </div>
+                    <Button type="button" variant="outline" onClick={() => setAvatarDialogOpen(true)}>
+                      <Sparkles className="size-4" /> Avatar erstellen
+                    </Button>
+                    <AvatarEditorDialog
+                      open={avatarDialogOpen}
+                      onOpenChange={setAvatarDialogOpen}
+                      value={avatar}
+                      seed={name}
+                      name={name}
+                      onSave={(config) => form.setFieldValue("avatar_config", config)}
                     />
-                  ) : (
-                    <span className="text-xs text-muted-foreground">Bild</span>
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => imageInputRef.current?.click()}
-                  className="absolute -top-1 -right-1 size-5 rounded-full bg-background border border-border hover:bg-muted shadow-sm"
-                >
-                  <Plus className="w-3 h-3 text-foreground" />
-                </Button>
-                {imagePreview && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleImageChange(null)}
-                    className="absolute -bottom-1 -right-1 size-5 rounded-full bg-background border border-border hover:bg-muted shadow-sm"
-                  >
-                    <X className="w-2.5 h-2.5 text-foreground" />
-                  </Button>
-                )}
-              </div>
-              <div className="text-center">
-                <p className="text-xs font-semibold leading-snug">Profilbild</p>
-                <p className="text-[10px] text-muted-foreground">Max. 1 MB</p>
-              </div>
-              <Button
-                variant={"outline"}
-                onClick={() => imageInputRef.current?.click()}
-              >
-                Auswählen
-              </Button>
-              <input
-                ref={imageInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0] ?? null;
-                  handleImageChange(file);
-                  e.target.value = "";
-                }}
-              />
-            </div>
+                  </div>
+                );
+              }}
+            </form.Subscribe>
           </div>
         </div>
       </div>

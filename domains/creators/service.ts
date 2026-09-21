@@ -30,8 +30,9 @@ export const CreatorService = {
 
   async patch(id: string, patch: CreatorPatch): Promise<void> {
     const supabase = await createClient();
-    await getAuthContext(supabase);
-    return CreatorRepository.patch(supabase, id, patch);
+    const { agencyId, permissions } = await getAuthContext(supabase);
+    if (!permissions.edit_creators) throw new Error("Missing edit_creators permission");
+    return CreatorRepository.patch(supabase, id, agencyId, patch);
   },
 
   async remove(id: string): Promise<void> {

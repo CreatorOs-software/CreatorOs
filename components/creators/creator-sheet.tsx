@@ -127,7 +127,7 @@ export function CreatorSheet({
               </div>
 
               <div className="flex items-start gap-3">
-                <AvatarCreator initials={creator.initials} size="lg" />
+                <AvatarCreator initials={creator.initials} avatarConfig={creator.avatar_config} seed={creator.id} name={creator.full_name} size="lg" />
                 <div className="min-w-0 flex-1">
                   <SheetTitle className="truncate">
                     {creator.full_name}

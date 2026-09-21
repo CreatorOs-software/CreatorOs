@@ -44,7 +44,7 @@ export function CreatorCard({
       {/* Initials avatar */}
       <div className="mb-5 flex justify-center relative z-10">
         <div className="relative">
-          <AvatarCreator initials={c.initials} size="2xl" />
+          <AvatarCreator initials={c.initials} avatarConfig={c.avatar_config} seed={c.id} name={c.full_name} size="2xl" />
           {/* Glow ring */}
           <div className="absolute inset-0 rounded-xl border-2 border-foreground/20 opacity-0 group-hover:opacity-100 transition-all duration-200" />
         </div>

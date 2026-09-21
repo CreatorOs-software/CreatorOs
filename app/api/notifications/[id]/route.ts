@@ -3,7 +3,13 @@ import { z } from "zod";
 import { toErrorResponse } from "@/lib/auth-context";
 import { NotificationService } from "@/domains/notifications";
 
-const patchSchema = z.object({ status: z.literal("DISMISSED") });
+const patchSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("dismiss") }),
+  z.object({ action: z.literal("restore") }),
+  z.object({ action: z.literal("read"), unread: z.boolean() }),
+  z.object({ action: z.literal("acknowledge") }),
+  z.object({ action: z.literal("snooze"), until: z.string().datetime() }),
+]);
 
 export async function PATCH(
   req: NextRequest,
@@ -15,7 +21,16 @@ export async function PATCH(
     if (!parsed.success) {
       return Response.json({ error: "Ungültige Daten" }, { status: 400 });
     }
-    const notification = await NotificationService.dismiss(id);
+    const notification = parsed.data.action === "dismiss"
+      ? await NotificationService.dismiss(id)
+      : await NotificationService.updateInteraction(
+          id,
+          parsed.data.action === "read"
+            ? { type: "read", unread: parsed.data.unread }
+            : parsed.data.action === "snooze"
+              ? { type: "snooze", until: parsed.data.until }
+              : { type: parsed.data.action },
+        );
     return Response.json({ notification });
   } catch (e) {
     return toErrorResponse(e);

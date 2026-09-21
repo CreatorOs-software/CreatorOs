@@ -10,6 +10,8 @@ import type {
 const NOTIFICATION_SELECT = `
   id, type, severity, subject_type, subject_id, vorgang_key, creator_id,
   title, reason, href, payload, status, todo_id, created_at, updated_at, read_at,
+  rule_key, entity_key, stage, reminder_count, last_triggered_at,
+  next_reminder_at, acknowledged_at, snoozed_until, resolved_at, is_condition,
   creator:creator_id (id, full_name, initials)
 `;
 
@@ -46,8 +48,9 @@ export const NotificationRepository = {
       .select(NOTIFICATION_SELECT)
       .eq("agency_id", agencyId)
       .eq("recipient_id", userId)
-      .eq("status", "OPEN")
-      .order("created_at", { ascending: false });
+      .in("status", ["OPEN", "DISMISSED", "CONVERTED"])
+      .order("updated_at", { ascending: false })
+      .limit(100);
     if (error) throw error;
     return (data ?? []) as unknown as Notification[];
   },
@@ -88,6 +91,46 @@ export const NotificationRepository = {
       .single();
     if (error) throw error;
     return data as unknown as Notification;
+  },
+
+  async updateInteraction(
+    supabase: SupabaseClient,
+    id: string,
+    agencyId: string,
+    userId: string,
+    patch: {
+      read_at?: string | null;
+      acknowledged_at?: string | null;
+      snoozed_until?: string | null;
+      status?: "OPEN" | "DISMISSED";
+    },
+  ): Promise<Notification> {
+    const { data, error } = await supabase
+      .from("notifications")
+      .update(patch)
+      .eq("id", id)
+      .eq("agency_id", agencyId)
+      .eq("recipient_id", userId)
+      .select(NOTIFICATION_SELECT)
+      .single();
+    if (error) throw error;
+    return data as unknown as Notification;
+  },
+
+  async updateCondition(
+    supabase: SupabaseClient,
+    id: string,
+    agencyId: string,
+    userId: string,
+    patch: Record<string, unknown>,
+  ): Promise<void> {
+    const { error } = await supabase
+      .from("notifications")
+      .update(patch)
+      .eq("id", id)
+      .eq("agency_id", agencyId)
+      .eq("recipient_id", userId);
+    if (error) throw error;
   },
 
   async attachTodo(

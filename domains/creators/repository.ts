@@ -74,12 +74,14 @@ export const CreatorRepository = {
   async patch(
     supabase: SupabaseClient,
     id: string,
+    agencyId: string,
     patch: CreatorPatch,
   ): Promise<void> {
     const { error } = await supabase
       .from("creators")
       .update(patch)
-      .eq("id", id);
+      .eq("id", id)
+      .eq("agency_id", agencyId);
 
     if (error) throw new Error(error.message);
   },
