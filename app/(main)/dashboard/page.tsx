@@ -4,6 +4,10 @@ import { KiAnfragenCard } from "@/components/dashboard/ki-anfragen-card";
 import { TermineCard } from "@/components/dashboard/termine-card";
 import { CreatorCard } from "@/components/dashboard/creator-card";
 import { IncomeCard } from "@/components/dashboard/income-card";
+import {
+  InvoicesCard,
+  type OpenInvoice,
+} from "@/components/dashboard/invoices-card";
 import { OnboardingCard } from "@/components/dashboard/onboarding-card";
 import { OnboardingTaskCard } from "@/components/dashboard/onboarding-task.card";
 import { StatGroup } from "@/components/dashboard/stat-card";
@@ -13,6 +17,46 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const auth = await getAuthContext(supabase);
   const displayName = auth.displayName ?? auth.fullName ?? auth.email ?? "";
+
+  const { data: deals } = await supabase
+    .from("deals")
+    .select("id, title, payment_items, brands(company_name, short_code)")
+    .eq("agency_id", auth.agencyId);
+
+  const openInvoices = (deals ?? [])
+    .flatMap((deal) => {
+      const paymentItems = Array.isArray(deal.payment_items)
+        ? (deal.payment_items as Array<{
+            label?: string;
+            amount?: number;
+            invoice_date?: string;
+            payment_term?: number;
+            paid_at?: string;
+          }>)
+        : [];
+
+      return paymentItems.flatMap((item, index): OpenInvoice[] => {
+        if (!item.invoice_date || item.paid_at) return [];
+
+        const dueDate = new Date(`${item.invoice_date}T00:00:00Z`);
+        if (Number.isNaN(dueDate.getTime())) return [];
+        dueDate.setUTCDate(dueDate.getUTCDate() + (item.payment_term ?? 0));
+        const brand = Array.isArray(deal.brands)
+          ? (deal.brands[0] ?? null)
+          : deal.brands;
+
+        return [{
+          id: `${deal.id}-${index}`,
+          dealId: deal.id,
+          dealTitle: deal.title,
+          label: item.label ?? "Rechnung",
+          amount: Number(item.amount ?? 0),
+          dueDate: dueDate.toISOString().slice(0, 10),
+          brand,
+        }];
+      });
+    })
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 
   return (
     <div className="h-full flex flex-col">
@@ -54,7 +98,10 @@ export default async function DashboardPage() {
 
         {/* Row 1, col 4-9 */}
         <IncomeCard className="col-span-6 lg:col-span-3" />
-        <IncomeCard className="col-span-6 lg:col-span-3" />
+        <InvoicesCard
+          invoices={openInvoices}
+          className="col-span-6 lg:col-span-3"
+        />
 
         {/* col 10-12 — spans row 1 + row 2, flex column inside */}
         <div className="col-span-12 lg:col-span-3 lg:row-span-2 flex flex-col gap-4">

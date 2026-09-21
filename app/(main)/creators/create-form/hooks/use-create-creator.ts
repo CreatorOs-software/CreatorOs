@@ -9,6 +9,10 @@ export function useCreateCreator() {
   return useMutation({
     mutationFn: async (values: CreatorFormValues) => {
       const name = fullName(values.vorname, values.nachname);
+      const goals = values.goals
+        .filter((goal) => goal.value && goal.type && goal.period)
+        .map((goal) => ({ ...goal, value: Number(goal.value) }));
+      const primaryGoal = goals[0];
       const res = await fetch("/api/creators", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -25,9 +29,10 @@ export function useCreateCreator() {
           country: values.country.trim() || null,
           niche: values.niche,
           bio: values.bio.trim() || null,
-          goal_value: Number(values.goal_value) || null,
-          goal_type: values.goal_type || null,
-          goal_period: values.goal_period || null,
+          goals,
+          goal_value: primaryGoal?.value ?? null,
+          goal_type: primaryGoal?.type ?? null,
+          goal_period: primaryGoal?.period ?? null,
           weitere_ziele: values.weitere_ziele.trim() || null,
           min_kooperation_betrag: Number(values.min_kooperation_betrag) || null,
           wunsche_anforderungen: values.wunsche_anforderungen.trim() || null,

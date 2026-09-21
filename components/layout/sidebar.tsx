@@ -58,10 +58,10 @@ function MobileAppCard() {
       <RibbonGradient className="absolute inset-0 -z-10" />
       <div className="mb-3 w-28">
         <Image
-          src="/logos/png/prodigy-one-logo-on-petrol.png"
+          src="/logos/svg/prodigy-one-logo-on-petrol.svg"
           alt="Prodigy One"
-          width={2000}
-          height={443}
+          width={289.11}
+          height={64}
           className="h-auto w-full object-contain"
         />
       </div>

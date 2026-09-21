@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+export const creatorGoalSchema = z.object({
+  value: z.string(),
+  type: z.enum(["", "umsatz", "kooperationen", "post"]),
+  period: z.enum(["", "30_tage", "3_monate", "1_jahr"]),
+});
+
+export type CreatorGoalFormValue = z.infer<typeof creatorGoalSchema>;
+
 export const creatorFormSchema = z.object({
   vorname: z.string().min(1, "Vorname ist erforderlich"),
   nachname: z.string(),
@@ -22,9 +30,7 @@ export const creatorFormSchema = z.object({
   niche: z.array(z.string()),
   bio: z.string(),
   status: z.enum(["active", "on-break", "inactive"]),
-  goal_value: z.string(),
-  goal_type: z.enum(["", "umsatz", "kooperationen", "post"]),
-  goal_period: z.enum(["", "30_tage", "3_monate", "1_jahr"]),
+  goals: z.array(creatorGoalSchema),
   weitere_ziele: z.string(),
   min_kooperation_betrag: z
     .string()
@@ -48,7 +54,7 @@ export type CreatorFormValues = z.infer<typeof creatorFormSchema>;
 export const STEP_FIELDS = {
   1: ["vorname", "nachname", "handle", "email", "phone", "whatsapp_opt_in", "street", "postal_code", "city", "country"],
   2: ["niche", "bio", "status"],
-  3: ["goal_value", "goal_type", "goal_period", "weitere_ziele", "min_kooperation_betrag", "wunsche_anforderungen"],
+  3: ["goals", "weitere_ziele", "min_kooperation_betrag", "wunsche_anforderungen"],
   4: ["platforms", "followers", "monthly_revenue"],
   5: [],
 } as const satisfies Record<number, (keyof CreatorFormValues)[]>;
@@ -81,6 +87,19 @@ export const STEP_SCHEMAS = {
     status: z.enum(["active", "on-break", "inactive"]),
   }),
   3: z.object({
+    goals: z.array(creatorGoalSchema).superRefine((goals, ctx) => {
+      goals.forEach((goal, index) => {
+        const isEmpty = !goal.value && !goal.type && !goal.period;
+        if (isEmpty) return;
+        if (!goal.value || Number(goal.value) <= 0 || !goal.type || !goal.period) {
+          ctx.addIssue({
+            code: "custom",
+            path: [index],
+            message: "Bitte Wert, Ziel-Typ und Zeitraum vollständig ausfüllen.",
+          });
+        }
+      });
+    }),
     wunsche_anforderungen: z.string().max(1000, "Maximal 1000 Zeichen"),
     min_kooperation_betrag: z
       .string()

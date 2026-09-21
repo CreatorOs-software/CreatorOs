@@ -42,9 +42,13 @@ function toFormValues(creator: Creator): CreatorFormValues {
     niche: creator.niche ?? [],
     bio: creator.bio ?? "",
     status: creator.status,
-    goal_value: creator.goal_value ? String(creator.goal_value) : "",
-    goal_type: (creator.goal_type ?? "") as CreatorFormValues["goal_type"],
-    goal_period: (creator.goal_period ?? "") as CreatorFormValues["goal_period"],
+    goals: creator.goals?.length
+      ? creator.goals.map((goal) => ({ ...goal, value: String(goal.value) }))
+      : [{
+          value: creator.goal_value ? String(creator.goal_value) : "",
+          type: creator.goal_type ?? "",
+          period: creator.goal_period ?? "",
+        }],
     weitere_ziele: creator.weitere_ziele ?? "",
     min_kooperation_betrag: creator.min_kooperation_betrag
       ? String(creator.min_kooperation_betrag)

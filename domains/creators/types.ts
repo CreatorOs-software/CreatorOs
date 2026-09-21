@@ -4,6 +4,12 @@ export type CreatorRate = {
   bundle?: boolean;
 };
 
+export type CreatorGoal = {
+  value: number;
+  type: "umsatz" | "kooperationen" | "post";
+  period: "30_tage" | "3_monate" | "1_jahr";
+};
+
 export type Creator = {
   id: string;
   agency_id: string;
@@ -31,6 +37,7 @@ export type Creator = {
   goal_value: number | null;
   goal_type: "umsatz" | "kooperationen" | "post" | null;
   goal_period: "30_tage" | "3_monate" | "1_jahr" | null;
+  goals: CreatorGoal[];
   weitere_ziele: string | null;
   min_kooperation_betrag: number | null;
   wunsche_anforderungen: string | null;
