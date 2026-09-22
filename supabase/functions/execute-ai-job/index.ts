@@ -5,14 +5,16 @@ import { PROMPT_REGISTRY, getAdapter } from "./registry.ts";
 import { buildEmailAnalysisContext } from "./tasks/incoming-email-analysis/context.ts";
 import { buildAttachmentAnalyzeContext } from "./tasks/attachment-analyze/context.ts";
 import { maybeEmitInboundNotification } from "./notify.ts";
+import { buildCreatorRequestMatchingContext } from "./tasks/creator-request-matching/context.ts";
 
 type Payload = {
   email_thread_id: string;
   agency_id: string;
-  mode?: "label" | "analyse" | "proofread" | "analyze-attachment";
+  mode?: "label" | "analyse" | "matching" | "proofread" | "analyze-attachment";
   text?: string;
   current_anfrage?: Record<string, unknown> | null;
   email_attachment_id?: string;
+  creator_id?: string;
 };
 
 type ThreadRow = {
@@ -90,6 +92,80 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
+
+    if (mode === "matching") {
+      if (!payload.creator_id) return json({ error: "creator_id required" }, 400);
+
+      const analyseDef = PROMPT_REGISTRY.INCOMING_EMAIL_ANALYSIS;
+      const emailContext = await buildEmailAnalysisContext(
+        { email_thread_id, current_anfrage: null },
+        agency_id,
+        db,
+      );
+      const analyseResponse = await getAdapter(analyseDef.provider).execute({
+        system: analyseDef.system,
+        messages: analyseDef.buildMessages(emailContext),
+        model: analyseDef.model,
+        maxTokens: analyseDef.maxTokens,
+      });
+      const extraction = analyseDef.outputSchema.parse(JSON.parse(analyseResponse.content));
+
+      const matchingContext = await buildCreatorRequestMatchingContext(
+        {
+          creator_id: payload.creator_id,
+          request: extraction,
+          email: {
+            subject: emailContext.email.subject,
+            sender_email: emailContext.email.sender_email,
+            sender_name: emailContext.email.sender_name,
+          },
+        },
+        agency_id,
+        db,
+      );
+      const matchingDef = PROMPT_REGISTRY.CREATOR_REQUEST_MATCHING;
+      const matchingResponse = await getAdapter(matchingDef.provider).execute({
+        system: matchingDef.system,
+        messages: matchingDef.buildMessages(matchingContext),
+        model: matchingDef.model,
+        maxTokens: matchingDef.maxTokens,
+      });
+      const aiMatching = matchingDef.outputSchema.parse(JSON.parse(matchingResponse.content));
+      const weights = {
+        goal_fit: 30,
+        budget_fit: 25,
+        content_fit: 20,
+        timing_fit: 15,
+        brand_fit: 10,
+      } as const;
+      const scoredDimensions = Object.entries(weights).flatMap(([key, weight]) => {
+        const score = aiMatching.dimensions[key as keyof typeof weights].score;
+        return score == null ? [] : [{ score, weight }];
+      });
+      const totalWeight = scoredDimensions.reduce((sum, item) => sum + item.weight, 0);
+      const weightedScore = totalWeight === 0
+        ? 0
+        : Math.round(
+          scoredDimensions.reduce((sum, item) => sum + item.score * item.weight, 0) /
+            totalWeight,
+        );
+      const hasFailedRule = matchingContext.deterministic_rules.some((rule) => rule.status === "fail");
+      const score = hasFailedRule ? Math.min(weightedScore, 69) : weightedScore;
+      const verdict = score >= 75 && !hasFailedRule
+        ? "strong"
+        : score >= 45
+          ? "conditional"
+          : "weak";
+      const matching = { ...aiMatching, score, verdict };
+
+      return json({
+        extraction,
+        matching,
+        goal_progress: matchingContext.goal_progress,
+        deterministic_rules: matchingContext.deterministic_rules,
+        prompt_version: matchingDef.version,
+      });
+    }
 
     // ── Analyse mode: extract WorkPanel fields from email, no DB writes ──────
     if (mode === "analyse") {

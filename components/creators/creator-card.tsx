@@ -44,7 +44,12 @@ export function CreatorCard({
       {/* Initials avatar */}
       <div className="mb-5 flex justify-center relative z-10">
         <div className="relative">
-          <Avatar initials={c.initials} avatarConfig={c.avatar_config} name={c.full_name} size="2xl" />
+          <Avatar
+            initials={c.initials}
+            avatarConfig={c.avatar_config}
+            name={c.full_name}
+            size="2xl"
+          />
           {/* Glow ring */}
           <div className="absolute inset-0 rounded-xl border-2 border-foreground/20 opacity-0 group-hover:opacity-100 transition-all duration-200" />
         </div>
@@ -84,27 +89,31 @@ export function CreatorCard({
 
       {/* Action buttons */}
       <div className="mt-4 flex gap-2 relative z-10">
-        <Button
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenPlatformSheet();
-          }}
-          className="flex-1"
-          aria-label="Schnittstellen verwalten"
-          variant={"outline"}
-        >
-          <Puzzle className="mx-auto h-4 w-4" />
-        </Button>
-        <Button
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenSheet();
-          }}
-          className="flex-1"
-          variant={"outline"}
-        >
-          <Eye className="mx-auto h-4 w-4 " />
-        </Button>
+        <div className="flex flex-1 items-center justify-center">
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenPlatformSheet();
+            }}
+            aria-label="Schnittstellen verwalten"
+            variant={"outline"}
+            size="icon"
+          >
+            <Puzzle className="mx-auto h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex flex-1 items-center justify-center">
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenSheet();
+            }}
+            variant={"outline"}
+            size="icon"
+          >
+            <Eye className="mx-auto h-4 w-4 " />
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -6,11 +6,9 @@ import {
   ChevronDown,
   Inbox,
   Mail,
-  MessageSquare,
   Pencil,
   Plus,
   Send,
-  Settings2,
   Trash2,
   X,
 } from "lucide-react";
@@ -173,43 +171,45 @@ function LabelsSection({
           {labels.map((label) => {
             const isActive = activeLabelId === label.id;
             return (
-              <Button
+              <div
                 key={label.id}
-                type="button"
-                variant="ghost"
-                onClick={() => onLabelClick(label.id)}
                 className={cn(
-                  "h-auto group flex w-full items-center justify-start gap-2 rounded-lg px-2 py-1.5 text-left",
+                  "group flex w-full items-center rounded-lg",
                   isActive ? "bg-muted" : "hover:bg-muted/60",
                 )}
               >
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: label.color }}
-                />
-                <span
-                  className={cn(
-                    "flex-1 truncate text-[13px]",
-                    isActive
-                      ? "font-medium text-foreground"
-                      : "text-muted-foreground",
-                  )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => onLabelClick(label.id)}
+                  className="h-auto min-w-0 flex-1 justify-start gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-transparent"
                 >
-                  {label.name}
-                </span>
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: label.color }}
+                  />
+                  <span
+                    className={cn(
+                      "flex-1 truncate text-[13px]",
+                      isActive
+                        ? "font-medium text-foreground"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {label.name}
+                  </span>
+                </Button>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void onDeleteLabel(label.id);
-                  }}
-                  className="size-auto hidden rounded text-muted-foreground hover:text-foreground hover:bg-transparent group-hover:block"
+                  aria-label={`${label.name} löschen`}
+                  onClick={() => void onDeleteLabel(label.id)}
+                  className="mr-2 size-auto hidden rounded text-muted-foreground hover:bg-transparent hover:text-foreground group-hover:block focus-visible:block"
                 >
                   <X className="h-3 w-3" />
                 </Button>
-              </Button>
+              </div>
             );
           })}
         </div>

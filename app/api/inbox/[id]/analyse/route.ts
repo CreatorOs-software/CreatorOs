@@ -2,107 +2,10 @@ import { z } from "zod";
 import { getAuthContext } from "@/domains/auth";
 import { createClient } from "@/lib/supabase/server";
 import { toErrorResponse } from "@/lib/auth-context";
-
-type AiDeliverable = {
-  count: number;
-  content_type: string;
-  platform: string;
-  draft_deadline: string | null;
-  freigabe_deadline: string | null;
-  live_date: string | null;
-};
-
-type AiPaymentItem = {
-  label: string;
-  amount: number;
-  invoice_date: string | null;
-  payment_term: 14 | 30 | 45;
-};
-
-type AiGuidelines = {
-  labeling: string | null;
-  wording: string | null;
-  nogo: string | null;
-  hashtags: string[];
-} | null;
-
-type AiTrackingAssets = {
-  discount_code: string | null;
-  affiliate_links: string[];
-  utm_params: string | null;
-} | null;
-
-type AiResult = {
-  creator_id: string | null;
-  creator_confidence: number;
-  contact: string | null;
-  title: string | null;
-  product: string | null;
-  budget: number | null;
-  budget_offer: number | null;
-  fee: number | null;
-  period: string | null;
-  campaign_start: string | null;
-  campaign_end: string | null;
-  notes: string | null;
-  deliverables: AiDeliverable[];
-  payment_items: AiPaymentItem[];
-  guidelines: AiGuidelines;
-  tracking_assets: AiTrackingAssets;
-  missing_information: string[];
-  suggested_reply: string | null;
-};
-
-export type AnalyseResult = AiResult & {
-  brand_name: string | null;
-  brand_id: string | null;
-  brand_is_new: boolean;
-  anfrage_id: string | null;
-};
+import { matchBrandFromSender } from "@/domains/communication/brand-matching";
+import type { AiAnalysisResult, AnalyseResult } from "@/domains/communication/ai-analysis";
 
 const bodySchema = z.object({ mode: z.enum(["create", "merge"]).optional() });
-
-function normalize(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
-function matchBrand(
-  senderEmail: string,
-  senderName: string | null,
-  brands: { id: string; company_name: string }[],
-  contacts: { brand_id: string; email: string | null }[],
-): { id: string; company_name: string } | null {
-  // 1. Exact contact email match
-  const contactMatch = contacts.find(
-    (c) => c.email && c.email.toLowerCase() === senderEmail.toLowerCase(),
-  );
-  if (contactMatch) {
-    return brands.find((b) => b.id === contactMatch.brand_id) ?? null;
-  }
-
-  // 2. Email domain vs company name
-  const domain = senderEmail.split("@")[1]?.split(".")[0] ?? "";
-  if (domain) {
-    const domainNorm = normalize(domain);
-    const byDomain = brands.find((b) => {
-      const n = normalize(b.company_name);
-      return n.includes(domainNorm) || domainNorm.includes(n);
-    });
-    if (byDomain) return byDomain;
-  }
-
-  // 3. Sender name vs company name
-  if (senderName) {
-    const nameNorm = normalize(senderName);
-    const byName = brands.find((b) => {
-      const n = normalize(b.company_name);
-      return n.includes(nameNorm) || nameNorm.includes(n);
-    });
-    if (byName) return byName;
-  }
-
-  return null;
-}
 
 /** Compact snapshot passed to the AI for orientation on a follow-up merge. */
 function anfrageSnapshot(a: Record<string, unknown>): Record<string, unknown> {
@@ -203,11 +106,11 @@ export async function POST(
       return Response.json({ error: `AI analyse failed (${aiRes.status}): ${text}` }, { status: 500 });
     }
 
-    const aiData = await aiRes.json() as AiResult;
+    const aiData = await aiRes.json() as AiAnalysisResult;
     const brands = brandsRes.data ?? [];
     const contacts = contactsRes.data ?? [];
 
-    const matchedBrand = matchBrand(
+    const matchedBrand = matchBrandFromSender(
       thread.sender_email,
       thread.sender_name,
       brands,

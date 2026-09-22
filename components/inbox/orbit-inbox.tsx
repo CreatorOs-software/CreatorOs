@@ -121,27 +121,20 @@ export function OrbitInbox() {
   // Deeplink aus der Glocke / vom Dashboard: /inbox?thread=<id> überschreibt
   // den zuletzt geöffneten Thread.
   const searchParams = useSearchParams();
-  const [selectedId, setSelectedId] = useState<string | null>(
-    () =>
-      searchParams.get("thread") ??
-      localStorage.getItem("inbox:selectedThreadId"),
+  const [selectedId, setSelectedId] = useState<string | null>(() =>
+    searchParams.get("thread"),
   );
 
   const [selectedIntegrationId, setSelectedIntegrationId] = useState<
     string | null
-  >(
-    () =>
-      searchParams.get("integration_id") ??
-      localStorage.getItem("inbox:selectedIntegrationId"),
-  );
+  >(() => searchParams.get("integration_id"));
+  const [storageHydrated, setStorageHydrated] = useState(false);
   const [category, setCategory] = useState("all");
   const [folder, setFolder] = useState<Folder>("inbox");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [workPanelOpen, setWorkPanelOpen] = useState(true);
-  const [workPanelWidth, setWorkPanelWidth] = useState<number>(
-    readStoredWorkPanelWidth,
-  );
+  const [workPanelWidth, setWorkPanelWidth] = useState<number>(WORK_PANEL_DEFAULT);
   const [isResizing, setIsResizing] = useState(false);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const resizeRef = useRef<{
@@ -159,6 +152,22 @@ export function OrbitInbox() {
   // und geöffnet wurde (siehe Effect weiter unten, der auf `threads` lauert).
   const pendingThreadIdRef = useRef<string | null>(null);
   const threadListRef = useRef<HTMLDivElement | null>(null);
+
+  // Client Components werden beim ersten Laden auch serverseitig gerendert.
+  // Persistierte Browser-Werte deshalb erst nach der Hydration einlesen; URL-
+  // Parameter haben weiterhin Vorrang vor dem zuletzt gespeicherten Zustand.
+  useEffect(() => {
+    if (storageHydrated) return;
+    if (!searchParams.get("thread")) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedId(localStorage.getItem("inbox:selectedThreadId"));
+    }
+    if (!searchParams.get("integration_id")) {
+      setSelectedIntegrationId(localStorage.getItem("inbox:selectedIntegrationId"));
+    }
+    setWorkPanelWidth(readStoredWorkPanelWidth());
+    setStorageHydrated(true);
+  }, [searchParams, storageHydrated]);
 
   // Der Initializer oben greift nur beim allerersten Mount. Navigiert man
   // erneut mit einem anderen `?thread=` hierher, während OrbitInbox schon
@@ -290,7 +299,7 @@ export function OrbitInbox() {
   }, [fetchNextPage]);
 
   useEffect(() => {
-    if (integrations.length === 0) return;
+    if (!storageHydrated || integrations.length === 0) return;
     const stillValid = integrations.some((i) => i.id === selectedIntegrationId);
     // The first response supplies mailbox metadata; subsequent list requests
     // are scoped to the selected mailbox on the server. Also self-heals when
@@ -302,7 +311,7 @@ export function OrbitInbox() {
       setSelectedIntegrationId(integrations[0].id);
       localStorage.setItem("inbox:selectedIntegrationId", integrations[0].id);
     }
-  }, [integrations, selectedIntegrationId]);
+  }, [integrations, selectedIntegrationId, storageHydrated]);
 
   // Kick off label-batch once on load so any pending threads get labeled.
   useEffect(() => {
@@ -313,17 +322,19 @@ export function OrbitInbox() {
 
   // Persist the open thread so the inbox reopens where the user left off.
   useEffect(() => {
+    if (!storageHydrated) return;
     if (selectedId) localStorage.setItem("inbox:selectedThreadId", selectedId);
     else localStorage.removeItem("inbox:selectedThreadId");
-  }, [selectedId]);
+  }, [selectedId, storageHydrated]);
 
   // Persist the work-panel width across sessions.
   useEffect(() => {
+    if (!storageHydrated) return;
     localStorage.setItem(
       WORK_PANEL_WIDTH_KEY,
       String(Math.round(workPanelWidth)),
     );
-  }, [workPanelWidth]);
+  }, [storageHydrated, workPanelWidth]);
 
   function handleResizeStart(e: React.PointerEvent<HTMLDivElement>) {
     e.preventDefault();

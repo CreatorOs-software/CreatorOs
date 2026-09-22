@@ -74,11 +74,19 @@ export type NewBrandData = {
   extractedData: ExtractedEmailData;
 };
 
+import type { MatchingResponse } from "@/domains/matching";
+
 export type WorkPanelState =
   | { phase: "idle" }
   | { phase: "scanning"; mode: "create" | "merge"; anfrageId?: string }
   | { phase: "not-coop" }
-  | { phase: "matching"; creatorId: string | null }
+  | {
+      phase: "matching";
+      creatorId: string | null;
+      status: "idle" | "loading" | "error" | "success";
+      error?: string;
+      response?: MatchingResponse;
+    }
   | { phase: "new-brand"; newBrand: NewBrandData }
   | { phase: "extracted"; data: ExtractedEmailData; merge?: { anfrageId: string } }
   | { phase: "vorgang"; vorgang: LocalVorgang };

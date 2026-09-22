@@ -1,6 +1,7 @@
 "use client";
 
-import type { AnalyseResult } from "@/app/api/inbox/[id]/analyse/route";
+import type { AnalyseResult } from "@/domains/communication/ai-analysis";
+import type { MatchingResponse } from "@/domains/matching";
 import { cn } from "@/lib/utils";
 import { Button } from "@talentos/ui";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -191,6 +192,47 @@ async function runAnalyse(
   }
   const data = (await res.json()) as AnalyseResult;
 
+  const extractedData = toExtractedEmailData(data);
+
+  if (mode === "merge") {
+    const id = anfrageId ?? data.anfrage_id;
+    if (!id) throw new Error("Keine verknüpfte Anfrage gefunden");
+    return {
+      phase: "extracted",
+      data: extractedData,
+      merge: { anfrageId: id },
+    };
+  }
+
+  if (data.brand_is_new) {
+    return {
+      phase: "new-brand",
+      newBrand: {
+        brand_name: data.brand_name ?? "",
+        industry: null,
+        extractedData,
+      },
+    };
+  }
+
+  return { phase: "extracted", data: extractedData };
+}
+
+async function runMatching(threadId: string, creatorId: string): Promise<MatchingResponse> {
+  const response = await fetch(`/api/inbox/${threadId}/matching`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ creatorId }),
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? "Matching fehlgeschlagen");
+  }
+  return response.json() as Promise<MatchingResponse>;
+}
+
+function toExtractedEmailData(data: AnalyseResult): ExtractedEmailData {
+
   const aiDeliverables = (data.deliverables ?? []).map((d) => ({
     count: d.count,
     content_type: d.content_type,
@@ -229,7 +271,7 @@ async function runAnalyse(
     (t.discount_code || t.utm_params || (t.affiliate_links?.length ?? 0) > 0)
   );
 
-  const extractedData = {
+  return {
     brand: data.brand_name ?? "",
     contact: data.contact ?? "",
     creatorId: data.creator_id,
@@ -274,29 +316,6 @@ async function runAnalyse(
       ...(trackingDetected ? ["trackingAssets"] : []),
     ],
   };
-
-  if (mode === "merge") {
-    const id = anfrageId ?? data.anfrage_id;
-    if (!id) throw new Error("Keine verknüpfte Anfrage gefunden");
-    return {
-      phase: "extracted",
-      data: extractedData,
-      merge: { anfrageId: id },
-    };
-  }
-
-  if (data.brand_is_new) {
-    return {
-      phase: "new-brand",
-      newBrand: {
-        brand_name: data.brand_name ?? "",
-        industry: null,
-        extractedData,
-      },
-    };
-  }
-
-  return { phase: "extracted", data: extractedData };
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -366,6 +385,41 @@ export function WorkPanel({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workState.phase, selected?.id]);
+
+  useEffect(() => {
+    if (
+      workState.phase !== "matching" ||
+      workState.status !== "loading" ||
+      !workState.creatorId ||
+      !selected
+    ) return;
+
+    let cancelled = false;
+    runMatching(selected.id, workState.creatorId)
+      .then((response) => {
+        if (!cancelled) {
+          onSetWorkState({
+            phase: "matching",
+            creatorId: workState.creatorId,
+            status: "success",
+            response,
+          });
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          onSetWorkState({
+            phase: "matching",
+            creatorId: workState.creatorId,
+            status: "error",
+            error: error instanceof Error ? error.message : "Matching fehlgeschlagen",
+          });
+        }
+      });
+
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workState.phase, workState.phase === "matching" ? workState.status : null, selected?.id]);
 
   return (
     <div
@@ -444,6 +498,7 @@ export function WorkPanel({
                 onSetWorkState({
                   phase: "matching",
                   creatorId: mailboxCreatorId,
+                  status: "idle",
                 })
               }
               onBriefingExtracted={(filename, extracted) =>
@@ -461,8 +516,25 @@ export function WorkPanel({
               thread={selected}
               creators={creators}
               creatorId={workState.creatorId}
+              status={workState.status}
+              error={workState.error}
+              response={workState.response}
               onSetWorkState={onSetWorkState}
-              onAnalyse={() => startAnalyse("create")}
+              onRun={() => {
+                if (!workState.creatorId) return;
+                onSetWorkState({
+                  phase: "matching",
+                  creatorId: workState.creatorId,
+                  status: "loading",
+                });
+              }}
+              onUseExtraction={() => {
+                if (!workState.response) return;
+                onSetWorkState({
+                  phase: "extracted",
+                  data: toExtractedEmailData(workState.response.extraction),
+                });
+              }}
             />
           )}
           {selected && workState.phase === "new-brand" && (

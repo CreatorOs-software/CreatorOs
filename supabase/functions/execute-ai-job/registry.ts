@@ -6,6 +6,7 @@ import { incomingEmailAnalysisPrompt } from "./tasks/incoming-email-analysis/pro
 import { emailLabelPrompt } from "./tasks/email-label/prompt.ts";
 import { emailDraftProofreadPrompt } from "./tasks/email-proofread/prompt.ts";
 import { attachmentAnalyzePrompt } from "./tasks/attachment-analyze/prompt.ts";
+import { creatorRequestMatchingPrompt } from "./tasks/creator-request-matching/prompt.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -17,7 +18,8 @@ export type AITaskType =
   | "INCOMING_EMAIL_ANALYSIS"
   | "EMAIL_LABEL"
   | "EMAIL_DRAFT_PROOFREAD"
-  | "ATTACHMENT_ANALYZE";
+  | "ATTACHMENT_ANALYZE"
+  | "CREATOR_REQUEST_MATCHING";
 
 // `mode` decides how the Edge Function consumes the model output:
 //   "structured" (default) — one JSON blob, validated by `outputSchema`
@@ -53,6 +55,7 @@ export const PROMPT_REGISTRY = {
   EMAIL_LABEL:             emailLabelPrompt,
   EMAIL_DRAFT_PROOFREAD:   emailDraftProofreadPrompt,
   ATTACHMENT_ANALYZE:      attachmentAnalyzePrompt,
+  CREATOR_REQUEST_MATCHING: creatorRequestMatchingPrompt,
 } satisfies Record<AITaskType, PromptDefinition<never>>;
 
 // ---------------------------------------------------------------------------
