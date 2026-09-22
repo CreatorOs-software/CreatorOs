@@ -6,6 +6,7 @@ import { ArrowLeft, Check } from "lucide-react";
 import { useForm } from "@tanstack/react-form";
 import { Button, Stepper } from "@talentos/ui";
 import type { Creator } from "@/domains/creators/types";
+import { Avatar } from "@/components/ui/avatar-creator";
 
 import { Step2 } from "@/app/(main)/creators/deals/create-deal/[id]/steps/step-2";
 import { StepDeliverables } from "@/app/(main)/creators/deals/create-deal/[id]/steps/step-deliverables";
@@ -164,9 +165,7 @@ export function AnfrageWizard({
             </Button>
             <div className="flex items-center gap-2.5">
               {creator && (
-                <span className="w-7 h-7 rounded-lg inline-flex items-center justify-center text-xs font-bold text-zinc-500 shrink-0 bg-zinc-100">
-                  {creator.initials}
-                </span>
+                <Avatar initials={creator.initials} avatarConfig={creator.avatar_config} name={creator.full_name} size="xs" />
               )}
               <div>
                 <h1 className="text-base font-semibold">

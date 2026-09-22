@@ -163,6 +163,8 @@ export function OnboardingTaskCard({ className }: OnboardingTaskCardProps) {
                   {task.assignee && (
                     <Avatar
                       initials={task.assignee.initials}
+                      avatarConfig={task.assignee.avatar_config}
+                      name={task.assignee.full_name}
                       variant="team"
                       className="h-6 w-6 shrink-0 text-[10px]"
                     />

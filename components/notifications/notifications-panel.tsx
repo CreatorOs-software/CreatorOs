@@ -187,7 +187,7 @@ export function NotificationsPanel({ onNavigate }: { onNavigate?: () => void }) 
               return (
                 <li key={item.id} className={cn("group flex gap-3 px-4 py-3 transition-colors hover:bg-muted/50", isUnread && "bg-primary/[0.035]")}>
                   <div className="relative mt-0.5 size-8 shrink-0">
-                    {item.creator ? <Avatar initials={item.creator.initials} variant="team" className="size-8 text-[10px]" /> : <span className="grid size-8 place-items-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">TO</span>}
+                    {item.creator ? <Avatar initials={item.creator.initials} avatarConfig={item.creator.avatar_config} name={item.creator.full_name} variant="team" className="size-8 text-[10px]" /> : <span className="grid size-8 place-items-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">TO</span>}
                     <span className={cn("absolute -bottom-0.5 -right-0.5 grid size-4 place-items-center rounded-full ring-2 ring-popover", TYPE_TINT[item.type])}><Icon className="size-2.5" /></span>
                   </div>
 

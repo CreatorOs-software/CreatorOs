@@ -30,7 +30,7 @@ type TodoItem = {
   done: boolean;
   due_date: string | null;
   priority: Priority | null;
-  assignee: { id: string; full_name: string; initials: string } | null;
+  assignee: { id: string; full_name: string; initials: string; avatar_config: import("@/lib/avatar").AvatarConfig | null } | null;
 };
 
 const PRIORITY_CFG: Record<Priority, { label: string; dot: string; badge: string }> = {
@@ -439,6 +439,8 @@ function TodosWidget({ creatorId }: { creatorId: string }) {
                 <span className="flex items-center gap-1.5 text-xs font-medium">
                   <Avatar
                     initials={selected.assignee.initials}
+                    avatarConfig={selected.assignee.avatar_config}
+                    name={selected.assignee.full_name}
                     variant="team"
                     className="size-5 text-[9px]"
                   />

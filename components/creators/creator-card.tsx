@@ -5,7 +5,7 @@ import { Eye, Puzzle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Creator } from "./creator-sheet";
 import { Button } from "@talentos/ui";
-import { AvatarCreator } from "../ui/avatar-creator";
+import { Avatar } from "../ui/avatar-creator";
 
 const STATUS_DOT: Record<string, "online" | "away" | "offline"> = {
   active: "online",
@@ -44,7 +44,7 @@ export function CreatorCard({
       {/* Initials avatar */}
       <div className="mb-5 flex justify-center relative z-10">
         <div className="relative">
-          <AvatarCreator initials={c.initials} avatarConfig={c.avatar_config} seed={c.id} name={c.full_name} size="2xl" />
+          <Avatar initials={c.initials} avatarConfig={c.avatar_config} name={c.full_name} size="2xl" />
           {/* Glow ring */}
           <div className="absolute inset-0 rounded-xl border-2 border-foreground/20 opacity-0 group-hover:opacity-100 transition-all duration-200" />
         </div>

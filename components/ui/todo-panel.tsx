@@ -18,6 +18,7 @@ type TodoAssignee = {
   id: string;
   full_name: string;
   initials: string;
+  avatar_config: import("@/lib/avatar").AvatarConfig | null;
 };
 
 type TodoItem = {
@@ -263,9 +264,7 @@ export function TodoPanel() {
                     const c = creators.find((x) => x.id === form.assignee_id);
                     return c ? (
                       <span className="flex items-center gap-2 text-sm">
-                        <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-zinc-500 bg-zinc-100">
-                          {c.initials}
-                        </span>
+                        <Avatar initials={c.initials} avatarConfig={c.avatar_config} name={c.full_name} className="size-5 text-[10px]" />
                         {c.full_name}
                       </span>
                     ) : (
@@ -283,9 +282,7 @@ export function TodoPanel() {
               <SelectContent>
                 {creators.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
-                    <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-zinc-500 bg-zinc-100">
-                      {c.initials}
-                    </span>
+                    <Avatar initials={c.initials} avatarConfig={c.avatar_config} name={c.full_name} className="size-5 text-[10px]" />
                     {c.full_name}
                   </SelectItem>
                 ))}
@@ -384,9 +381,7 @@ export function TodoPanel() {
                 const c = creators.find((x) => x.id === filterCreator);
                 return c ? (
                   <span className="flex items-center gap-1.5 truncate">
-                    <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-zinc-500 bg-zinc-100">
-                      {c.initials}
-                    </span>
+                    <Avatar initials={c.initials} avatarConfig={c.avatar_config} name={c.full_name} className="size-4 text-[9px]" />
                     <span className="truncate">{c.full_name}</span>
                   </span>
                 ) : (
@@ -401,11 +396,7 @@ export function TodoPanel() {
             </SelectItem>
             {creators.map((c) => (
               <SelectItem key={c.id} value={c.id} className="text-xs">
-                <span
-                  className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-zinc-500 bg-zinc-100"
-                >
-                  {c.initials}
-                </span>
+                <Avatar initials={c.initials} avatarConfig={c.avatar_config} name={c.full_name} className="size-4 text-[9px]" />
                 {c.full_name}
               </SelectItem>
             ))}
@@ -526,6 +517,8 @@ export function TodoPanel() {
                       {item.assignee && (
                         <Avatar
                           initials={item.assignee.initials}
+                          avatarConfig={item.assignee.avatar_config}
+                          name={item.assignee.full_name}
                           variant="team"
                           className="size-6 text-[10px]"
                         />

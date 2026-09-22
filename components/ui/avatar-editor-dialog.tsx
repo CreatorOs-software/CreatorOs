@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@talentos/ui";
 import type { AvatarConfig } from "@/lib/avatar";
-import { AvatarDisplay, makeAvatarConfig } from "./avatar-display";
+import { Avatar, makeAvatarConfig } from "./avatar-creator";
 
 type Option = { value: string; label: string };
 const OPTIONS: Array<{ key: keyof AvatarConfig; label: string; values: Option[] }> = [
@@ -68,7 +68,7 @@ export function AvatarEditorDialog({ open, onOpenChange, value, seed, name, onSa
         </DialogHeader>
         <div className="grid gap-6 py-2 md:grid-cols-[180px_1fr]">
           <div className="flex flex-col items-center gap-4 rounded-2xl bg-muted/40 p-5">
-            <AvatarDisplay config={draft} seed={seed} name={name} className="size-32" />
+            <Avatar initials="?" avatarConfig={draft} name={name} className="size-32" />
             <Button type="button" variant="outline" size="sm" onClick={randomize}>
               <Dice5 className="size-4" /> Zufällig
             </Button>

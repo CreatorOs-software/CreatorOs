@@ -14,7 +14,7 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import { QueryKeys } from "@/lib/query-keys";
 import { Badge, Button, Input, ToggleGroup, ToggleGroupItem } from "@talentos/ui";
-import { AvatarCreator } from "@/components/ui/avatar-creator";
+import { Avatar } from "@/components/ui/avatar-creator";
 import { Auflister } from "@/components/ui/auflister";
 import { CreatorCard, formatMoney } from "@/components/creators/creator-card";
 import { CreatorsListSkeleton } from "@/components/creators/creators-list-skeleton";
@@ -46,7 +46,7 @@ function buildColumns(
       size: 220,
       cell: ({ row }) => (
         <span className="flex items-center gap-2.5">
-          <AvatarCreator initials={row.original.initials} avatarConfig={row.original.avatar_config} seed={row.original.id} name={row.original.full_name} size="sm" />
+          <Avatar initials={row.original.initials} avatarConfig={row.original.avatar_config} name={row.original.full_name} size="sm" />
           <span className="font-medium">{row.original.full_name}</span>
         </span>
       ),

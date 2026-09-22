@@ -12,7 +12,7 @@ const NOTIFICATION_SELECT = `
   title, reason, href, payload, status, todo_id, created_at, updated_at, read_at,
   rule_key, entity_key, stage, reminder_count, last_triggered_at,
   next_reminder_at, acknowledged_at, snoozed_until, resolved_at, is_condition,
-  creator:creator_id (id, full_name, initials)
+  creator:creator_id (id, full_name, initials, avatar_config)
 `;
 
 const MUTE_SELECT = `id, scope_type, scope_key, created_at`;

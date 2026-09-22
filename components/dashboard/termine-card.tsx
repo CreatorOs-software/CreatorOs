@@ -19,7 +19,7 @@ type CalendarEvent = {
   start_at: string;
   location: string | null;
   creator_id: string | null;
-  creators: { full_name: string; initials: string } | null;
+  creators: { full_name: string; initials: string; avatar_config: import("@/lib/avatar").AvatarConfig | null } | null;
 };
 
 type TermineRow = {
@@ -29,7 +29,7 @@ type TermineRow = {
   start_at: string;
   subtitle: string;
   creatorId: string | null;
-  creators: { full_name: string; initials: string } | null;
+  creators: { full_name: string; initials: string; avatar_config: import("@/lib/avatar").AvatarConfig | null } | null;
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -318,6 +318,8 @@ export function TermineCard({ className }: TermineCardProps) {
                   <span title={ev.creators.full_name}>
                     <Avatar
                       initials={ev.creators.initials}
+                      avatarConfig={ev.creators.avatar_config}
+                      name={ev.creators.full_name}
                       size="sm"
                       className="shrink-0"
                     />

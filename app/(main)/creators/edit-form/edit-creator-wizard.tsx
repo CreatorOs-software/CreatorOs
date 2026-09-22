@@ -12,7 +12,7 @@ import type { CreatorFormValues } from "../create-form/creator-form.schema";
 import type { StepErrors } from "../create-form/creator-form.types";
 import { useEditCreator } from "../create-form/hooks/use-edit-creator";
 import type { Creator } from "@/domains/creators/types";
-import { AvatarDisplay } from "@/components/ui/avatar-display";
+import { Avatar } from "@/components/ui/avatar-creator";
 
 import { Step1 } from "../create-form/steps/step-1";
 import { Step2 } from "../create-form/steps/step-2";
@@ -145,7 +145,7 @@ export function EditCreatorWizard({ creator }: EditCreatorWizardProps) {
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div className="flex items-center gap-2.5">
-              <AvatarDisplay config={creator.avatar_config} seed={creator.id} name={creator.full_name} size="sm" />
+              <Avatar avatarConfig={creator.avatar_config} name={creator.full_name} initials={creator.initials} size="sm" />
               <div>
                 <h1 className="text-base font-semibold">{creator.full_name}</h1>
                 <p className="text-xs text-muted-foreground">Creator bearbeiten</p>

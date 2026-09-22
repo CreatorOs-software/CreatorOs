@@ -6,7 +6,7 @@ import { Pencil } from "lucide-react";
 import { Button } from "@talentos/ui";
 import { toast } from "sonner";
 import type { AvatarConfig } from "@/lib/avatar";
-import { AvatarDisplay } from "@/components/ui/avatar-display";
+import { Avatar } from "@/components/ui/avatar-creator";
 import { AvatarEditorDialog } from "@/components/ui/avatar-editor-dialog";
 
 interface ProfileAvatarSettingsProps {
@@ -21,6 +21,7 @@ export function ProfileAvatarSettings({ userId, name, email, initialConfig }: Pr
   const [config, setConfig] = useState(initialConfig);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const initials = name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "").join("");
 
   async function save(next: AvatarConfig) {
     setSaving(true);
@@ -44,7 +45,7 @@ export function ProfileAvatarSettings({ userId, name, email, initialConfig }: Pr
   return (
     <section className="rounded-2xl bg-card p-5">
       <div className="flex items-center gap-4">
-        <AvatarDisplay config={config} seed={userId} name={name} size="2xl" />
+        <Avatar avatarConfig={config} name={name} initials={initials} size="2xl" />
         <div className="min-w-0 flex-1">
           <h2 className="text-sm font-semibold">Persönlicher Avatar</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">{name}{email ? ` · ${email}` : ""}</p>

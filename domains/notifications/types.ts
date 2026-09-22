@@ -33,6 +33,7 @@ export type NotificationCreator = {
   id: string;
   full_name: string;
   initials: string;
+  avatar_config: AvatarConfig | null;
 };
 
 export type Notification = {
@@ -110,3 +111,4 @@ export type MuteInput = {
   scopeType: MuteScopeType;
   scopeKey: string;
 };
+import type { AvatarConfig } from "@/lib/avatar";

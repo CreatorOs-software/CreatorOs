@@ -20,7 +20,7 @@ import {
   SheetTitle,
 } from "@talentos/ui";
 import { CopyButton } from "@/components/ui/copy-button";
-import { AvatarCreator } from "@/components/ui/avatar-creator";
+import { Avatar } from "@/components/ui/avatar-creator";
 import {
   PLATFORM_ICONS,
   PLATFORM_KEY,
@@ -149,7 +149,7 @@ export function PlatformSheet({
         >
           <SheetHeader className="border-b border-border pb-4">
             <div className="flex items-center gap-3">
-              <AvatarCreator initials={creator.initials} avatarConfig={creator.avatar_config} seed={creator.id} name={creator.full_name} size="md" />
+              <Avatar initials={creator.initials} avatarConfig={creator.avatar_config} name={creator.full_name} size="md" />
               <div>
                 <SheetTitle>{creator.full_name}</SheetTitle>
                 {creator.handle && (

@@ -158,7 +158,7 @@ export type DealDeadline = {
   title: string;
   deadline: string;
   creator_id: string | null;
-  creators: { full_name: string; initials: string } | null;
+  creators: { full_name: string; initials: string; avatar_config: import("@/lib/avatar").AvatarConfig | null } | null;
   brands: { company_name: string; short_code: string } | null;
 };
 

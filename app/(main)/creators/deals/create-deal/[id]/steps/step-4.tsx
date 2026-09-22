@@ -4,6 +4,7 @@ import { Button } from "@talentos/ui";
 import type { DealFormValues, PaymentItem } from "../deal-form.schema";
 import type { BrandOption, CreatorOption } from "../deal-form.types";
 import { StepNav } from "@/app/(main)/creators/create-form/steps/step-nav";
+import { Avatar } from "@/components/ui/avatar-creator";
 
 // ── Formatting helpers ───────────────────────────────────────
 
@@ -189,9 +190,7 @@ export function Step4({
           <Row label="Creator">
             {creator ? (
               <span className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-md shrink-0 inline-flex items-center justify-center text-[10px] font-bold text-zinc-500 bg-zinc-100">
-                  {creator.initials}
-                </span>
+                <Avatar initials={creator.initials} avatarConfig={creator.avatar_config} name={creator.full_name} className="size-5 text-[10px]" />
                 {creator.full_name}
               </span>
             ) : (

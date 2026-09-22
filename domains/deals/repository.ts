@@ -14,7 +14,7 @@ const DEAL_SELECT = `
 
 const DEAL_DEADLINE_SELECT = `
   id, title, deadline, creator_id,
-  creators:creator_id (full_name, initials),
+  creators:creator_id (full_name, initials, avatar_config),
   brands(company_name, short_code)
 `;
 

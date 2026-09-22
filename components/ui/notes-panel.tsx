@@ -8,6 +8,7 @@ import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, Select
 import { FloatingWindow } from "@/components/ui/floating-window";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import type { Creator, Brand } from "@/domains/creators/types";
+import { Avatar } from "@/components/ui/avatar-creator";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -213,12 +214,7 @@ export function NotesPanel() {
                     </div>
                     <div className="flex items-center gap-1">
                       {creator && (
-                        <span
-                          className="inline-flex size-4 items-center justify-center rounded-full text-[9px] font-bold text-zinc-500 bg-zinc-100"
-                          title={creator.full_name}
-                        >
-                          {creator.initials}
-                        </span>
+                        <Avatar initials={creator.initials} avatarConfig={creator.avatar_config} name={creator.full_name} className="size-4 text-[9px]" />
                       )}
                       {brand && (
                         <span
@@ -264,9 +260,7 @@ export function NotesPanel() {
                       <SelectValue>
                         {assignedCreator ? (
                           <span className="flex items-center gap-1.5">
-                            <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-zinc-500 bg-zinc-100">
-                              {assignedCreator.initials}
-                            </span>
+                            <Avatar initials={assignedCreator.initials} avatarConfig={assignedCreator.avatar_config} name={assignedCreator.full_name} className="size-4 text-[9px]" />
                             {assignedCreator.full_name}
                           </span>
                         ) : (
@@ -280,9 +274,7 @@ export function NotesPanel() {
                       </SelectItem>
                       {creators.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
-                          <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-zinc-500 bg-zinc-100">
-                            {c.initials}
-                          </span>
+                          <Avatar initials={c.initials} avatarConfig={c.avatar_config} name={c.full_name} className="size-5 text-[10px]" />
                           {c.full_name}
                         </SelectItem>
                       ))}

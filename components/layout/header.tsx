@@ -13,7 +13,7 @@ import {
   PopoverTrigger,
 } from "@talentos/ui";
 import { NotificationsPanel } from "@/components/notifications/notifications-panel";
-import { AvatarDisplay } from "@/components/ui/avatar-display";
+import { Avatar } from "@/components/ui/avatar-creator";
 import type { AvatarConfig } from "@/lib/avatar";
 
 interface User {
@@ -39,6 +39,7 @@ export function Header({ user }: HeaderProps) {
     refetchInterval: 60_000,
   });
   const unreadCount = notifData?.unreadCount ?? 0;
+  const initials = user?.name?.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "").join("") ?? "";
 
   return (
     <div className="px-2 pt-2 pl-0 shrink-0">
@@ -85,7 +86,7 @@ export function Header({ user }: HeaderProps) {
           {/* User Info */}
           {user && (
             <div className="flex items-center gap-2 bg-white rounded-full pl-1 pr-3 py-1 ">
-              <AvatarDisplay config={user.avatarConfig} seed={user.id} name={user.name} size="sm" />
+              <Avatar avatarConfig={user.avatarConfig} name={user.name} initials={initials} size="sm" />
               <span className="text-left leading-tight">
                 <span className="block text-sm font-medium">{user.name}</span>
                 {user.email && (

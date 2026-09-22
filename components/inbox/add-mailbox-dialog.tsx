@@ -450,7 +450,7 @@ function CreatorStep({ integrationEmail, creators, assigning, onAssign }: Creato
                     : "border-[#E7E7E7] hover:bg-muted/50",
                 )}
               >
-                <Avatar initials={c.initials} size="sm" />
+                <Avatar initials={c.initials} avatarConfig={c.avatar_config} name={c.full_name} size="sm" />
                 <span className="min-w-0 flex-1 truncate text-xs font-medium">{c.full_name}</span>
                 {selected === c.id && (
                   <Check className="h-3.5 w-3.5 shrink-0 text-foreground" />

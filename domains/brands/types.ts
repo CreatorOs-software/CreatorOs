@@ -45,6 +45,7 @@ export type CreatorRef = {
   id: string;
   full_name: string;
   initials: string;
+  avatar_config: import("@/lib/avatar").AvatarConfig | null;
 };
 
 export type DealRef = {

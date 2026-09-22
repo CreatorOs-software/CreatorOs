@@ -78,6 +78,7 @@ export type InboxCreator = {
   id: string;
   full_name: string;
   initials: string;
+  avatar_config: import("@/lib/avatar").AvatarConfig | null;
   phone: string | null;
   niche: string[];
   goals: Array<{

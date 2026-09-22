@@ -33,6 +33,7 @@ import {
 } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import { usePageHeader } from "@/components/layout/page-header-context";
+import { Avatar } from "@/components/ui/avatar-creator";
 import {
   STATUS_STYLE,
   fmtDate,
@@ -45,6 +46,7 @@ type CreatorMin = {
   id: string;
   full_name: string;
   initials: string;
+  avatar_config: import("@/lib/avatar").AvatarConfig | null;
 };
 
 type DealRow = {
@@ -172,11 +174,7 @@ function BrandAvatar({
 }
 
 function CreatorAvatar({ creator }: { creator: CreatorMin }) {
-  return (
-    <span className="w-8 h-8 rounded-full shrink-0 inline-flex items-center justify-center text-zinc-500 text-[10px] font-bold bg-zinc-100">
-      {creator.initials}
-    </span>
-  );
+  return <Avatar initials={creator.initials} avatarConfig={creator.avatar_config} name={creator.full_name} size="sm" />;
 }
 
 function DealStatusBadge({ status }: { status: string }) {
@@ -869,9 +867,7 @@ function GapSection({ creators }: { creators: CreatorMin[] }) {
             href={`/creators/dashboard/${c.id}`}
             className="inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-full border border-border bg-background hover:bg-muted transition-colors text-xs font-medium"
           >
-            <span className="w-5 h-5 rounded-full inline-flex items-center justify-center text-zinc-500 text-[9px] font-bold shrink-0 bg-zinc-100">
-              {c.initials}
-            </span>
+            <Avatar initials={c.initials} avatarConfig={c.avatar_config} name={c.full_name} className="size-5 text-[9px]" />
             {c.full_name}
             <span className="text-muted-foreground/60 ml-0.5">+</span>
           </Link>

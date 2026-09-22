@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Creator } from "@/domains/creators";
+import { Avatar } from "@/components/ui/avatar-creator";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -43,6 +44,7 @@ type TeamMember = {
   display_name: string | null;
   initials: string | null;
   role: string;
+  avatar_config: import("@/lib/avatar").AvatarConfig | null;
 };
 
 type DbEvent = {
@@ -57,7 +59,7 @@ type DbEvent = {
   attendee_ids: string[];
   all_day: boolean;
   recurrence: string;
-  creators: { full_name: string; initials: string } | null;
+  creators: { full_name: string; initials: string; avatar_config: import("@/lib/avatar").AvatarConfig | null } | null;
 };
 
 type CalEvent = {
@@ -72,7 +74,7 @@ type CalEvent = {
   attendeeIds: string[];
   allDay: boolean;
   recurrence: Recurrence;
-  creator: { full_name: string; initials: string } | null;
+  creator: { full_name: string; initials: string; avatar_config: import("@/lib/avatar").AvatarConfig | null } | null;
 };
 
 type FormState = {
@@ -729,12 +731,7 @@ function ListView({
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     {ev.creator && (
-                      <span
-                        className="inline-flex size-7 items-center justify-center rounded-full text-[11px] font-semibold text-brand bg-brand/10"
-                        title={ev.creator.full_name}
-                      >
-                        {ev.creator.initials}
-                      </span>
+                      <Avatar initials={ev.creator.initials} avatarConfig={ev.creator.avatar_config} name={ev.creator.full_name} variant="team" className="size-7 text-[11px]" />
                     )}
                     <Badge
                       variant="outline"
@@ -984,9 +981,7 @@ function EventDialog({
                           key={id}
                           className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand"
                         >
-                          <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-brand/20 text-[9px] font-bold">
-                            {abbr}
-                          </span>
+                          <Avatar initials={abbr} avatarConfig={m.avatar_config} name={m.display_name} variant="team" className="size-4 text-[9px]" />
                           {m.display_name ?? abbr}
                         </span>
                       );
@@ -1018,9 +1013,7 @@ function EventDialog({
                             active ? "bg-muted" : "hover:bg-muted/60",
                           )}
                         >
-                          <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-brand/10 text-[11px] font-semibold text-brand">
-                            {initials}
-                          </span>
+                          <Avatar initials={initials} avatarConfig={member.avatar_config} name={member.display_name} variant="team" className="size-7 text-[11px]" />
                           <span className="flex-1 truncate text-left">
                             {member.display_name ?? initials}
                           </span>
@@ -1244,9 +1237,7 @@ function EventDialog({
                     <SelectTrigger>
                       {displayCreator ? (
                         <span className="flex items-center gap-2 text-sm">
-                          <span className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-brand bg-brand/10">
-                            {displayCreator.initials}
-                          </span>
+                          <Avatar initials={displayCreator.initials} avatarConfig={displayCreator.avatar_config} name={displayCreator.full_name} variant="team" className="size-4 text-[9px]" />
                           {displayCreator.full_name}
                         </span>
                       ) : (
@@ -1260,9 +1251,7 @@ function EventDialog({
                       {creators.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           <span className="flex items-center gap-2">
-                            <span className="inline-flex size-4 items-center justify-center rounded-full bg-brand/10 text-[9px] font-semibold text-brand">
-                              {c.initials}
-                            </span>
+                            <Avatar initials={c.initials} avatarConfig={c.avatar_config} name={c.full_name} variant="team" className="size-4 text-[9px]" />
                             {c.full_name}
                           </span>
                         </SelectItem>
@@ -1702,9 +1691,7 @@ export function EventManager() {
                 const c = creators.find((x) => x.id === filterCreator);
                 return c ? (
                   <span className="flex items-center gap-2">
-                    <span className="inline-flex size-4 items-center justify-center rounded-full bg-brand/10 text-[9px] font-semibold text-brand">
-                      {c.initials}
-                    </span>
+                    <Avatar initials={c.initials} avatarConfig={c.avatar_config} name={c.full_name} variant="team" className="size-4 text-[9px]" />
                     {c.full_name}
                   </span>
                 ) : (
@@ -1718,9 +1705,7 @@ export function EventManager() {
             {creators.map((c) => (
               <SelectItem key={c.id} value={c.id}>
                 <span className="flex items-center gap-2">
-                  <span className="inline-flex size-4 items-center justify-center rounded-full bg-brand/10 text-[9px] font-semibold text-brand">
-                    {c.initials}
-                  </span>
+                  <Avatar initials={c.initials} avatarConfig={c.avatar_config} name={c.full_name} variant="team" className="size-4 text-[9px]" />
                   {c.full_name}
                 </span>
               </SelectItem>

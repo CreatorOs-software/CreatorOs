@@ -14,7 +14,7 @@ export type CalendarEvent = {
   attendee_ids: string[];
   all_day: boolean;
   recurrence: Recurrence;
-  creators: { full_name: string; initials: string } | null;
+  creators: { full_name: string; initials: string; avatar_config: AvatarConfig | null } | null;
 };
 
 export type EventCreateInput = {
@@ -50,3 +50,4 @@ export type EventFilters = {
   to?: string;
   creator_id?: string;
 };
+import type { AvatarConfig } from "@/lib/avatar";

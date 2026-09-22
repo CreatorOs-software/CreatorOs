@@ -19,7 +19,7 @@ export default async function CreateDealPage({
       .eq("agency_id", agencyId),
     supabase
       .from("creators")
-      .select("id, full_name, initials")
+      .select("id, full_name, initials, avatar_config")
       .eq("agency_id", agencyId)
       .order("full_name"),
     supabase

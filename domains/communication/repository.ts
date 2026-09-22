@@ -86,7 +86,7 @@ export const CommunicationRepository = {
       supabase
         .from("creators")
         .select(
-          "id, full_name, initials, phone, niche, goals, weitere_ziele, min_kooperation_betrag, wunsche_anforderungen",
+          "id, full_name, initials, avatar_config, phone, niche, goals, weitere_ziele, min_kooperation_betrag, wunsche_anforderungen",
         )
         .eq("agency_id", agencyId),
       supabase

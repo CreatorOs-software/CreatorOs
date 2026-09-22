@@ -24,7 +24,7 @@ import {
   CREATOR_STATUS_LABEL as STATUS_LABEL,
 } from "@/components/creators/dashboard/constants";
 import { formatMoney } from "@/lib/formatters";
-import { AvatarCreator } from "@/components/ui/avatar-creator";
+import { Avatar } from "@/components/ui/avatar-creator";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -127,7 +127,7 @@ export function CreatorSheet({
               </div>
 
               <div className="flex items-start gap-3">
-                <AvatarCreator initials={creator.initials} avatarConfig={creator.avatar_config} seed={creator.id} name={creator.full_name} size="lg" />
+                <Avatar initials={creator.initials} avatarConfig={creator.avatar_config} name={creator.full_name} size="lg" />
                 <div className="min-w-0 flex-1">
                   <SheetTitle className="truncate">
                     {creator.full_name}

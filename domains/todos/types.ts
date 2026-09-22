@@ -7,7 +7,7 @@ export type Todo = {
   due_date: string | null;
   priority: TodoPriority | null;
   created_at: string;
-  assignee: { id: string; full_name: string; initials: string } | null;
+  assignee: { id: string; full_name: string; initials: string; avatar_config: AvatarConfig | null } | null;
 };
 
 export type TodoCreateInput = {
@@ -24,3 +24,4 @@ export type TodoPatch = {
   assignee_id?: string | null;
   priority?: TodoPriority | null;
 };
+import type { AvatarConfig } from "@/lib/avatar";

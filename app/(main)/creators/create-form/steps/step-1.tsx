@@ -9,8 +9,9 @@ import type {
 } from "../creator-form.types";
 import { StepNav } from "./step-nav";
 import { Button, Checkbox, Input, Label } from "@talentos/ui";
-import { AvatarDisplay } from "@/components/ui/avatar-display";
+import { Avatar } from "@/components/ui/avatar-creator";
 import { AvatarEditorDialog } from "@/components/ui/avatar-editor-dialog";
+import { getInitials } from "../creator-form.helpers";
 
 interface Step1Props {
   form: CreatorForm;
@@ -203,7 +204,7 @@ export function Step1({
                 const name = `${first} ${last}`.trim() || "Neuer Creator";
                 return (
                   <div className="flex w-52 shrink-0 flex-col items-center gap-3 rounded-sm border border-dashed p-3">
-                    <AvatarDisplay config={avatar} seed={name} name={name} size="2xl" />
+                    <Avatar avatarConfig={avatar} name={name} initials={getInitials(name)} size="2xl" />
                     <div className="text-center">
                       <p className="text-xs font-semibold leading-snug">Avatar</p>
                       <p className="text-[10px] text-muted-foreground">Individuell konfigurierbar</p>

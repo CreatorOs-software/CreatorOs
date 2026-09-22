@@ -7,6 +7,7 @@ import { Inbox, RefreshCw, X, Check, AlertCircle, Plus, Loader2 } from "lucide-r
 import { cn } from "@/lib/utils";
 import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@talentos/ui";
 import type { Creator } from "@/domains/creators";
+import { Avatar } from "@/components/ui/avatar-creator";
 
 type Provider = "gmail" | "outlook" | "imap";
 
@@ -329,12 +330,7 @@ export function IntegrationsPage() {
                   {/* Creator assignment */}
                   <div className="flex items-center gap-2 shrink-0">
                     {assignedCreator && (
-                      <span
-                        className="w-6 h-6 rounded-lg bg-zinc-100 inline-flex items-center justify-center text-[10px] font-bold text-zinc-500"
-                        title={assignedCreator.full_name}
-                      >
-                        {assignedCreator.initials}
-                      </span>
+                      <Avatar initials={assignedCreator.initials} avatarConfig={assignedCreator.avatar_config} name={assignedCreator.full_name} size="xs" />
                     )}
                     <Select
                       value={integ.creator_id ?? "none"}

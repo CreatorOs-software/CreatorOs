@@ -35,7 +35,7 @@ import { VertraegeTab } from "@/components/creators/dashboard/vertraege-tab";
 import { DealsTab } from "@/components/creators/dashboard/deals/deals-tab";
 import { UebersichtTab } from "@/components/creators/dashboard/uebersicht-tab";
 import type { DocEntry } from "@/components/ui/file-upload";
-import { AvatarCreator } from "@/components/ui/avatar-creator";
+import { Avatar } from "@/components/ui/avatar-creator";
 
 export default function CreatorDashboardPage() {
   const { id } = useParams<{ id: string }>();
@@ -141,7 +141,7 @@ export default function CreatorDashboardPage() {
       onBack: () => router.back(),
       title: (
         <div className="flex items-center gap-2">
-          <AvatarCreator initials={creator.initials} avatarConfig={creator.avatar_config} seed={creator.id} name={creator.full_name} size="sm" />
+          <Avatar initials={creator.initials} avatarConfig={creator.avatar_config} name={creator.full_name} size="sm" />
           <span className="text-sm font-semibold">
             {creator.handle ?? creator.full_name}
           </span>
@@ -181,7 +181,7 @@ export default function CreatorDashboardPage() {
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <AvatarCreator initials={creator.initials} avatarConfig={creator.avatar_config} seed={creator.id} name={creator.full_name} size="md" />
+          <Avatar initials={creator.initials} avatarConfig={creator.avatar_config} name={creator.full_name} size="md" />
           <div>
             <h2 className="text-lg font-semibold leading-tight">{creator.full_name}</h2>
             {creator.handle && (
