@@ -8,9 +8,11 @@ import {
   trackingAssetsSchema,
 } from "../shared/anfrage-fields.schema.ts";
 
+const confidenceSchema = z.number().min(0).max(100).transform(Math.round);
+
 const extractedSchema = z.object({
   creator_id: z.string().nullable(),
-  creator_confidence: z.number().int().min(0).max(100),
+  creator_confidence: confidenceSchema,
   contact: z.string().nullable(),
   title: z.string().nullable(),
   product: z.string().nullable(),
@@ -29,7 +31,7 @@ const extractedSchema = z.object({
 
 const outputSchema = z.object({
   classification: z.enum(["RECHNUNG", "VERTRAG_BRIEFING", "ANDERES"]),
-  classification_confidence: z.number().int().min(0).max(100),
+  classification_confidence: confidenceSchema,
   extracted: extractedSchema.nullable(),
 });
 

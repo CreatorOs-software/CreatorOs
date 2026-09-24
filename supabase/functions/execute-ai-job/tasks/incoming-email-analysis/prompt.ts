@@ -8,14 +8,12 @@ import {
   trackingAssetsSchema,
 } from "../shared/anfrage-fields.schema.ts";
 
-const outputSchema = z.object({
-  is_request: z.boolean(),
-  information_complete: z.boolean(),
-  missing_information: z.array(z.string()),
-  suggested_reply: z.string().nullable(),
-  creator_id: z.string().nullable(),
-  creator_confidence: z.number().int().min(0).max(100),
-  contact: z.string().nullable(),
+const confidenceSchema = z.number().min(0).max(100).transform(Math.round);
+
+const requestGroupSchema = z.object({
+  key: z.string(),
+  creator_ids: z.array(z.string().uuid()).min(1),
+  creator_confidence: confidenceSchema,
   title: z.string().nullable(),
   product: z.string().nullable(),
   budget: z.number().nullable(),
@@ -31,13 +29,43 @@ const outputSchema = z.object({
   tracking_assets: trackingAssetsSchema,
 });
 
+const outputSchema = z.object({
+  is_request: z.boolean(),
+  information_complete: z.boolean(),
+  missing_information: z.array(z.string()),
+  suggested_reply: z.string().nullable(),
+  creator_id: z.string().nullable(),
+  creator_confidence: confidenceSchema,
+  contact: z.string().nullable(),
+  title: z.string().nullable(),
+  product: z.string().nullable(),
+  budget: z.number().nullable(),
+  budget_offer: z.number().nullable(),
+  fee: z.number().nullable(),
+  period: z.string().nullable(),
+  campaign_start: z.string().nullable(),
+  campaign_end: z.string().nullable(),
+  notes: z.string().nullable(),
+  deliverables: z.array(deliverableSchema),
+  payment_items: z.array(paymentItemSchema),
+  guidelines: guidelinesSchema,
+  tracking_assets: trackingAssetsSchema,
+  request_structure: z.enum([
+    "single_request_single_creator",
+    "single_request_multiple_creators",
+    "multiple_distinct_requests",
+    "unclear",
+  ]),
+  request_groups: z.array(requestGroupSchema),
+});
+
 export type EmailAnalysisOutput = z.infer<typeof outputSchema>;
 
 export const incomingEmailAnalysisPrompt: PromptDefinition<
   EmailAnalysisContext,
   EmailAnalysisOutput
 > = {
-  version: "INCOMING_EMAIL_v4.0",
+  version: "INCOMING_EMAIL_v5.0",
   provider: "openai",
   model: "gpt-5-mini",
   maxTokens: 8000,
@@ -98,7 +126,9 @@ Analysiere die E-Mail und antworte mit folgendem JSON (jeder Key MUSS vorhanden 
   "deliverables": [{ "count": number, "content_type": string, "platform": string, "draft_deadline": string | null, "freigabe_deadline": string | null, "live_date": string | null }],
   "payment_items": [{ "label": string, "amount": number, "invoice_date": string | null, "payment_term": 14 | 30 | 45 }],
   "guidelines": { "labeling": string | null, "wording": string | null, "nogo": string | null, "hashtags": string[] } | null,
-  "tracking_assets": { "discount_code": string | null, "affiliate_links": string[], "utm_params": string | null } | null
+  "tracking_assets": { "discount_code": string | null, "affiliate_links": string[], "utm_params": string | null } | null,
+  "request_structure": "single_request_single_creator" | "single_request_multiple_creators" | "multiple_distinct_requests" | "unclear",
+  "request_groups": [{ "key": string, "creator_ids": string[], "creator_confidence": number, "title": string | null, "product": string | null, "budget": number | null, "budget_offer": number | null, "fee": number | null, "period": string | null, "campaign_start": string | null, "campaign_end": string | null, "notes": string | null, "deliverables": [], "payment_items": [], "guidelines": object | null, "tracking_assets": object | null }]
 }
 
 Regeln:
@@ -106,8 +136,13 @@ Regeln:
 - information_complete: true nur wenn Budget, Deadline und mindestens ein Deliverable bekannt sind
 - missing_information: nur Felder die tatsächlich fehlen (z.B. ["Budget", "Zeitraum"])
 - suggested_reply: kurzer Antwort-Entwurf auf Deutsch wenn is_request=true und information_complete=false, sonst null
-- creator_id: die exakte UUID aus der Creator-Liste oben wenn ein Creator namentlich erwähnt wird (auch bei Tippfehlern oder ähnlichen Namen), sonst null
-- creator_confidence: 0–100 wie sicher du beim Creator-Match bist (0 wenn creator_id=null)
+- creator_id/creator_confidence bleiben aus Kompatibilitätsgründen der sicherste primäre Creator.
+- request_groups ist die autoritative Aufteilung. Verwende ausschließlich Creator-UUIDs aus der Liste.
+- Eine gemeinsame Kampagne für A UND B ist eine Gruppe mit beiden creator_ids und request_structure=single_request_multiple_creators.
+- Eine Wahlmöglichkeit A ODER B ist ebenfalls eine Gruppe mit beiden IDs; erläutere die Alternative in notes.
+- Zwei unterschiedliche Briefings für A und B sind zwei Gruppen mit unterschiedlichen keys und request_structure=multiple_distinct_requests.
+- Für jeden Creator einer Gruppe wird später eine eigene Anfrage angelegt. Gemeinsame Felder dürfen deshalb in derselben Gruppe stehen.
+- Wenn kein Creator sicher bestimmbar ist, request_groups=[] und creator_id=null. Erfinde niemals eine ID.
 - contact: Name der Kontaktperson aus der E-Mail
 - title: kurzer Titel/Kampagnenname wenn genannt, sonst null
 - deliverables: Liste der angefragten Leistungen, jede als eigenes Objekt. Beispiele:

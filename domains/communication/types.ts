@@ -15,6 +15,23 @@ export type LabelStatus =
   | "manual"
   | "low_confidence";
 
+export type EmailThreadCreatorMatch = {
+  creator_id: string;
+  confidence: number;
+  relation: "required" | "alternative" | "group" | "mentioned" | "unknown";
+  evidence: string | null;
+  request_group_key: string | null;
+  source: "ai_label" | "ai_analysis" | "manual" | "linked_request";
+};
+
+export type EmailRequestStructure =
+  | "single_request_single_creator"
+  | "single_request_multiple_creators"
+  | "multiple_distinct_requests"
+  | "unclear";
+
+export type EmailRequestStatus = "open" | "rejected" | "converted";
+
 export type EmailThread = {
   id: string;
   agency_id: string;
@@ -37,6 +54,11 @@ export type EmailThread = {
   gmail_thread_id: string | null;
   system_labels: SystemLabel[];
   label_status: LabelStatus;
+  suggested_creator_id: string | null;
+  request_structure: EmailRequestStructure | null;
+  request_structure_confidence: number | null;
+  request_status: EmailRequestStatus;
+  creator_matches: EmailThreadCreatorMatch[];
   conversation_id: string | null;
   message_id: string | null;
   in_reply_to: string | null;
@@ -72,6 +94,7 @@ export type ThreadPatch = {
   starred?: boolean;
   priority?: "low" | "med" | "high";
   folder?: string;
+  request_status?: EmailRequestStatus;
 };
 
 export type InboxCreator = {
@@ -118,6 +141,7 @@ export type InboxFilters = {
   labelId?: string;
   unread?: boolean;
   category?: string;
+  requestStatus?: EmailRequestStatus;
   /** Für "Mehr laden" — wie viele Threads (in der aktuellen Sortierung/Filterung) übersprungen werden sollen. */
   offset?: number;
 };

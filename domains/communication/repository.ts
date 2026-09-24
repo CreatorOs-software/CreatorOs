@@ -17,7 +17,7 @@ import type {
 // Supabase-Egress hoch. Eingebettete Relationen (Labels, verknüpfte Anfrage)
 // liefern nur schmale Spalten.
 const THREAD_LIST_COLUMNS =
-  "id, integration_id, folder, sender_email, sender_name, recipient_email, subject, preview, received_at, unread, starred, priority, system_labels, label_status, conversation_id, conversation:conversations(anfrage_id, deal_id, anfrage:anfragen(linked_deal_id)), thread_labels:email_thread_labels(label:email_labels(id, name, color))";
+  "id, integration_id, folder, sender_email, sender_name, recipient_email, subject, preview, received_at, unread, starred, priority, system_labels, label_status, suggested_creator_id, request_structure, request_structure_confidence, request_status, conversation_id, creator_matches:email_thread_creator_matches(creator_id, confidence, relation, evidence, request_group_key, source), conversation:conversations(anfrage_id, deal_id, anfrage:anfragen(linked_deal_id)), thread_labels:email_thread_labels(label:email_labels(id, name, color))";
 
 const THREAD_LIST_LIMIT = 30;
 const CONVERSATION_MESSAGE_LIMIT = 30;
@@ -42,6 +42,7 @@ export const CommunicationRepository = {
     if (filters.integrationId) threadsQuery = threadsQuery.eq("integration_id", filters.integrationId);
     if (filters.folder) threadsQuery = threadsQuery.eq("folder", filters.folder);
     if (filters.unread) threadsQuery = threadsQuery.eq("unread", true);
+    if (filters.requestStatus) threadsQuery = threadsQuery.eq("request_status", filters.requestStatus);
     if (filters.category === "important") threadsQuery = threadsQuery.eq("starred", true);
     else if (filters.category && filters.category !== "all") {
       threadsQuery = threadsQuery.contains("system_labels", [filters.category]);

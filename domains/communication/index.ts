@@ -11,4 +11,5 @@ export type {
   InboxFilters,
   SystemLabel,
   LabelStatus,
+  EmailRequestStatus,
 } from "./types";

@@ -6,6 +6,7 @@ import { buildEmailAnalysisContext } from "./tasks/incoming-email-analysis/conte
 import { buildAttachmentAnalyzeContext } from "./tasks/attachment-analyze/context.ts";
 import { maybeEmitInboundNotification } from "./notify.ts";
 import { buildCreatorRequestMatchingContext } from "./tasks/creator-request-matching/context.ts";
+import { buildEmailLabelContext } from "./tasks/email-label/context.ts";
 
 type Payload = {
   email_thread_id: string;
@@ -15,6 +16,7 @@ type Payload = {
   current_anfrage?: Record<string, unknown> | null;
   email_attachment_id?: string;
   creator_id?: string;
+  force_relabel?: boolean;
 };
 
 type ThreadRow = {
@@ -184,9 +186,65 @@ Deno.serve(async (req) => {
       });
       const parsed = analyseDef.outputSchema.parse(JSON.parse(response.content));
 
+      const validCreatorIds = new Set(ctx.agency.creators.map((creator) => creator.id));
+      const requestGroups = parsed.request_groups
+        .map((group) => ({
+          ...group,
+          creator_ids: [...new Set(group.creator_ids.filter((creatorId) => validCreatorIds.has(creatorId)))],
+        }))
+        .filter((group) => group.creator_ids.length > 0);
+      const rawAnalysedMatches = requestGroups.flatMap((group) =>
+        group.creator_ids
+          .map((creatorId) => ({
+            thread_id: email_thread_id,
+            creator_id: creatorId,
+            agency_id,
+            confidence: group.creator_confidence,
+            relation: group.creator_ids.length > 1 ? "group" : "required",
+            evidence: `Tiefenanalyse: ${group.title ?? group.key}`,
+            request_group_key: group.key,
+            source: "ai_analysis",
+          }))
+      ).sort((a, b) => b.confidence - a.confidence);
+      const analysedMatches = rawAnalysedMatches.filter(
+        (match, index, matches) =>
+          matches.findIndex((candidate) => candidate.creator_id === match.creator_id) === index,
+      );
+      if (analysedMatches.length > 0) {
+        const { error } = await db.from("email_thread_creator_matches").upsert(
+          analysedMatches,
+          { onConflict: "thread_id,creator_id" },
+        );
+        if (error) throw new Error(`analysis creator matches: ${error.message}`);
+      }
+      let staleMatchesQuery = db
+        .from("email_thread_creator_matches")
+        .delete()
+        .eq("thread_id", email_thread_id)
+        .eq("agency_id", agency_id);
+      const analysedCreatorIds = analysedMatches.map((match) => match.creator_id);
+      if (analysedCreatorIds.length > 0) {
+        staleMatchesQuery = staleMatchesQuery.not(
+          "creator_id",
+          "in",
+          `(${analysedCreatorIds.join(",")})`,
+        );
+      }
+      const { error: staleMatchesError } = await staleMatchesQuery;
+      if (staleMatchesError) throw new Error(`analysis creator cleanup: ${staleMatchesError.message}`);
+
+      await db.from("email_threads").update({
+        suggested_creator_id: analysedMatches[0]?.creator_id ?? null,
+        confidence_score: analysedMatches[0]?.confidence ?? 0,
+        request_structure: parsed.request_structure,
+        request_structure_confidence: requestGroups.length > 0
+          ? Math.max(...requestGroups.map((group) => group.creator_confidence))
+          : 0,
+      }).eq("id", email_thread_id).eq("agency_id", agency_id);
+
       return json({
-        creator_id:         parsed.creator_id,
-        creator_confidence: parsed.creator_confidence,
+        creator_id:         parsed.creator_id && validCreatorIds.has(parsed.creator_id) ? parsed.creator_id : null,
+        creator_confidence: parsed.creator_id && validCreatorIds.has(parsed.creator_id) ? parsed.creator_confidence : 0,
         contact:            parsed.contact,
         title:              parsed.title,
         product:            parsed.product,
@@ -203,6 +261,8 @@ Deno.serve(async (req) => {
         tracking_assets:    parsed.tracking_assets,
         missing_information: parsed.missing_information,
         suggested_reply:    parsed.suggested_reply,
+        request_structure:  parsed.request_structure,
+        request_groups:     requestGroups,
       });
     }
 
@@ -216,7 +276,9 @@ Deno.serve(async (req) => {
       .single<ThreadRow>();
 
     if (threadErr) return json({ error: `Thread not found: ${threadErr.message}` }, 400);
-    if (thread.system_labels.length > 0) return json({ skipped: true, reason: "already_labeled" });
+    if (thread.system_labels.length > 0 && !payload.force_relabel) {
+      return json({ skipped: true, reason: "already_labeled" });
+    }
 
     // 2. Resolve or create conversation
     const conversationId = await resolveConversation(db, thread, agency_id);
@@ -268,21 +330,114 @@ Deno.serve(async (req) => {
 
     // 6. Run AI — wrap in try/catch so failures always write "failed" to DB
     let finalLabels: string[];
+    let classificationResult: {
+      creator_matches: Array<{
+        creator_id: string;
+        confidence: number;
+        relation: "required" | "alternative" | "group" | "mentioned" | "unknown";
+        evidence: string;
+        request_group_key: string | null;
+      }>;
+      request_structure: "single_request_single_creator" | "single_request_multiple_creators" | "multiple_distinct_requests" | "unclear";
+      structure_confidence: number;
+      suggested_creator_id: string | null;
+      creator_candidates_considered: number;
+    };
     try {
       const labelDef = PROMPT_REGISTRY.EMAIL_LABEL;
-      const ctx = await buildEmailAnalysisContext({ email_thread_id }, agency_id, db);
+      const ctx = await buildEmailLabelContext(
+        { email_thread_id, integration_id: thread.integration_id },
+        agency_id,
+        db,
+      );
       const labelAdapter = getAdapter(labelDef.provider);
 
       const labelResponse = await labelAdapter.execute({
         system: labelDef.system,
-        messages: labelDef.buildMessages({ subject: ctx.email.subject, body: ctx.email.body }),
+        messages: labelDef.buildMessages(ctx),
         model: labelDef.model,
         maxTokens: labelDef.maxTokens,
+        reasoning: labelDef.reasoning,
       });
 
       const labelParsed = labelDef.outputSchema.parse(JSON.parse(labelResponse.content));
       const remaining = 3 - deterministicLabels.length;
       finalLabels = [...deterministicLabels, ...labelParsed.labels.slice(0, remaining)];
+
+      const validCreatorIds = new Set(ctx.creators.map((creator) => creator.id));
+      const sortedCreatorMatches = labelParsed.creator_matches
+        .filter((match) => validCreatorIds.has(match.creator_id) && match.confidence >= 60)
+        .sort((a, b) => b.confidence - a.confidence);
+      const creatorMatches = sortedCreatorMatches.filter(
+        (match, index, matches) =>
+          matches.findIndex((candidate) => candidate.creator_id === match.creator_id) === index,
+      );
+      if (
+        creatorMatches.length === 0 &&
+        ctx.mailbox_creator_id &&
+        validCreatorIds.has(ctx.mailbox_creator_id)
+      ) {
+        creatorMatches.push({
+          creator_id: ctx.mailbox_creator_id,
+          confidence: 65,
+          relation: "unknown",
+          evidence: "Fallback über das dem Postfach zugeordnete Creator-Profil",
+          request_group_key: null,
+        });
+      }
+
+      if (creatorMatches.length > 0) {
+        const { error: upsertError } = await db
+          .from("email_thread_creator_matches")
+          .upsert(
+            creatorMatches.map((match) => ({
+              thread_id: email_thread_id,
+              creator_id: match.creator_id,
+              agency_id,
+              confidence: match.confidence,
+              relation: match.relation,
+              evidence: match.evidence,
+              request_group_key: match.request_group_key,
+              source: "ai_label",
+            })),
+            { onConflict: "thread_id,creator_id" },
+          );
+        if (upsertError) throw new Error(`creator match upsert: ${upsertError.message}`);
+      }
+
+      let staleQuery = db
+        .from("email_thread_creator_matches")
+        .delete()
+        .eq("thread_id", email_thread_id)
+        .eq("agency_id", agency_id)
+        .eq("source", "ai_label");
+      const matchedIds = creatorMatches.map((match) => match.creator_id);
+      if (matchedIds.length > 0) {
+        staleQuery = staleQuery.not("creator_id", "in", `(${matchedIds.join(",")})`);
+      }
+      const { error: staleError } = await staleQuery;
+      if (staleError) throw new Error(`creator match cleanup: ${staleError.message}`);
+
+      const primaryMatch = creatorMatches.toSorted((a, b) => b.confidence - a.confidence)[0];
+      classificationResult = {
+        creator_matches: creatorMatches,
+        request_structure: labelParsed.request_structure,
+        structure_confidence: labelParsed.structure_confidence,
+        suggested_creator_id: primaryMatch?.creator_id ?? null,
+        creator_candidates_considered: ctx.creators.length,
+      };
+      const { error: metadataError } = await db
+        .from("email_threads")
+        .update({
+          suggested_creator_id: primaryMatch?.creator_id ?? null,
+          confidence_score: primaryMatch?.confidence ?? 0,
+          request_structure: labelParsed.request_structure,
+          request_structure_confidence: labelParsed.structure_confidence,
+          ai_processed: true,
+        })
+        .eq("id", email_thread_id)
+        .eq("agency_id", agency_id);
+      if (metadataError) throw new Error(`creator match metadata: ${metadataError.message}`);
     } catch (aiErr) {
       const msg = aiErr instanceof Error ? aiErr.message : String(aiErr);
       console.error("AI call failed:", msg);
@@ -303,7 +458,11 @@ Deno.serve(async (req) => {
       })
       .eq("id", email_thread_id);
 
-    return json({ ok: true, labels: finalLabels });
+    return json({
+      ok: true,
+      labels: finalLabels,
+      ...classificationResult,
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("execute-ai-job:", msg);

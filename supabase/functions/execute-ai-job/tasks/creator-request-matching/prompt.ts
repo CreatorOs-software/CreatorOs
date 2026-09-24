@@ -2,16 +2,18 @@ import { z } from "npm:zod@3";
 import { PromptDefinition } from "../../registry.ts";
 import { CreatorRequestMatchingContext } from "./context.ts";
 
+const confidenceSchema = z.number().min(0).max(100).transform(Math.round);
+
 const dimensionSchema = z.object({
-  score: z.number().int().min(0).max(100).nullable(),
+  score: confidenceSchema.nullable(),
   status: z.enum(["strong", "conditional", "weak", "unknown"]),
   explanation: z.string(),
   evidence: z.array(z.string()),
 });
 
 export const creatorRequestMatchingOutputSchema = z.object({
-  score: z.number().int().min(0).max(100),
-  confidence: z.number().int().min(0).max(100),
+  score: confidenceSchema,
+  confidence: confidenceSchema,
   verdict: z.enum(["strong", "conditional", "weak"]),
   summary: z.string(),
   dimensions: z.object({

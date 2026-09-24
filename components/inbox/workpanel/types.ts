@@ -50,6 +50,8 @@ export type ExtractedEmailData = {
   detectedFields: string[];
   /** Field name → attachment filename, when a field came from an analyzed attachment rather than the email body. */
   fieldSources?: Record<string, string>;
+  requestGroups?: import("@/domains/communication/ai-analysis").AiRequestGroup[];
+  requestStructure?: import("@/domains/communication/ai-analysis").AiAnalysisResult["request_structure"];
 };
 
 export type LocalVorgang = {

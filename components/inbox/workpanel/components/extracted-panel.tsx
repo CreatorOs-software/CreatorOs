@@ -85,6 +85,7 @@ type Props = {
   threadId: string;
   merge?: { anfrageId: string };
   onSetWorkState: (s: WorkPanelState) => void;
+  onReject: () => Promise<void>;
 };
 
 function buildVorgang(v: ExtractedFormValues): LocalVorgang {
@@ -115,6 +116,7 @@ export function ExtractedPanel({
   threadId,
   merge,
   onSetWorkState,
+  onReject,
 }: Props) {
   const isMerge = !!merge;
   const queryClient = useQueryClient();
@@ -320,6 +322,45 @@ export function ExtractedPanel({
     const brandMatch = brands.find((b) => b.company_name === value.brand);
     const g = value.guidelines;
     const t = value.trackingAssets;
+    const requestGroups = data.requestGroups ?? [];
+    const creatorCount = new Set(requestGroups.flatMap((group) => group.creator_ids)).size;
+
+    if (requestGroups.length > 1 || creatorCount > 1) {
+      const [firstGroup, ...remainingGroups] = requestGroups;
+      const response = await fetch(`/api/inbox/${threadId}/anfragen`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          brand_id: brandMatch?.id ?? null,
+          brand_name: value.brand || null,
+          contact_person: value.contact || null,
+          title: value.title || null,
+          groups: [{
+            ...firstGroup,
+            creator_ids: firstGroup?.creator_ids.length ? firstGroup.creator_ids : [value.creatorId],
+            title: value.title || null,
+            product: value.product || null,
+            budget: value.budget,
+            budget_offer: value.budgetOffer,
+            fee: value.fee,
+            campaign_start: value.campaign_start || null,
+            campaign_end: value.campaign_end || null,
+            notes: value.notes || null,
+            deliverables: deliverablesToApi(value.deliverables),
+            payment_items: paymentItemsToApi(value.paymentItems),
+            guidelines: guidelinesToApi(g),
+            tracking_assets: trackingToApi(t),
+          }, ...remainingGroups],
+        }),
+      });
+      if (!response.ok) {
+        const body = (await response.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? "Anfragen konnten nicht angelegt werden");
+      }
+      void queryClient.invalidateQueries({ queryKey: QueryKeys.inbox.all() });
+      return;
+    }
+
     const res = await fetch(`/api/creators/${value.creatorId}/anfragen`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -466,6 +507,39 @@ export function ExtractedPanel({
           Erkannte Felder werden in die bestehende Anfrage übernommen. Listen
           (Deliverables, Zahlungen) werden angehängt.
         </p>
+      )}
+
+      {!isMerge && data.requestGroups && data.requestGroups.length > 0 && (
+        <div className="mb-(--tui-space-sm) rounded-(--tui-radius-md) border border-border bg-muted/30 p-(--tui-space-sm)">
+          <p className="text-xs font-semibold text-foreground">
+            {data.requestGroups.length > 1
+              ? `${data.requestGroups.length} getrennte Briefings`
+              : data.requestGroups[0].creator_ids.length > 1
+                ? "Gemeinsame Anfrage"
+                : "Erkanntes Briefing"}
+          </p>
+          <div className="mt-(--tui-space-xs) flex flex-col gap-(--tui-space-2xs)">
+            {data.requestGroups.map((group) => (
+              <div
+                key={group.key}
+                className="flex items-center justify-between gap-(--tui-space-xs) border-t border-border pt-(--tui-space-2xs) text-xs"
+              >
+                <span className="truncate">{group.title || group.product || "Kooperationsanfrage"}</span>
+                <span className="shrink-0 text-muted-foreground">
+                  {group.creator_ids
+                    .map((id) => creators.find((creator) => creator.id === id)?.full_name)
+                    .filter(Boolean)
+                    .join(", ")}
+                </span>
+              </div>
+            ))}
+          </div>
+          {(data.requestGroups.length > 1 || data.requestGroups[0].creator_ids.length > 1) && (
+            <p className="mt-(--tui-space-xs) text-[11px] text-muted-foreground">
+              Beim Speichern wird pro Creator eine eigene Anfrage in derselben Kampagnengruppe angelegt.
+            </p>
+          )}
+        </div>
       )}
 
       <AttachmentAnalyzer
@@ -1198,9 +1272,21 @@ export function ExtractedPanel({
             <Button
               variant="destructive"
               className="w-full"
-              onClick={() => onSetWorkState({ phase: "not-coop" })}
+              disabled={saving}
+              onClick={async () => {
+                setSaving(true);
+                setSubmitError(null);
+                try {
+                  await onReject();
+                  onSetWorkState({ phase: "not-coop" });
+                } catch (error) {
+                  setSubmitError(error instanceof Error ? error.message : "Ablehnen fehlgeschlagen");
+                } finally {
+                  setSaving(false);
+                }
+              }}
             >
-              Verwerfen
+              Anfrage ablehnen
             </Button>
           </>
         )}

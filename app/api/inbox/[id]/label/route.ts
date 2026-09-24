@@ -26,7 +26,11 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
         "Content-Type": "application/json",
         Authorization: `Bearer ${serviceKey}`,
       },
-      body: JSON.stringify({ email_thread_id: id, agency_id: agencyId }),
+      body: JSON.stringify({
+        email_thread_id: id,
+        agency_id: agencyId,
+        force_relabel: true,
+      }),
     });
 
     const body = await res.json() as Record<string, unknown>;

@@ -41,7 +41,7 @@ export function KiAnfragenCard({ className }: KiAnfragenCardProps) {
   const { data, isPending } = useQuery<InboxPageData>({
     queryKey: QueryKeys.inbox.aiRequests(),
     queryFn: () =>
-      fetch("/api/inbox?folder=INBOX&category=anfrage&unread=true").then((r) =>
+      fetch("/api/inbox?folder=INBOX&category=anfrage&request_status=open").then((r) =>
         r.json(),
       ),
     staleTime: 60_000,
@@ -53,12 +53,26 @@ export function KiAnfragenCard({ className }: KiAnfragenCardProps) {
   const creators = data?.creators ?? [];
   const visible = threads.slice(0, DISPLAY_LIMIT);
 
-  function creatorNameFor(integrationId: string): string {
+  function creatorNamesFor(thread: InboxPageData["threads"][number]): string[] {
+    const matchedNames = (thread.creator_matches ?? [])
+      .filter((match) => match.relation !== "mentioned")
+      .sort((a, b) => b.confidence - a.confidence)
+      .map((match) => creators.find((creator) => creator.id === match.creator_id)?.full_name)
+      .filter((name): name is string => Boolean(name));
+    if (matchedNames.length > 0) return [...new Set(matchedNames)];
+
+    const integrationId = thread.integration_id;
     const integration = integrations.find((i) => i.id === integrationId);
     const creator = integration?.creator_id
       ? creators.find((c) => c.id === integration.creator_id)
       : null;
-    return creator?.full_name ?? "Noch nicht zugeordnet";
+    return creator ? [creator.full_name] : [];
+  }
+
+  function structureLabel(thread: InboxPageData["threads"][number]): string | null {
+    if (thread.request_structure === "multiple_distinct_requests") return "Getrennte Briefings";
+    if (thread.request_structure === "single_request_multiple_creators") return "Gemeinsame Anfrage";
+    return null;
   }
 
   async function markRead(threadId: string) {
@@ -72,7 +86,12 @@ export function KiAnfragenCard({ className }: KiAnfragenCardProps) {
       QueryKeys.inbox.aiRequests(),
       (old) =>
         old
-          ? { ...old, threads: old.threads.filter((t) => t.id !== threadId) }
+          ? {
+              ...old,
+              threads: old.threads.map((thread) =>
+                thread.id === threadId ? { ...thread, unread: false } : thread,
+              ),
+            }
           : old,
     );
   }
@@ -102,6 +121,8 @@ export function KiAnfragenCard({ className }: KiAnfragenCardProps) {
       ) : (
         <Accordion type="multiple" className="flex flex-col">
           {visible.map((thread) => {
+            const creatorNames = creatorNamesFor(thread);
+            const structure = structureLabel(thread);
             const status = thread.deal_id
               ? "Verknüpfter Deal"
               : thread.anfrage_id
@@ -139,7 +160,18 @@ export function KiAnfragenCard({ className }: KiAnfragenCardProps) {
                       <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                         Creator
                       </p>
-                      <p>{creatorNameFor(thread.integration_id)}</p>
+                      <div className="mt-(--tui-space-3xs) flex flex-wrap gap-(--tui-space-3xs)">
+                        {creatorNames.length > 0 ? creatorNames.map((name) => (
+                          <Badge key={name} variant="outline">{name}</Badge>
+                        )) : (
+                          <span>Noch nicht zugeordnet</span>
+                        )}
+                      </div>
+                      {structure && (
+                        <p className="mt-(--tui-space-3xs) text-xs text-muted-foreground">
+                          {structure}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex gap-2 mt-3">
@@ -147,9 +179,10 @@ export function KiAnfragenCard({ className }: KiAnfragenCardProps) {
                       type="button"
                       variant="outline"
                       size="sm"
+                      disabled={!thread.unread}
                       onClick={() => markRead(thread.id)}
                     >
-                      Gelesen
+                      {thread.unread ? "Als gelesen markieren" : "Gelesen"}
                     </Button>
                     <Button
                       type="button"
@@ -173,7 +206,7 @@ export function KiAnfragenCard({ className }: KiAnfragenCardProps) {
       {threads.length > DISPLAY_LIMIT && (
         <button
           type="button"
-          onClick={() => router.push("/inbox?category=anfrage&unread=true")}
+          onClick={() => router.push("/inbox?category=anfrage")}
           className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 self-start"
         >
           Alle anzeigen ({threads.length})

@@ -315,6 +315,8 @@ function toExtractedEmailData(data: AnalyseResult): ExtractedEmailData {
       ...(guidelinesDetected ? ["guidelines"] : []),
       ...(trackingDetected ? ["trackingAssets"] : []),
     ],
+    requestGroups: data.request_groups ?? [],
+    requestStructure: data.request_structure,
   };
 }
 
@@ -334,7 +336,7 @@ type Props = {
   vorgangCount: number;
   onToggle: () => void;
   onSetWorkState: (state: WorkPanelState) => void;
-  onPatch: (id: string, patch: Partial<Thread>) => void;
+  onPatch: (id: string, patch: Partial<Thread>) => void | Promise<void>;
 };
 
 const COLLAPSED_WIDTH = 40;
@@ -352,6 +354,7 @@ export function WorkPanel({
   workState,
   onToggle,
   onSetWorkState,
+  onPatch,
 }: Props) {
   const [analyseError, setAnalyseError] = useState<string | null>(null);
   const mailboxCreatorId = selected
@@ -501,6 +504,11 @@ export function WorkPanel({
                   status: "idle",
                 })
               }
+              requestStatus={selected.request_status}
+              onReject={async () => {
+                await onPatch(selected.id, { request_status: "rejected" });
+                onSetWorkState({ phase: "not-coop" });
+              }}
               onBriefingExtracted={(filename, extracted) =>
                 onSetWorkState({
                   phase: "extracted",
@@ -552,6 +560,9 @@ export function WorkPanel({
               threadId={selected.id}
               merge={workState.merge}
               onSetWorkState={onSetWorkState}
+              onReject={async () => {
+                await onPatch(selected.id, { request_status: "rejected" });
+              }}
             />
           )}
           {selected && workState.phase === "vorgang" && (

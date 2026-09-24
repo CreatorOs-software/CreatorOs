@@ -44,6 +44,7 @@ export type AnfrageTrackingAssets = {
 
 export type Anfrage = {
   id: string;
+  campaign_group_id: string | null;
   creator_id: string;
   brand_id: string | null;
   brand_name: string | null;
@@ -99,6 +100,7 @@ export type AnfragePatch = {
 
 export type AnfrageCreateInput = {
   creator_id: string;
+  campaign_group_id?: string | null;
   brand_id?: string | null;
   brand_name?: string | null;
   contact_person?: string | null;

@@ -1,9 +1,9 @@
 "use client";
 
 import { Archive, Briefcase, Loader2, Star, Trash2 } from "lucide-react";
-import { Button } from "@talentos/ui";
+import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@talentos/ui";
 import { cn } from "@/lib/utils";
-import type { Thread } from "./types";
+import type { Creator, Thread } from "./types";
 import { formatDate, getDisplayName, getInitial } from "./utils";
 import { Avatar } from "@/components/ui/avatar-creator";
 import { SYSTEM_LABELS } from "./constants";
@@ -19,6 +19,7 @@ type Props = {
   onStar: () => void;
   onArchive: () => void;
   onDelete: () => void;
+  creatorsById: ReadonlyMap<string, Creator>;
 };
 
 export function ThreadItem({
@@ -28,9 +29,20 @@ export function ThreadItem({
   onStar,
   onArchive,
   onDelete,
+  creatorsById,
 }: Props) {
   const displayName = getDisplayName(thread.sender_name, thread.sender_email);
   const initial = getInitial(thread.sender_name, thread.sender_email);
+  const matchedCreatorIds = (thread.creator_matches ?? [])
+    .filter((match) => match.relation !== "mentioned")
+    .toSorted((a, b) => b.confidence - a.confidence)
+    .map((match) => match.creator_id);
+  if (matchedCreatorIds.length === 0 && thread.suggested_creator_id) {
+    matchedCreatorIds.push(thread.suggested_creator_id);
+  }
+  const matchedCreators = [...new Set(matchedCreatorIds)]
+    .map((creatorId) => creatorsById.get(creatorId))
+    .filter((creator): creator is Creator => Boolean(creator));
 
   return (
     <div
@@ -93,9 +105,10 @@ export function ThreadItem({
             </div>
           )}
           {thread.label_status !== "processing" &&
-            (thread.system_labels.length > 0 || thread.labels.length > 0) && (
-              <div className="mt-1.5 flex flex-wrap gap-1">
-                {thread.system_labels.map((name) => {
+            (thread.system_labels.length > 0 || thread.labels.length > 0 || matchedCreators.length > 0) && (
+              <div className="mt-1.5 flex items-center justify-between gap-(--tui-space-xs)">
+                <div className="flex min-w-0 flex-wrap gap-(--tui-space-3xs)">
+                  {thread.system_labels.map((name) => {
                   const color = SYSTEM_LABEL_COLOR[name] ?? "#8C8C8C";
                   return (
                     <span
@@ -110,8 +123,8 @@ export function ThreadItem({
                       {name}
                     </span>
                   );
-                })}
-                {thread.labels.map((label) => (
+                  })}
+                  {thread.labels.map((label) => (
                   <span
                     key={label.id}
                     className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
@@ -126,7 +139,29 @@ export function ThreadItem({
                     />
                     {label.name}
                   </span>
-                ))}
+                  ))}
+                </div>
+                {matchedCreators.length > 0 && (
+                  <div
+                    className="ml-auto flex shrink-0 gap-(--tui-space-3xs)"
+                    aria-label={`Zugeordnete Creator: ${matchedCreators.map((creator) => creator.full_name).join(", ")}`}
+                  >
+                    {matchedCreators.map((creator) => (
+                      <Tooltip key={creator.id}>
+                        <TooltipTrigger className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                          <Avatar
+                            initials={creator.initials}
+                            avatarConfig={creator.avatar_config}
+                            name={creator.full_name}
+                            size="xs"
+                            className="size-5 border border-border bg-card"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>{creator.full_name}</TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
         </div>

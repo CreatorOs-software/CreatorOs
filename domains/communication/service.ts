@@ -236,6 +236,9 @@ export const CommunicationService = {
       anfrageId,
       agencyId,
     );
+    await CommunicationRepository.patchThread(supabase, threadId, {
+      request_status: "converted",
+    });
   },
 
   async linkThreadToDeal(threadId: string, dealId: string): Promise<void> {
@@ -261,5 +264,8 @@ export const CommunicationService = {
       dealId,
       agencyId,
     );
+    await CommunicationRepository.patchThread(supabase, threadId, {
+      request_status: "converted",
+    });
   },
 };

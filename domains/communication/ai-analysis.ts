@@ -38,6 +38,31 @@ export type AiAnalysisResult = {
   } | null;
   missing_information: string[];
   suggested_reply: string | null;
+  request_structure:
+    | "single_request_single_creator"
+    | "single_request_multiple_creators"
+    | "multiple_distinct_requests"
+    | "unclear";
+  request_groups: AiRequestGroup[];
+};
+
+export type AiRequestGroup = {
+  key: string;
+  creator_ids: string[];
+  creator_confidence: number;
+  title: string | null;
+  product: string | null;
+  budget: number | null;
+  budget_offer: number | null;
+  fee: number | null;
+  period: string | null;
+  campaign_start: string | null;
+  campaign_end: string | null;
+  notes: string | null;
+  deliverables: AiAnalysisResult["deliverables"];
+  payment_items: AiAnalysisResult["payment_items"];
+  guidelines: AiAnalysisResult["guidelines"];
+  tracking_assets: AiAnalysisResult["tracking_assets"];
 };
 
 export type AnalyseResult = AiAnalysisResult & {

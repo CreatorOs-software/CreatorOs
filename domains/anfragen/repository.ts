@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Anfrage, AnfrageCreateInput, AnfragePatch } from "./types";
 
 const ANFRAGE_SELECT = `
-  id, creator_id, brand_id, brand_name, contact_person,
+  id, creator_id, campaign_group_id, brand_id, brand_name, contact_person,
   title, product, campaign_start, campaign_end,
   deliverables, payment_items, fee, guidelines, tracking_assets,
   format, budget_requested, budget_offer, source, status,

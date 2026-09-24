@@ -30,6 +30,7 @@ import {
   TooltipTrigger,
 } from "@talentos/ui";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 // ─── Work panel resize ────────────────────────────────────────────────────────
 
@@ -38,6 +39,7 @@ const WORK_PANEL_MAX = 720;
 const WORK_PANEL_DEFAULT = 340;
 const INBOX_MIN = 520; // keep the inbox card at least this wide while dragging
 const WORK_PANEL_WIDTH_KEY = "inbox:workPanelWidth";
+const EMPTY_CREATORS: InboxData["creators"] = [];
 
 function readStoredWorkPanelWidth(): number {
   const raw = localStorage.getItem(WORK_PANEL_WIDTH_KEY);
@@ -291,7 +293,11 @@ export function OrbitInbox() {
     [firstPage],
   );
   const labels = firstPage?.labels ?? [];
-  const creators = firstPage?.creators ?? [];
+  const creators = firstPage?.creators ?? EMPTY_CREATORS;
+  const creatorsById = useMemo(
+    () => new Map(creators.map((creator) => [creator.id, creator])),
+    [creators],
+  );
   const hasMore = !!hasNextPage;
   const loadingMore = isFetchingNextPage;
   const loadMore = useCallback(() => {
@@ -390,7 +396,7 @@ export function OrbitInbox() {
   // ── Actions ──────────────────────────────────────────────────────────────────
 
   const syncPatch = useCallback(
-    async (id: string, patch: ThreadPatch) => {
+    async (id: string, patch: ThreadPatch, throwOnError = false) => {
       const previous =
         queryClient.getQueryData<InfiniteData<InboxData>>(inboxQueryKey);
       patchThreadsInCache(queryClient, inboxQueryKey, id, (t) => ({
@@ -405,8 +411,14 @@ export function OrbitInbox() {
             queryKey: QueryKeys.inbox.unreadCount(),
           });
         }
-      } catch {
+        if (patch.request_status !== undefined) {
+          void queryClient.invalidateQueries({
+            queryKey: QueryKeys.inbox.aiRequests(),
+          });
+        }
+      } catch (error) {
         queryClient.setQueryData(inboxQueryKey, previous);
+        if (throwOnError) throw error;
       }
     },
     [inboxQueryKey, queryClient],
@@ -457,7 +469,7 @@ export function OrbitInbox() {
   }
 
   function handlePatch(id: string, patch: ThreadPatch) {
-    void syncPatch(id, patch);
+    return syncPatch(id, patch, true);
   }
 
   function handleFolderChange(f: Folder) {
@@ -575,7 +587,24 @@ export function OrbitInbox() {
       label_status: "processing" as const,
     }));
     try {
-      await fetch(`/api/inbox/${threadId}/label`, { method: "POST" });
+      const response = await fetch(`/api/inbox/${threadId}/label`, { method: "POST" });
+      const body = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        skipped?: boolean;
+      };
+      if (!response.ok || body.error) {
+        throw new Error(body.error ?? "Die E-Mail konnte nicht klassifiziert werden.");
+      }
+      toast.success("E-Mail wurde neu klassifiziert");
+    } catch (error) {
+      toast.error("Klassifizierung fehlgeschlagen", {
+        description:
+          error instanceof Error && error.message.includes("max_output_tokens")
+            ? "Die KI hat ihr Ausgabelimit erreicht. Bitte starte die Klassifizierung erneut."
+            : error instanceof Error
+              ? error.message
+            : "Beim Klassifizieren ist ein unbekannter Fehler aufgetreten.",
+      });
     } finally {
       await queryClient.refetchQueries({ queryKey: QueryKeys.inbox.list() });
     }
@@ -746,6 +775,7 @@ export function OrbitInbox() {
                         onStar={() => handleStar(t.id)}
                         onArchive={() => handleArchive(t.id)}
                         onDelete={() => handleDelete(t.id)}
+                        creatorsById={creatorsById}
                       />
                     </div>
                   ))}

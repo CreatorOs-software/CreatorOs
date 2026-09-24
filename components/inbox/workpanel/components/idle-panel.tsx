@@ -6,9 +6,10 @@ import {
   ChevronUp,
   HelpCircle,
   Sparkles,
+  XCircle,
 } from "lucide-react";
 import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@talentos/ui";
-import type { SystemLabel } from "@/domains/communication";
+import type { EmailRequestStatus, SystemLabel } from "@/domains/communication";
 import type { Creator } from "../../types";
 import {
   AttachmentAnalyzer,
@@ -36,6 +37,8 @@ type Props = {
   ) => void;
   onInvoiceAi?: () => void;
   onMatching?: () => void;
+  requestStatus: EmailRequestStatus;
+  onReject: () => Promise<void>;
 };
 
 export function IdlePanel({
@@ -50,10 +53,15 @@ export function IdlePanel({
   onBriefingExtracted,
   onInvoiceAi,
   onMatching,
+  requestStatus,
+  onReject,
 }: Props) {
   const router = useRouter();
   const [showAll, setShowAll] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [confirmReject, setConfirmReject] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectError, setRejectError] = useState<string | null>(null);
   const { main, more } = resolveActions(labels, { anfrageId, dealId });
   const isLinked = !!(anfrageId || dealId);
 
@@ -133,6 +141,61 @@ export function IdlePanel({
           {ACTION_META[id].label}
         </Button>
       ))}
+
+      {!isLinked && labels.includes("ANFRAGE") && requestStatus === "open" && (
+        <div className="w-full rounded-(--tui-radius-md) border border-border p-(--tui-space-sm) text-left">
+          <p className="text-xs font-semibold text-foreground">Nächster Schritt</p>
+          <p className="mt-(--tui-space-3xs) text-xs leading-relaxed text-muted-foreground">
+            Lege eine Anfrage an oder lehne sie bewusst ab. Bis dahin bleibt sie im Dashboard sichtbar.
+          </p>
+          {confirmReject ? (
+            <div className="mt-(--tui-space-xs) flex flex-col gap-(--tui-space-2xs)">
+              <p className="text-xs font-medium text-destructive">Anfrage wirklich ablehnen?</p>
+              {rejectError && <p className="text-xs text-destructive">{rejectError}</p>}
+              <div className="flex gap-(--tui-space-2xs)">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disabled={rejecting}
+                  onClick={async () => {
+                    setRejecting(true);
+                    setRejectError(null);
+                    try {
+                      await onReject();
+                    } catch (error) {
+                      setRejectError(error instanceof Error ? error.message : "Ablehnen fehlgeschlagen");
+                      setRejecting(false);
+                    }
+                  }}
+                >
+                  {rejecting ? "Wird abgelehnt…" : "Ja, ablehnen"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={rejecting}
+                  onClick={() => setConfirmReject(false)}
+                >
+                  Abbrechen
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-(--tui-space-xs) w-full text-destructive"
+              onClick={() => setConfirmReject(true)}
+            >
+              <XCircle className="h-4 w-4" />
+              Anfrage ablehnen
+            </Button>
+          )}
+        </div>
+      )}
 
       {more.length > 0 && (
         <div className="flex w-full flex-col gap-2">
