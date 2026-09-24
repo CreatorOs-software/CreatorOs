@@ -3,7 +3,7 @@ import { getAuthContext } from "@/domains/auth";
 import { KiAnfragenCard } from "@/components/dashboard/ki-anfragen-card";
 import { TermineCard } from "@/components/dashboard/termine-card";
 import { CreatorCard } from "@/components/dashboard/creator-card";
-import { IncomeCard } from "@/components/dashboard/income-card";
+import { ReactionRequiredCard } from "@/components/dashboard/reaction-required-card";
 import {
   InvoicesCard,
   type OpenInvoice,
@@ -93,7 +93,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Main Grid — 2 explicit rows, right col spans both */}
-      <div className="flex-1 min-h-0 grid grid-cols-12 grid-rows-[auto_1fr] gap-4">
+      <div className="grid min-h-0 flex-1 grid-cols-12 grid-rows-[auto_minmax(0,1fr)] gap-4">
         {/* Row 1, col 1-3 */}
         <CreatorCard
           className="col-span-12 lg:col-span-3"
@@ -104,7 +104,7 @@ export default async function DashboardPage() {
         />
 
         {/* Row 1, col 4-9 */}
-        <IncomeCard className="col-span-6 lg:col-span-3" />
+        <ReactionRequiredCard className="col-span-6 lg:col-span-3" />
         <InvoicesCard
           invoices={openInvoices}
           className="col-span-6 lg:col-span-3"
@@ -117,10 +117,10 @@ export default async function DashboardPage() {
         </div>
 
         {/* Row 2, col 1-3 */}
-        <KiAnfragenCard className="col-span-12 lg:col-span-3" />
+        <KiAnfragenCard className="col-span-12 min-h-0 lg:col-span-3" />
 
         {/* Row 2, col 4-9 */}
-        <TermineCard className="col-span-12 lg:col-span-6" />
+        <TermineCard className="col-span-12 min-h-0 lg:col-span-6" />
       </div>
     </div>
   );

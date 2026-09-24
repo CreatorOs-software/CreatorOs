@@ -97,7 +97,7 @@ export function KiAnfragenCard({ className }: KiAnfragenCardProps) {
   }
 
   return (
-    <Card className={cn("p-5 flex flex-col gap-4 h-full", className)}>
+    <Card className={cn("flex h-full min-h-0 flex-col gap-4 overflow-hidden p-5", className)}>
       <div className="flex items-center justify-between">
         <p className="text-lg font-semibold">Anfragen</p>
         <Badge variant="default">
@@ -105,31 +105,32 @@ export function KiAnfragenCard({ className }: KiAnfragenCardProps) {
         </Badge>
       </div>
 
-      {isPending ? (
-        <div className="flex flex-col gap-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex flex-col gap-1.5 py-1">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-3 w-1/2" />
-            </div>
-          ))}
-        </div>
-      ) : visible.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-2">
-          Keine neuen Anfragen 🎉
-        </p>
-      ) : (
-        <Accordion type="multiple" className="flex flex-col">
-          {visible.map((thread) => {
-            const creatorNames = creatorNamesFor(thread);
-            const structure = structureLabel(thread);
-            const status = thread.deal_id
-              ? "Verknüpfter Deal"
-              : thread.anfrage_id
-                ? "Bestehende Anfrage"
-                : "Neue Anfrage";
-            return (
-              <AccordionItem key={thread.id} value={thread.id}>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {isPending ? (
+          <div className="flex flex-col gap-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-1.5 py-1">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : visible.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-2">
+            Keine neuen Anfragen 🎉
+          </p>
+        ) : (
+          <Accordion type="multiple" className="flex flex-col">
+            {visible.map((thread) => {
+              const creatorNames = creatorNamesFor(thread);
+              const structure = structureLabel(thread);
+              const status = thread.deal_id
+                ? "Verknüpfter Deal"
+                : thread.anfrage_id
+                  ? "Bestehende Anfrage"
+                  : "Neue Anfrage";
+              return (
+                <AccordionItem key={thread.id} value={thread.id}>
                 <AccordionTrigger>
                   <div className="flex-1 min-w-0 text-left">
                     <p className="text-sm font-medium truncate">
@@ -197,11 +198,12 @@ export function KiAnfragenCard({ className }: KiAnfragenCardProps) {
                     </Button>
                   </div>
                 </AccordionContent>
-              </AccordionItem>
-            );
-          })}
-        </Accordion>
-      )}
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
+        )}
+      </div>
 
       {threads.length > DISPLAY_LIMIT && (
         <button

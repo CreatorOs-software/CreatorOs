@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { QueryKeys } from "@/lib/query-keys";
 import { Avatar } from "@/components/ui/avatar-creator";
-import { Card, CardHeader, CardTitle, Skeleton } from "@talentos/ui";
+import { Card, CardTitle, Skeleton } from "@talentos/ui";
 import { cn } from "@/lib/utils";
 import type { DealDeadline } from "@/domains/deals";
 import type { Todo } from "@/domains/todos";
@@ -228,7 +228,7 @@ export function TermineCard({ className }: TermineCardProps) {
   const isPending = eventsPending || deadlinesPending || todosPending;
 
   return (
-    <Card className={cn("p-5 flex flex-col gap-4 h-full", className)}>
+    <Card className={cn("flex h-full min-h-0 flex-col gap-4 overflow-hidden p-5", className)}>
       {/* Header */}
 
       <CardTitle>Anstehende Termine · nächste 7 Tage</CardTitle>
@@ -248,7 +248,7 @@ export function TermineCard({ className }: TermineCardProps) {
       </div>
 
       {/* Event list */}
-      <div className="flex flex-col divide-y divide-border overflow-y-auto max-h-80">
+      <div className="flex min-h-0 flex-1 flex-col divide-y divide-border overflow-y-auto">
         {isPending ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div

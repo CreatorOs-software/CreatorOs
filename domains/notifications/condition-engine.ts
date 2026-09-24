@@ -32,6 +32,19 @@ type AnfrageRow = {
   brands: { company_name: string } | { company_name: string }[] | null;
 };
 
+type IncomingRequestRow = {
+  id: string;
+  subject: string;
+  sender_name: string | null;
+  sender_email: string;
+  received_at: string;
+  suggested_creator_id: string | null;
+  creator_matches: Array<{
+    creator_id: string;
+    creator: { manager_id: string | null } | { manager_id: string | null }[] | null;
+  }> | null;
+};
+
 type PaymentItem = {
   id?: string;
   label?: string;
@@ -278,6 +291,46 @@ function requestSignals(requests: AnfrageRow[], context: EvaluationContext, toda
   });
 }
 
+function incomingRequestSignals(
+  requests: IncomingRequestRow[],
+  context: EvaluationContext,
+  today: Date,
+) {
+  return requests.flatMap((request): ConditionSignal[] => {
+    const receivedAt = new Date(request.received_at);
+    if (Number.isNaN(receivedAt.getTime())) return [];
+    const age = calendarDaysSince(receivedAt, today);
+    if (age < 3) return [];
+    const stage = age >= 7 ? 3 : age >= 5 ? 2 : 1;
+    const creatorMatches = request.creator_matches ?? [];
+    const belongsToUser = creatorMatches.some(
+      (match) => one(match.creator)?.manager_id === context.userId,
+    );
+    if (context.role !== "admin" && !belongsToUser) return [];
+    const sender = request.sender_name ?? request.sender_email;
+    const creatorId = creatorMatches[0]?.creator_id ?? request.suggested_creator_id;
+
+    return [{
+      ruleKey: "INCOMING_REQUEST_STALE",
+      entityKey: `email-thread:${request.id}`,
+      stage,
+      severity: stage >= 2 ? "LAUT" : "NORMAL",
+      subjectType: "EMAIL_THREAD",
+      subjectId: request.id,
+      vorgangKey: `email-thread:${request.id}`,
+      creatorId,
+      title: `Anfrage von ${sender} wartet seit ${age} Tagen`,
+      reason: request.subject,
+      href: `/inbox?thread=${request.id}`,
+      nextReminderAt: stage === 1
+        ? isoReminder(addDays(today, 2))
+        : stage === 2
+          ? isoReminder(addDays(today, 2))
+          : nextWeekly(today),
+    }];
+  });
+}
+
 async function payoutSignals(
   supabase: SupabaseClient,
   context: EvaluationContext,
@@ -346,7 +399,7 @@ export async function evaluateNotificationConditions(
   context: EvaluationContext,
 ) {
   const today = startOfToday();
-  const [{ data: deals }, { data: requests }, existing, payouts] = await Promise.all([
+  const [{ data: deals }, { data: requests }, { data: incomingRequests }, existing, payouts] = await Promise.all([
     supabase
       .from("deals")
       .select("id, title, creator_id, assignee_id, assigned_manager, deliverables, payment_items, creators(manager_id)")
@@ -356,6 +409,12 @@ export async function evaluateNotificationConditions(
       .select("id, title, brand_name, status, updated_at, creator_id, linked_deal_id, creators(manager_id), brands(company_name)")
       .eq("agency_id", context.agencyId)
       .in("status", ["neu", "pruefung"]),
+    supabase
+      .from("email_threads")
+      .select("id, subject, sender_name, sender_email, received_at, suggested_creator_id, creator_matches:email_thread_creator_matches(creator_id, creator:creator_id(manager_id))")
+      .eq("agency_id", context.agencyId)
+      .eq("request_status", "open")
+      .contains("system_labels", ["ANFRAGE"]),
     NotificationRepository.findForUser(supabase, context.agencyId, context.userId),
     payoutSignals(supabase, context, today),
   ]);
@@ -364,6 +423,7 @@ export async function evaluateNotificationConditions(
     ...invoiceSignals((deals ?? []) as unknown as DealRow[], context, today),
     ...draftSignals((deals ?? []) as unknown as DealRow[], context, today),
     ...requestSignals((requests ?? []) as unknown as AnfrageRow[], context, today),
+    ...incomingRequestSignals((incomingRequests ?? []) as unknown as IncomingRequestRow[], context, today),
     ...payouts,
   ];
   const activeKeys = new Set(signals.map((signal) => `${signal.ruleKey}:${signal.entityKey}`));

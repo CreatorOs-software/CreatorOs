@@ -20,6 +20,7 @@ export type NotificationType =
   | "CONTENT_DELIVERED"
   | "PAYMENT_RECEIVED"
   | "NEW_REQUEST_DETECTED"
+  | "INCOMING_REQUEST_STALE"
   // Kategorie 2 – Nicht-Bewegung
   | "REQUEST_STALE"
   | "OFFER_STALE"
