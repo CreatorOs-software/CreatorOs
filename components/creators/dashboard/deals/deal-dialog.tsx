@@ -1667,15 +1667,6 @@ function DealDialogContent({
               )}
             </div>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="size-auto p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted shrink-0"
-          >
-            <X className="size-4" />
-          </Button>
         </div>
         <DealStepper
           status={local.status}
@@ -1769,6 +1760,7 @@ export function DealDialog({
       }}
     >
       <DialogContent
+        size="lg"
         className="gap-0 overflow-hidden p-0"
         aria-describedby={undefined}
       >

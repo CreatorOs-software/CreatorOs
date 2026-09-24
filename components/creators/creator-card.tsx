@@ -96,7 +96,7 @@ export function CreatorCard({
               onOpenPlatformSheet();
             }}
             aria-label="Schnittstellen verwalten"
-            variant={"outline"}
+            variant={"secondary"}
             size="icon"
           >
             <Puzzle className="mx-auto h-4 w-4" />
@@ -108,7 +108,7 @@ export function CreatorCard({
               e.stopPropagation();
               onOpenSheet();
             }}
-            variant={"outline"}
+            variant={"secondary"}
             size="icon"
           >
             <Eye className="mx-auto h-4 w-4 " />

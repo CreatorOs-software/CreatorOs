@@ -43,6 +43,20 @@ export type CreatorRequestMatchingContext = {
 
 const PERIOD_DAYS = { "30_tage": 30, "3_monate": 90, "1_jahr": 365 } as const;
 const COUNTED_DEAL_STATUSES = new Set(["confirmed", "production", "approval", "scheduled", "posted", "invoiced", "paid"]);
+const GOAL_TYPES = new Set<Goal["type"]>(["umsatz", "kooperationen", "post"]);
+const GOAL_PERIODS = new Set<Goal["period"]>(["30_tage", "3_monate", "1_jahr"]);
+
+function parseGoal(value: unknown): Goal | null {
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as Record<string, unknown>;
+  const goalValue = Number(candidate.value);
+  const type = candidate.type as Goal["type"];
+  const period = candidate.period as Goal["period"];
+
+  if (!Number.isFinite(goalValue) || goalValue <= 0) return null;
+  if (!GOAL_TYPES.has(type) || !GOAL_PERIODS.has(period)) return null;
+  return { value: goalValue, type, period };
+}
 
 function startDate(period: Goal["period"]): string {
   const date = new Date();
@@ -74,14 +88,22 @@ export async function buildCreatorRequestMatchingContext(
 ): Promise<CreatorRequestMatchingContext> {
   const { data: creator, error: creatorError } = await db
     .from("creators")
-    .select("id, full_name, niche, goals, weitere_ziele, min_kooperation_betrag, wunsche_anforderungen")
+    .select("id, full_name, niche, goals, goal_value, goal_type, goal_period, weitere_ziele, min_kooperation_betrag, wunsche_anforderungen")
     .eq("id", payload.creator_id)
     .eq("agency_id", agencyId)
     .single();
 
   if (creatorError || !creator) throw new Error("matching context: creator not found");
 
-  const goals = (Array.isArray(creator.goals) ? creator.goals : []) as Goal[];
+  const goals = (Array.isArray(creator.goals) ? creator.goals : [])
+    .map(parseGoal)
+    .filter((goal): goal is Goal => goal !== null);
+  const legacyGoal = parseGoal({
+    value: creator.goal_value,
+    type: creator.goal_type,
+    period: creator.goal_period,
+  });
+  if (goals.length === 0 && legacyGoal) goals.push(legacyGoal);
   const earliestStart = goals.length
     ? goals.map((goal) => startDate(goal.period)).sort()[0]
     : startDate("1_jahr");
